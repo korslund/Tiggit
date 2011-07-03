@@ -1,0 +1,7 @@
+private
+Makefile
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+*_test
+wxtest
