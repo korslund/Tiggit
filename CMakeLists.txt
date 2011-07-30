@@ -5,5 +5,5 @@ find_package(wxWidgets COMPONENTS core base REQUIRED)
 # This automagically sets up everything for us
 include( ${wxWidgets_USE_FILE} )
 
-add_executable(wxtest wxtest.cpp)
-target_link_libraries(wxtest ${wxWidgets_LIBRARIES})
+add_executable(wxtest1_flexgrid wxtest1_flexgrid.cpp)
+target_link_libraries(wxtest1_flexgrid ${wxWidgets_LIBRARIES})
