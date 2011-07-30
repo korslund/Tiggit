@@ -5,3 +5,4 @@ CMakeFiles
 cmake_install.cmake
 *_test
 wxtest1_flexgrid
+wxtest2_ctrl_list
