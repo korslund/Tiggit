@@ -6,3 +6,5 @@ cmake_install.cmake
 *_test
 wxtest1_flexgrid
 wxtest2_ctrl_list
+wxtest3_html
+wxtest4_list
