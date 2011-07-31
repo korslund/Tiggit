@@ -8,6 +8,10 @@
 #include <fstream>
 #include <stdexcept>
 
+#include "curl_get.hpp"
+#include "decodeurl.hpp"
+#include "filegetter.hpp"
+
 using namespace std;
 
 struct DataList
@@ -45,64 +49,6 @@ struct DataList
 };
 
 DataList data;
-
-struct TigList
-{
-  std::string filename, channel, desc, location, homepage;
-
-  void fail(const std::string &msg)
-  {
-    throw std::runtime_error("ERROR in '" + filename + "': " + msg);
-  }
-
-  void loadData(const std::string &file, DataList &data)
-  {
-    using namespace Json;
-    filename = file;
-
-    Value root;
-
-    {
-      std::ifstream inf(file.c_str());
-      if(!inf)
-        fail("Cannot read file");
-
-      Reader reader;
-      if(!reader.parse(inf, root))
-        fail(reader.getFormatedErrorMessages());
-    }
-
-    // Check file type
-    if(root["type"] != "tiglist 1.0")
-      fail("Not a valid tiglist");
-
-    channel = root["name"].asString();
-    desc = root["desc"].asString();
-    location = root["location"].asString();
-    homepage = root["homepage"].asString();
-
-    // This must be present, the rest are optional
-    if(channel == "") fail("Missing or invalid channel name");
-
-    // Traverse the list
-    root = root["list"];
-
-    // We have to do it this way because the jsoncpp iterators are
-    // b0rked.
-    Value::Members keys = root.getMemberNames();
-    Value::Members::iterator it;
-    for(it = keys.begin(); it != keys.end(); it++)
-      {
-        const std::string &key = *it;
-        Value game = root[key];
-
-        // Push the game into the list
-        data.add(0, key,
-                 game["title"].asString(), game["desc"].asString(),
-                 game["fpshot"].asString(), game["tigurl"].asString());
-      }
-  }
-};
 
 class MyList : public wxListCtrl
 {
@@ -227,6 +173,10 @@ public:
     CreateStatusBar();
     SetStatusText(_("Welcome to tiggit!"));
 
+    // Without this the menubar doesn't appear (in GTK at least) until
+    // you move the mouse. Probably some weird bug.
+    SendSizeEvent();
+
     list = new MyList(this, myID_LIST);
 
     wxBoxSizer *leftPane = new wxBoxSizer(wxVERTICAL);
@@ -260,8 +210,23 @@ public:
     Connect(myID_LIST, wxEVT_COMMAND_LIST_ITEM_ACTIVATED,
             wxListEventHandler(MyFrame::onListActivate));
 
+    Connect(wxID_ABOUT, wxEVT_COMMAND_MENU_SELECTED,
+            wxCommandEventHandler(MyFrame::onAbout));
+    Connect(wxID_EXIT, wxEVT_COMMAND_MENU_SELECTED,
+            wxCommandEventHandler(MyFrame::onExit));
+
     updateData();
     list->SetFocus();
+  }
+
+  void onAbout(wxCommandEvent &event)
+  {
+    cout << "About tiggit\n";
+  }
+
+  void onExit(wxCommandEvent &event)
+  {
+    Close();
   }
 
   void updateData() { list->update(); }
@@ -354,17 +319,90 @@ public:
   }
 };
 
+struct TigListReader
+{
+  std::string filename, channel, desc, location, homepage;
+
+  void fail(const std::string &msg)
+  {
+    throw std::runtime_error("ERROR parsing '" + filename + "':\n\n" + msg);
+  }
+
+  void loadData(const std::string &file, DataList &data)
+  {
+    using namespace Json;
+    filename = file;
+
+    Value root;
+
+    {
+      std::ifstream inf(file.c_str());
+      if(!inf)
+        fail("Cannot read file");
+
+      Reader reader;
+      if(!reader.parse(inf, root))
+        fail(reader.getFormatedErrorMessages());
+    }
+
+    // Check file type
+    if(root["type"] != "tiglist 1.0")
+      fail("Not a valid tiglist");
+
+    channel = root["channel"].asString();
+    desc = root["desc"].asString();
+    location = root["location"].asString();
+    homepage = root["homepage"].asString();
+
+    // This must be present, the rest are optional
+    if(channel == "") fail("Missing or invalid channel name");
+
+    // Traverse the list
+    root = root["list"];
+
+    // We have to do it this way because the jsoncpp iterators are
+    // b0rked.
+    Value::Members keys = root.getMemberNames();
+    Value::Members::iterator it;
+    for(it = keys.begin(); it != keys.end(); it++)
+      {
+        const std::string &key = *it;
+        Value game = root[key];
+
+        // Push the game into the list
+        data.add(0, key,
+                 game["title"].asString(), game["desc"].asString(),
+                 game["fpshot"].asString(), game["tigurl"].asString());
+      }
+  }
+};
+
 class MyApp : public wxApp
 {
 public:
   virtual bool OnInit()
   {
-    TigList lst;
-    lst.loadData("all_games.json", data);
+    try
+      {
+        string url = "http://tiggit.net/api/all_games.json";
 
-    MyFrame *frame = new MyFrame(wxT("Custom list"));
-    frame->Show(true);
-    return true;
+        cout << "Fetching " << url << endl;
+        string lstfile = get.getFile(url);
+        cout << "Downloaded to " << lstfile << endl;
+
+        TigListReader lst;
+        lst.loadData(lstfile, data);
+
+        MyFrame *frame = new MyFrame(wxT("Custom list"));
+        frame->Show(true);
+        return true;
+      }
+    catch(std::exception &e)
+      {
+        wxString msg(e.what(), wxConvUTF8);
+        wxMessageBox(msg, wxT("Error"), wxOK | wxICON_ERROR);
+      }
+    return false;
   }
 };
 
