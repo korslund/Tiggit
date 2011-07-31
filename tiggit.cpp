@@ -1,9 +1,13 @@
 #include <wx/wx.h>
+#include <json/json.h>
 
 #include <string>
 #include <vector>
 #include <iostream>
 #include <assert.h>
+#include <fstream>
+#include <stdexcept>
+
 using namespace std;
 
 struct DataList
@@ -11,24 +15,94 @@ struct DataList
   struct Entry
   {
     int status;
-    wxString idname, name, desc;
+    wxString idname, name, desc, fpshot, tigurl;
   };
 
   std::vector<Entry> arr;
 
-  void add(int status, const wxString &idname, const wxString &name, const wxString &desc)
+  void add(int status, const wxString &idname, const wxString &name,
+           const wxString &desc, const wxString &fpshot,
+           const wxString &tigurl)
   {
-    Entry e = { status, idname, name, desc };
+    Entry e = { status, idname, name, desc, fpshot, tigurl };
     arr.push_back(e);
   }
 
-  void add(int status, const char* idname, const char* name, const char* desc)
+  void add(int status,
+           const std::string &idname,
+           const std::string &name,
+           const std::string &desc,
+           const std::string &fpshot,
+           const std::string &tigurl)
   {
-    add(status, wxString(idname, wxConvUTF8), wxString(name, wxConvUTF8), wxString(desc, wxConvUTF8));
+    add(status,
+        wxString(idname.c_str(), wxConvUTF8),
+        wxString(name.c_str(), wxConvUTF8),
+        wxString(desc.c_str(), wxConvUTF8),
+        wxString(fpshot.c_str(), wxConvUTF8),
+        wxString(tigurl.c_str(), wxConvUTF8));
   }
 };
 
 DataList data;
+
+struct TigList
+{
+  std::string filename, channel, desc, location, homepage;
+
+  void fail(const std::string &msg)
+  {
+    throw std::runtime_error("ERROR in '" + filename + "': " + msg);
+  }
+
+  void loadData(const std::string &file, DataList &data)
+  {
+    using namespace Json;
+    filename = file;
+
+    Value root;
+
+    {
+      std::ifstream inf(file.c_str());
+      if(!inf)
+        fail("Cannot read file");
+
+      Reader reader;
+      if(!reader.parse(inf, root))
+        fail(reader.getFormatedErrorMessages());
+    }
+
+    // Check file type
+    if(root["type"] != "tiglist 1.0")
+      fail("Not a valid tiglist");
+
+    channel = root["name"].asString();
+    desc = root["desc"].asString();
+    location = root["location"].asString();
+    homepage = root["homepage"].asString();
+
+    // This must be present, the rest are optional
+    if(channel == "") fail("Missing or invalid channel name");
+
+    // Traverse the list
+    root = root["list"];
+
+    // We have to do it this way because the jsoncpp iterators are
+    // b0rked.
+    Value::Members keys = root.getMemberNames();
+    Value::Members::iterator it;
+    for(it = keys.begin(); it != keys.end(); it++)
+      {
+        const std::string &key = *it;
+        Value game = root[key];
+
+        // Push the game into the list
+        data.add(0, key,
+                 game["title"].asString(), game["desc"].asString(),
+                 game["fpshot"].asString(), game["tigurl"].asString());
+      }
+  }
+};
 
 class MyList : public wxListCtrl
 {
@@ -43,20 +117,18 @@ public:
 
     col.SetId(0);
     col.SetText( wxT("Name") );
-    col.SetWidth(160);
+    col.SetWidth(200);
     InsertColumn(0, col);
         
     col.SetId(1);
     col.SetText( wxT("Description") );
-    col.SetWidth(200);
+    col.SetWidth(230);
     InsertColumn(1, col);
 
     col.SetId(2);
     col.SetText( wxT("Status") );
-    col.SetWidth(250);
+    col.SetWidth(240);
     InsertColumn(2, col);
-
-    SetFocus();
 
     /*
     green.SetBackgroundColour(wxColour(100,255,100));
@@ -141,6 +213,20 @@ public:
   {
     Centre();
 
+    wxMenu *menuFile = new wxMenu;
+
+    menuFile->Append(wxID_ABOUT, _("&About..."));
+    menuFile->AppendSeparator();
+    menuFile->Append(wxID_EXIT, _("E&xit"));
+
+    wxMenuBar *menuBar = new wxMenuBar;
+    menuBar->Append(menuFile, _("&App"));
+
+    SetMenuBar( menuBar );
+
+    CreateStatusBar();
+    SetStatusText(_("Welcome to tiggit!"));
+
     list = new MyList(this, myID_LIST);
 
     wxBoxSizer *leftPane = new wxBoxSizer(wxVERTICAL);
@@ -174,22 +260,11 @@ public:
     Connect(myID_LIST, wxEVT_COMMAND_LIST_ITEM_ACTIVATED,
             wxListEventHandler(MyFrame::onListActivate));
 
-    data.add(2, "col", "Colonization", "A really old one, this");
-    data.add(2, "tt", "Tiny Tactics", "A cool tactical RPG in the style of Final Fantasy Tactics and Vandal Hearts");
-    data.add(2, "mith", "Mithril", "Underground strategy and colonization simulator");
-    data.add(2, "plan", "Planet", "In the biggest exploration game ever created, you are given an entire planet.");
-    data.add(1, "port", "Portal", "Eh, not really an indie game, is it?");
-    data.add(3, "sc", "SpaceChem", "This one certainly isn't bad");
-    data.add(1, "cw2", "Creeper World 2", "I love this one too");
-    data.add(0, "mc", "Minecraft", "Exploration mega-hit");
-    data.add(0, "aquaria", "Aquaria", "This is a cool underwater game");
-    data.add(0, "creeper-world", "Creeper World", "Man, I love this game");
-    data.add(0, "dd", "Desktop Dungeons", "Go underground and kill stuff");
-
-    update();
+    updateData();
+    list->SetFocus();
   }
 
-  void update() { list->update(); }
+  void updateData() { list->update(); }
 
   void doAction(int index, int b)
   {
@@ -231,6 +306,7 @@ public:
   {
     int b = event.GetId()-20;
     doAction(select, b);
+    list->SetFocus();
   }
 
   void onListDeselect(wxListEvent &event)
@@ -283,6 +359,9 @@ class MyApp : public wxApp
 public:
   virtual bool OnInit()
   {
+    TigList lst;
+    lst.loadData("all_games.json", data);
+
     MyFrame *frame = new MyFrame(wxT("Custom list"));
     frame->Show(true);
     return true;
