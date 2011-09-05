@@ -1,112 +1,16 @@
 #include <wx/wx.h>
-#include <json/json.h>
 
-#include <string>
-#include <vector>
 #include <iostream>
 #include <assert.h>
-#include <fstream>
-#include <stdexcept>
 
 #include "curl_get.hpp"
 #include "decodeurl.hpp"
 #include "filegetter.hpp"
+#include "data_reader.hpp"
 
 using namespace std;
 
-struct DataList
-{
-  struct Entry
-  {
-    int status;
-    wxString idname, name, desc, fpshot, tigurl;
-  };
-
-  std::vector<Entry> arr;
-
-  void add(int status, const wxString &idname, const wxString &name,
-           const wxString &desc, const wxString &fpshot,
-           const wxString &tigurl)
-  {
-    Entry e = { status, idname, name, desc, fpshot, tigurl };
-    arr.push_back(e);
-  }
-
-  void add(int status,
-           const std::string &idname,
-           const std::string &name,
-           const std::string &desc,
-           const std::string &fpshot,
-           const std::string &tigurl)
-  {
-    add(status,
-        wxString(idname.c_str(), wxConvUTF8),
-        wxString(name.c_str(), wxConvUTF8),
-        wxString(desc.c_str(), wxConvUTF8),
-        wxString(fpshot.c_str(), wxConvUTF8),
-        wxString(tigurl.c_str(), wxConvUTF8));
-  }
-};
-
 DataList data;
-
-struct TigListReader
-{
-  std::string filename, channel, desc, location, homepage;
-
-  void fail(const std::string &msg)
-  {
-    throw std::runtime_error("ERROR parsing '" + filename + "':\n\n" + msg);
-  }
-
-  void loadData(const std::string &file, DataList &data)
-  {
-    using namespace Json;
-    filename = file;
-
-    Value root;
-
-    {
-      std::ifstream inf(file.c_str());
-      if(!inf)
-        fail("Cannot read file");
-
-      Reader reader;
-      if(!reader.parse(inf, root))
-        fail(reader.getFormatedErrorMessages());
-    }
-
-    // Check file type
-    if(root["type"] != "tiglist 1.0")
-      fail("Not a valid tiglist");
-
-    channel = root["channel"].asString();
-    desc = root["desc"].asString();
-    location = root["location"].asString();
-    homepage = root["homepage"].asString();
-
-    // This must be present, the rest are optional
-    if(channel == "") fail("Missing or invalid channel name");
-
-    // Traverse the list
-    root = root["list"];
-
-    // We have to do it this way because the jsoncpp iterators are
-    // b0rked.
-    Value::Members keys = root.getMemberNames();
-    Value::Members::iterator it;
-    for(it = keys.begin(); it != keys.end(); it++)
-      {
-        const std::string &key = *it;
-        Value game = root[key];
-
-        // Push the game into the list
-        data.add(0, key,
-                 game["title"].asString(), game["desc"].asString(),
-                 game["fpshot"].asString(), game["tigurl"].asString());
-      }
-  }
-};
 
 // Update data from stored all_games.json
 void updateData()
@@ -263,11 +167,12 @@ public:
 
     wxBoxSizer *leftPane = new wxBoxSizer(wxVERTICAL);
     leftPane->Add(list, 1, wxGROW | wxALL, 10);
-    leftPane->Add(new wxStaticText(this, wxID_ANY, wxT("Mouse: click to view, double-click to install / play\nKeyboard: arrow keys + enter")), 0, wxALL, 10);
+    leftPane->Add(new wxStaticText(this, wxID_ANY, wxT("Mouse: double-click to install / play\nKeyboard: arrow keys + enter")), 0, wxALL, 10);
 
     wxBoxSizer *rightPane = new wxBoxSizer(wxVERTICAL);
-    b1 = new wxButton(this, myID_BUTTON1, wxT("Button1"));
-    b2 = new wxButton(this, myID_BUTTON2, wxT("Button2"));
+    b1 = new wxButton(this, myID_BUTTON1, wxT("No action"));
+    b2 = new wxButton(this, myID_BUTTON2, wxT("No action"));
+    b2->Show(false);
     rightPane->Add(b1, 0, wxBOTTOM | wxRIGHT, 10);
     rightPane->Add(b2, 0, wxBOTTOM | wxRIGHT, 10);
 
@@ -324,6 +229,9 @@ public:
 
   void doAction(int index, int b)
   {
+    if(index < 0 || index >= data.arr.size())
+      return;
+
     const DataList::Entry &e = data.arr[index];
 
     // True when called as an 'activate' command.

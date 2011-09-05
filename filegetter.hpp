@@ -1,5 +1,7 @@
-#include <stdlib.h>
+#ifndef _FILEGETTER_HPP_
+#define _FILEGETTER_HPP_
 
+#include <stdlib.h>
 #include "tmpdir.hpp"
 
 struct FileGetter
@@ -44,14 +46,26 @@ struct FileGetter
     return dest.string();
   }
 
-  // Cache a given file. Returns the final path.
-  std::string cache(const std::string &file)
+  // Get the file from the given local position within the base
+  // dir. If it doesn't exist, fetch it from the given url. Returns
+  // the final path.
+  std::string getCache(const std::string &local, const std::string &url)
   {
     using namespace boost::filesystem;
 
-    path dest = "cache";
-    dest /= path(file).leaf();
-    return copyTo(file, dest.string());
+    // This is the final path
+    path dest = base / local;
+
+    // Check if it exists
+    if(!exists(dest))
+      {
+        // Nope, we need to download it
+        std::string tmp = getFile(url);
+        copyTo(tmp, local);
+      }
+
+    // Return the absolute filename
+    return dest.string();
   }
 
   /* Takes an input file or URL, decodes it, downloads it if necessary,
@@ -77,3 +91,5 @@ struct FileGetter
 };
 
 FileGetter get;
+
+#endif

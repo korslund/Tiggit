@@ -47,6 +47,9 @@ struct CurlGet
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
 
+    // This is required for multithreading
+    curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+
     // Progress bar (not currently in use)
     /*
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
@@ -67,20 +70,5 @@ struct CurlGet
     if(res != CURLE_OK)
       throw std::runtime_error("Error fetching " + url);
   }
-
-  /* This is tested and works.
-  static int progress_bar(void *data,
-                          // Download
-                          double dl_total,
-                          double dl_now,
-                          // Upload
-                          double up_total,
-                          double up_now)
-  {
-    // Return non-zero to abort. curl_easy_perform should then return
-    // CURLE_ABORTED_BY_CALLBACK.
-    return 0;
-  }
-  */
 };
 #endif
