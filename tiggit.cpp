@@ -7,6 +7,7 @@
 #include "decodeurl.hpp"
 #include "filegetter.hpp"
 #include "data_reader.hpp"
+#include "thread_get.hpp"
 
 using namespace std;
 
@@ -227,6 +228,14 @@ public:
 
   void updateData() { list->update(); }
 
+  // Called regularly by an external timer, used to update
+  // thread-dependent
+  void tick()
+  {
+    list->Refresh();
+    cout << "tick\n";
+  }
+
   void doAction(int index, int b)
   {
     if(index < 0 || index >= data.arr.size())
@@ -318,15 +327,51 @@ public:
   }
 };
 
+struct MyTimer : wxTimer
+{
+  MyFrame *frame;
+
+  MyTimer(MyFrame *f)
+    : frame(f)
+  {
+    Start(2000);
+  }
+
+  void Notify()
+  {
+    frame->tick();
+  }
+};
+
 class MyApp : public wxApp
 {
+  MyTimer *time;
+
 public:
   virtual bool OnInit()
   {
+    /*
+    ThreadGet tg;
+
+    tg.start("http://tiggit.net/rzip/debrysis.zip", "test.zip");
+
+    while(tg.status < 2)
+      {
+        cout << "status=" << tg.status << " progress="
+             << tg.current << "/" << tg.total << "("
+             << (100.0*tg.current/tg.total) << "%)"
+             << endl;
+        wxThread::Sleep(200);
+      }
+    cout << "FINAL status=" << tg.status << " progress="
+         << tg.current << "/" << tg.total << endl;
+    */
+
     try
       {
         MyFrame *frame = new MyFrame(wxT("Tiggit - the indie game installer"));
         frame->Show(true);
+        time = new MyTimer(frame);
         return true;
       }
     catch(std::exception &e)
@@ -334,6 +379,7 @@ public:
         wxString msg(e.what(), wxConvUTF8);
         wxMessageBox(msg, wxT("Error"), wxOK | wxICON_ERROR);
       }
+
     return false;
   }
 };

@@ -13,6 +13,8 @@
 
 struct CurlGet
 {
+  typedef int (*ProgFunc)(void*,double,double,double,double);
+
   static size_t stream_write(void *buffer, size_t size, size_t num, void *strm)
   {
     assert(strm);
@@ -25,14 +27,16 @@ struct CurlGet
   }
 
   // Download and write directly to the given file
-  static void get(const std::string &url, const std::string &file)
+  static void get(const std::string &url, const std::string &file,
+                  ProgFunc fn = NULL, void *data = NULL)
   {
     std::ofstream of(file.c_str(), std::ios::binary | std::ios::out);
-    get(url, of);
+    get(url, of, fn, data);
   }
 
   // Download a file and write it to the given stream
-  static void get(const std::string &url, std::ostream &out)
+  static void get(const std::string &url, std::ostream &out,
+                  ProgFunc fn = NULL, void *data = NULL)
   {
     CURL *curl = curl_easy_init();
     assert(curl);
@@ -50,16 +54,17 @@ struct CurlGet
     // This is required for multithreading
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 
-    // Progress bar (not currently in use)
-    /*
-    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
-    curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, my_progress_func);
-    curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, 0);
-    */
+    // Progress reports
+    if(fn)
+      {
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
+        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, fn);
+        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, data);
+      }
  
     // Set user agent string
     curl_easy_setopt(curl, CURLOPT_USERAGENT,
-                     "MUU-updater/1.0 (linux) http://tigflow.com/muu");
+                     "Tiggit client/1.0 - see http://tiggit.net/");
 
     // Can also use CURLOPT_REFERER if you want to pretend to be a
     // website.
@@ -67,7 +72,7 @@ struct CurlGet
     CURLcode res = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
 
-    if(res != CURLE_OK)
+    if(res != CURLE_OK && res != CURLE_ABORTED_BY_CALLBACK)
       throw std::runtime_error("Error fetching " + url);
   }
 };
