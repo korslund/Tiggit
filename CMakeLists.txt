@@ -9,7 +9,11 @@ include_directories("libs/jsoncpp/include/")
 set(JS libs/jsoncpp/src)
 set(JSON ${JS}/json_reader.cpp ${JS}/json_writer.cpp ${JS}/json_value.cpp)
 
-set(LIBS ${CURL_LIBRARIES} ${Boost_LIBRARIES} ${wxWidgets_LIBRARIES})
+set(ZZip_LIBRARIES zzip)
+
+set(LIBS ${CURL_LIBRARIES} ${Boost_LIBRARIES} ${wxWidgets_LIBRARIES} ${ZZip_LIBRARIES})
+
+#add_definitions(-O3)
 
 # This automagically sets up everything for us
 include( ${wxWidgets_USE_FILE} )

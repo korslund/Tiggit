@@ -1,3 +1,17 @@
+// This is a scrap file, it's not yet in use.
+
+#ifdef _WIN32
+  isWin = true;
+#endif
+
+#ifdef __linux__
+  isLin = true;
+#endif
+
+#ifdef TARGET_OS_MAC
+  isMac = true;
+#endif
+
 /*
   Windows bit-ness checker. Not in use yet. Checks if the client
   system is 32-bit or 64-bit (regardless of whether THIS is a 32 or 64

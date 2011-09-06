@@ -27,16 +27,28 @@ struct FileGetter
 
   ~FileGetter() { delete tmp; }
 
+  // Convert a relative filename to base-centered filename. Also
+  // creates any required directories needed to create the resulting
+  // path.
+  std::string getPath(const std::string &file)
+  {
+    using namespace boost::filesystem;
+
+    path dest = base / file;
+
+    // Make sure the destination dir exists
+    create_directories(dest.branch_path());
+
+    return dest.string();
+  }
+
   // Copy a source file to a given position within the base
   // dir. Returns final path.
   std::string copyTo(const std::string &from, const std::string &to)
   {
     using namespace boost::filesystem;
 
-    path dest = base / to;
-
-    // Make sure the destination dir exists
-    create_directories(dest.branch_path());
+    path dest = getPath(to);
 
     // Do explicit check/delete, since overwrite_if_exists is buggy.
     if(exists(dest))

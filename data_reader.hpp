@@ -8,39 +8,6 @@
 #include <boost/filesystem.hpp>
 #include "filegetter.hpp"
 
-/*
-// True if this platform matches
-bool isPlatform(const std::string &plat)
-{
-  bool isWin = false, isLin = false, isMac = false;
-
-#ifdef _WIN32
-  isWin = true;
-#endif
-
-#ifdef __linux__
-  isLin = true;
-#endif
-
-#ifdef TARGET_OS_MAC
-  isMac = true;
-#endif
-
-  // Use os.hpp (not done) for this later.
-
-  if(isWin && (plat == "windows" || plat == "win32" || plat == "win64"))
-    return true;
-
-  if(isLin && (plat == "linuxs" || plat == "linux32" || plat == "linux64"))
-    return true;
-
-  if(isMac && (plat == "mac" || plat == "osx"))
-    return true;
-
-  return false;
-}
-*/
-
 struct TigListReader
 {
   std::string filename, channel, desc, location, homepage;
@@ -57,16 +24,37 @@ struct TigListReader
 
     dir = "tigfiles";
     dir /= channel;
-    dir /= name + ".tigfile";
+    dir /= name + ".tig";
 
     return get.getCache(dir.string(), url);
   }
 
-  bool isSupported(const std::string &tigfile)
+  /* Decode a .tig file. Returns false if the file is invalid or
+     should otherwise be rejected.
+   */
+  bool decodeTigFile(const std::string &file, DataList::TigInfo &t)
   {
-    // Support all files for now. We only support the windows version
-    // at the moment, and all the games we put in currently have
-    // windows versions.
+    using namespace Json;
+
+    Value root;
+
+    {
+      std::ifstream inf(file.c_str());
+      if(!inf)
+        return false;
+
+      Reader reader;
+      if(!reader.parse(inf, root))
+        return false;
+    }
+
+    t.url = root["url"].asString();
+    t.launch = root["launch"].asString();
+    t.version = root["version"].asString();
+
+    if(t.url == "" || t.launch == "")
+      return false;
+
     return true;
   }
 
@@ -102,6 +90,8 @@ struct TigListReader
     // Traverse the list
     root = root["list"];
 
+    boost::filesystem::path chan = channel;
+
     // We have to do it this way because the jsoncpp iterators are
     // b0rked.
     Value::Members keys = root.getMemberNames();
@@ -114,15 +104,16 @@ struct TigListReader
         // Get the tigfile
         std::string tigf = getTigFile(key, game["tigurl"].asString());
 
-        // Check the tigfile if it supports our platform
-        if(!isSupported(tigf))
+        // Parse it
+        DataList::TigInfo ti;
+        if(!decodeTigFile(tigf, ti))
           continue;
 
         // Push the game into the list
-        data.add(0, key,
+        data.add(0, (chan/key).string(),
                  game["title"].asString(), game["desc"].asString(),
                  game["fpshot"].asString(), game["tigurl"].asString(),
-                 tigf);
+                 ti);
       }
   }
 };

@@ -15,7 +15,11 @@ struct MyThread : wxThread
   ThreadGet *data;
 
   MyThread(const std::string &_url, const std::string &_file, ThreadGet *tg)
-    : url(_url), file(_file), data(tg) {}
+    : url(_url), file(_file), data(tg)
+  {
+    Create();
+    Run();
+  }
 
   ExitCode Entry();
 
@@ -28,6 +32,8 @@ struct MyThread : wxThread
 
 struct ThreadGet
 {
+  std::string url, file;
+
   // Current status
   int current, total;
 
@@ -41,13 +47,14 @@ struct ThreadGet
   int status;
 
   // Main entrance function
-  void start(const std::string &url, const std::string &file)
+  void start(const std::string &_url, const std::string &_file)
   {
+    url = _url;
+    file = _file;
+
     status = current = total = 0;
 
-    MyThread *thr = new MyThread(url, file, this);
-    thr->Create();
-    thr->Run();
+    new MyThread(url, file, this);
   }
 
 };

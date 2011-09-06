@@ -7,19 +7,41 @@
 
 struct DataList
 {
+  struct TigInfo
+  {
+    std::string url, launch, version;
+  };
+
   struct Entry
   {
+    /*
+      0 - not installed
+      1 - downloading
+      2 - ready to play
+      3 - unpacking
+     */
     int status;
-    wxString idname, name, desc, fpshot, tigurl, tigfile;
+
+    // idname = channel/urlname
+    wxString idname, name, desc, fpshot, tigurl;
+
+    TigInfo tigInfo;
+
+    // Extra data, used for file downloads and other status
+    // information
+    void *extra;
+
+    // Status message used in some cases
+    wxString msg;
   };
 
   std::vector<Entry> arr;
 
   void add(int status, const wxString &idname, const wxString &name,
            const wxString &desc, const wxString &fpshot,
-           const wxString &tigurl, const wxString &tigfile)
+           const wxString &tigurl, const TigInfo &tiginfo)
   {
-    Entry e = { status, idname, name, desc, fpshot, tigurl, tigfile };
+    Entry e = { status, idname, name, desc, fpshot, tigurl, tiginfo, NULL, wxT("") };
     arr.push_back(e);
   }
 
@@ -29,7 +51,7 @@ struct DataList
            const std::string &desc,
            const std::string &fpshot,
            const std::string &tigurl,
-           const std::string &tigfile)
+           const TigInfo &tiginfo)
   {
     add(status,
         wxString(idname.c_str(), wxConvUTF8),
@@ -37,7 +59,7 @@ struct DataList
         wxString(desc.c_str(), wxConvUTF8),
         wxString(fpshot.c_str(), wxConvUTF8),
         wxString(tigurl.c_str(), wxConvUTF8),
-        wxString(tigfile.c_str(), wxConvUTF8));
+        tiginfo);
   }
 };
 

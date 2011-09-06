@@ -2,12 +2,14 @@
 
 #include <iostream>
 #include <assert.h>
+#include <set>
 
 #include "curl_get.hpp"
 #include "decodeurl.hpp"
 #include "filegetter.hpp"
 #include "data_reader.hpp"
 #include "thread_get.hpp"
+#include "install.hpp"
 
 using namespace std;
 
@@ -34,12 +36,16 @@ void refreshData()
 class MyList : public wxListCtrl
 {
   wxListItemAttr green, orange, gray;
+  wxString textNotInst, textReady;
 
 public:
   MyList(wxWindow *parent, int ID=wxID_ANY)
     : wxListCtrl(parent, ID, wxDefaultPosition, wxDefaultSize,
                  wxLC_REPORT | wxLC_VIRTUAL | wxLC_SINGLE_SEL)
   {
+    textNotInst = wxT("Not installed");
+    textReady = wxT("Ready to play");
+
     wxListItem col;
 
     col.SetId(0);
@@ -99,6 +105,8 @@ public:
 
   wxString OnGetItemText(long item, long column) const
   {
+    static int i = 0;
+
     const DataList::Entry &e = data.arr[item];
 
     if(column == 0)
@@ -107,19 +115,18 @@ public:
     if(column == 1)
       return e.desc;
 
+    assert(column == 2);
+
     int s = e.status;
 
     if(s == 0)
-      return wxT("Not installed");
+      return textNotInst;
 
     if(s == 2)
-      return wxT("Ready to play");
+      return textReady;
 
-    if(s == 1)
-      return wxT("34.7% (21.9Mb / 63Mb, 118kb/s)");
-
-    if(s == 3)
-      return wxT("Unpacking...");
+    if(s == 1 || s == 3)
+      return e.msg;
 
     assert(0);
   }
@@ -135,6 +142,9 @@ class MyFrame : public wxFrame
   wxButton *b1, *b2;
   MyList *list;
   int select;
+
+  typedef std::set<int> IntSet;
+  IntSet updateList;
 
 public:
   MyFrame(const wxString& title)
@@ -173,9 +183,9 @@ public:
     wxBoxSizer *rightPane = new wxBoxSizer(wxVERTICAL);
     b1 = new wxButton(this, myID_BUTTON1, wxT("No action"));
     b2 = new wxButton(this, myID_BUTTON2, wxT("No action"));
-    b2->Show(false);
     rightPane->Add(b1, 0, wxBOTTOM | wxRIGHT, 10);
     rightPane->Add(b2, 0, wxBOTTOM | wxRIGHT, 10);
+    b2->Show(false);
 
     wxBoxSizer *panes = new wxBoxSizer(wxHORIZONTAL);
     panes->Add(leftPane, 1, wxGROW);
@@ -228,12 +238,170 @@ public:
 
   void updateData() { list->update(); }
 
+  // Create a nice size string
+  wxString sizify(int size)
+  {
+    wxString tmp;
+    if(size > 1024*1024)
+      tmp << wxString::Format(wxT("%.1f"), size/(1024.0*1024)) << wxT("Mb");
+    else if(size > 1024)
+      tmp << wxString::Format(wxT("%.1f"), size/1024.0) << wxT("Kb");
+    else
+      tmp << size;
+
+    return tmp;
+  }
+
+  void handleDownload(int index)
+  {
+    DataList::Entry &e = data.arr[index];
+
+    // Neither downloading or unpacking
+    if(e.status != 1 && e.status != 3)
+      {
+        // We're done, remove ourselves from the list
+        updateList.erase(index);
+        return;
+      }
+
+    // Are we currently unpacking?
+    if(e.status == 3)
+      {
+        // Check the installer status
+        int res = inst.check(e.extra);
+
+        if(res == 2)
+          {
+            // Success. Move to "playable" status.
+            e.status = 2;
+            e.extra = NULL;
+          }
+        else if(res > 2)
+          {
+            e.status = 0;
+            e.extra = NULL;
+            // Install was aborted. Revert to "not installed" status.
+          }
+        /*
+        else if(res == 0)
+          e.msg = wxT("Queued for installation");
+        */
+        else if(res == 1 || res == 0)
+          e.msg = wxT("Unpacking...");
+
+        else assert(0);
+      }
+    else
+      {
+        // If we get here, we are currently downloading something.
+        assert(e.status == 1);
+        assert(e.extra);
+        const ThreadGet *g = (ThreadGet*)e.extra;
+
+        // Has the download finished?
+        if(g->status >= 2)
+          {
+            if(g->status == 2)
+              {
+                // Success. Move to unpacking stage.
+                e.status = 3;
+
+                // Construct the install path
+                boost::filesystem::path dir = "data";
+                dir /= string(e.idname.mb_str());
+
+                // Set up installer, store the reference struct.
+                e.extra = inst.queue(g->file, get.getPath(dir.string()));
+              }
+            else
+              {
+                // Abort.
+                e.status = 0;
+                e.extra = NULL;
+
+                // TODO: Clean up files
+              }
+
+            // We don't need the downloader anymore
+            delete g;
+          }
+        else if(g->status == 1)
+          {
+            // Download is still in progress
+
+            // Aw, fixed a div-by-zero bug, how quaint :)
+            int percent = 0;
+            if(g->total > 0)
+              percent = (100*g->current)/g->total;
+
+            // Update the visible progress message.
+            wxString status;
+            status << percent << wxT("% (");
+            status << sizify(g->current) << wxT(" / ");
+            status << sizify(g->total) << wxT(")");
+
+            e.msg = status;
+          }
+      }
+
+    // In any case, update the display
+    list->RefreshItem(index);
+  }
+
   // Called regularly by an external timer, used to update
   // thread-dependent
   void tick()
   {
-    list->Refresh();
-    cout << "tick\n";
+    for(IntSet::const_iterator it = updateList.begin();
+        it != updateList.end();)
+      {
+        int i = *it;
+
+        // Update iterator first, handleDownload() might remove the
+        // item from the list.
+        it++;
+
+        handleDownload(i);
+      }
+  }
+
+  void startDownload(int index)
+  {
+    assert(index >= 0 && index < data.arr.size());
+    DataList::Entry &e = data.arr[index];
+
+    if(e.extra)
+      {
+        cout << "FAIL: e.extra not NULL (internal error)\n";
+        return;
+      }
+    if(e.status != 0)
+      {
+        cout << "FAIL: wrong status " << e.status << "(internal error)\n";
+        return;
+      }
+
+    // Start theaded downloading
+    ThreadGet *tg = new ThreadGet;
+
+    string url = e.tigInfo.url;
+
+    // Construct the file name
+    boost::filesystem::path dir = "incoming";
+    dir /= string(e.idname.mb_str()) + ".zip";
+    string out = get.getPath(dir.string());
+
+    //cout << url << " => " << out << endl;
+    tg->start(url, out);
+
+    // Update list status
+    e.status = 1;
+    e.extra = tg;
+
+    // Finally, remember to update this entry later, and update it
+    // now.
+    updateList.insert(index);
+    handleDownload(index);
   }
 
   void doAction(int index, int b)
@@ -243,7 +411,9 @@ public:
 
     const DataList::Entry &e = data.arr[index];
 
-    // True when called as an 'activate' command.
+    // True called as an 'activate' command, meaning that the list
+    // told us the item was activated (it was double clicked or we
+    // pressed 'enter'.)
     bool activate = false;
 
     if(b == 3)
@@ -254,25 +424,30 @@ public:
 
     if(e.status == 0 && b == 1)
       {
-        cout << "Installing";
+        startDownload(index);
+        return;
       }
     else if(e.status == 1 || e.status == 3)
       {
+        /*
         if(activate)
           cout << "No action on";
         else if(b == 1)
           cout << "Pausing";
         else if(b == 2)
           cout << "Aborting";
+        */
       }
     else if(e.status == 2)
       {
+        /*
         if(b == 1)
           cout << "Playing";
         else if(b == 2)
           cout << "Uninstalling";
+        */
       }
-    cout << " " << e.name.mb_str() << "\n";
+    //cout << " " << e.name.mb_str() << "\n";
   }
 
   void onButton(wxCommandEvent &event)
@@ -334,7 +509,7 @@ struct MyTimer : wxTimer
   MyTimer(MyFrame *f)
     : frame(f)
   {
-    Start(2000);
+    Start(500);
   }
 
   void Notify()
@@ -350,23 +525,6 @@ class MyApp : public wxApp
 public:
   virtual bool OnInit()
   {
-    /*
-    ThreadGet tg;
-
-    tg.start("http://tiggit.net/rzip/debrysis.zip", "test.zip");
-
-    while(tg.status < 2)
-      {
-        cout << "status=" << tg.status << " progress="
-             << tg.current << "/" << tg.total << "("
-             << (100.0*tg.current/tg.total) << "%)"
-             << endl;
-        wxThread::Sleep(200);
-      }
-    cout << "FINAL status=" << tg.status << " progress="
-         << tg.current << "/" << tg.total << endl;
-    */
-
     try
       {
         MyFrame *frame = new MyFrame(wxT("Tiggit - the indie game installer"));
