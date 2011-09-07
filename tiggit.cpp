@@ -1,4 +1,5 @@
 #include <wx/wx.h>
+#include <wx/stdpaths.h>
 
 #include <iostream>
 #include <assert.h>
@@ -10,10 +11,18 @@
 #include "data_reader.hpp"
 #include "thread_get.hpp"
 #include "install.hpp"
+#include "json_installed.hpp"
+#include "auto_update.hpp"
 
 using namespace std;
 
 DataList data;
+JsonInstalled jinst;
+
+void writeConfig()
+{
+  jinst.write(data);
+}
 
 // Update data from stored all_games.json
 void updateData()
@@ -22,6 +31,7 @@ void updateData()
   string lstfile = (get.base / "all_games.json").string();
   TigListReader lst;
   lst.loadData(lstfile, data);
+  jinst.read(data);
 }
 
 // Refresh all_games.json from the net. Call updateData() after
@@ -35,7 +45,7 @@ void refreshData()
 
 class MyList : public wxListCtrl
 {
-  wxListItemAttr green, orange, gray;
+  wxListItemAttr green, orange;
   wxString textNotInst, textReady;
 
 public:
@@ -63,14 +73,11 @@ public:
     col.SetWidth(240);
     InsertColumn(2, col);
 
-    /*
-    green.SetBackgroundColour(wxColour(100,255,100));
-    orange.SetBackgroundColour(wxColour(255,200,100));
-    gray.SetBackgroundColour(wxColour(200,200,200));
-    */
-    green.SetTextColour(wxColour(0,120,0));
-    orange.SetTextColour(wxColour(160,100,0));
-    gray.SetTextColour(wxColour(60,60,60));
+    green.SetBackgroundColour(wxColour(180,255,180));
+    green.SetTextColour(wxColour(0,0,0));
+
+    orange.SetBackgroundColour(wxColour(255,240,180));
+    orange.SetTextColour(wxColour(0,0,0));
   }
 
   void setSelect(int index)
@@ -147,15 +154,17 @@ class MyFrame : public wxFrame
   IntSet updateList;
 
 public:
-  MyFrame(const wxString& title)
+  MyFrame(const wxString& title, const std::string &ver)
     : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(800, 600))
   {
     Centre();
 
     wxMenu *menuFile = new wxMenu;
 
+    /*
     menuFile->Append(wxID_ABOUT, _("&About..."));
     menuFile->AppendSeparator();
+    */
     menuFile->Append(wxID_EXIT, _("E&xit"));
 
     wxMenu *menuList = new wxMenu;
@@ -168,7 +177,7 @@ public:
     SetMenuBar( menuBar );
 
     CreateStatusBar();
-    SetStatusText(_("Welcome to tiggit!"));
+    SetStatusText(wxString(("Welcome to tiggit - version " + ver).c_str(), wxConvUTF8));
 
     // Without this the menubar doesn't appear (in GTK at least) until
     // you move the mouse. Probably some weird bug.
@@ -185,7 +194,6 @@ public:
     b2 = new wxButton(this, myID_BUTTON2, wxT("No action"));
     rightPane->Add(b1, 0, wxBOTTOM | wxRIGHT, 10);
     rightPane->Add(b2, 0, wxBOTTOM | wxRIGHT, 10);
-    b2->Show(false);
 
     wxBoxSizer *panes = new wxBoxSizer(wxHORIZONTAL);
     panes->Add(leftPane, 1, wxGROW);
@@ -256,11 +264,18 @@ public:
   {
     DataList::Entry &e = data.arr[index];
 
+    // If this is the current item, make sure the buttons are set
+    // correctly.
+    if(index == select) fixButtons();
+
     // Neither downloading or unpacking
     if(e.status != 1 && e.status != 3)
       {
         // We're done, remove ourselves from the list
         updateList.erase(index);
+
+        // Make sure config is updated
+        writeConfig();
         return;
       }
 
@@ -329,10 +344,10 @@ public:
           {
             // Download is still in progress
 
-            // Aw, fixed a div-by-zero bug, how quaint :)
+            // Aw, fixed a div-by-zero bug, how cute :)
             int percent = 0;
             if(g->total > 0)
-              percent = (100*g->current)/g->total;
+              percent = (int)((100.0*g->current)/g->total);
 
             // Update the visible progress message.
             wxString status;
@@ -431,7 +446,7 @@ public:
       {
         /*
         if(activate)
-          cout << "No action on";
+          cout << "No action";
         else if(b == 1)
           cout << "Pausing";
         else if(b == 2)
@@ -440,14 +455,54 @@ public:
       }
     else if(e.status == 2)
       {
-        /*
+        // TODO: All these path and file operations need to be
+        // outsourced to an external module. One "repository"
+        // module that doesn't know about the rest of the program
+        // is the best bet.
+
+        // Construct the install path
+        boost::filesystem::path dir = "data";
+        dir /= string(e.idname.mb_str());
+        dir = get.getPath(dir.string());
+
         if(b == 1)
-          cout << "Playing";
+          {
+            // Button1 == Launching
+            if((wxGetOsVersion() & wxOS_WINDOWS) != 0)
+              {
+                string program = (dir / e.tigInfo.launch).string();
+
+                int res = wxExecute(wxString(program.c_str(), wxConvUTF8));
+                if(res == -1)
+                  cout << "Failed to launch " << program << endl;
+              }
+            else
+              cout << "Launching currently only available on Windows\n";
+
+            /* wxExecute allows a callback for when the program exists
+               as well, letting us do things like (optionally)
+               disabling downloads while running the program. I assume
+               this needs to be handled in a thread-like manner, and
+               we also need an intuitive backup plan in case the
+               callback is never called.
+            */
+          }
         else if(b == 2)
-          cout << "Uninstalling";
-        */
+          {
+            // Button2 == Uninstall
+
+            // Kill all the files
+            boost::filesystem::remove_all(dir);
+
+            // Revert status
+            data.arr[index].status = 0;
+            if(index == select) fixButtons();
+            list->RefreshItem(index);
+
+            // Make sure we update the config file
+            writeConfig();
+          }
       }
-    //cout << " " << e.name.mb_str() << "\n";
   }
 
   void onButton(wxCommandEvent &event)
@@ -460,29 +515,46 @@ public:
   void onListDeselect(wxListEvent &event)
   {
     select = -1;
-    b1->Disable();
-    b2->Disable();
+    fixButtons();
   }
 
   void onListSelect(wxListEvent &event)
   {
     select = event.GetIndex();
-    //cout << "Selection " << select << endl;
+    fixButtons();
+  }
+
+  // Fix buttons for the current selected item (if any)
+  void fixButtons()
+  {
+    if(select < 0 || select >= data.arr.size())
+      {
+        b1->Disable();
+        b2->Disable();
+        b1->SetLabel(wxT("No action"));
+        b2->SetLabel(wxT("No action"));
+        return;
+      }
+
     int s = data.arr[select].status;
 
     b1->Enable();
     b2->Enable();
-    b2->Show(true);
 
     if(s == 0)
       {
         b1->SetLabel(wxT("Install"));
-        b2->Show(false);
+        b2->SetLabel(wxT("No action"));
+        b2->Disable();
       }
     else if(s == 1 || s == 3)
       {
         b1->SetLabel(wxT("Pause"));
         b2->SetLabel(wxT("Abort"));
+
+        // Neither are implemented yet
+        b1->Disable();
+        b2->Disable();
       }
     else if(s == 2)
       {
@@ -525,9 +597,25 @@ class MyApp : public wxApp
 public:
   virtual bool OnInit()
   {
+    if (!wxApp::OnInit())
+      return false;
+ 
+    SetAppName(wxT("tiggit"));
+
+    // Set up the config directory
+    wxString dataDir = wxStandardPaths::Get().GetUserLocalDataDir();
+    get.setBase(string(dataDir.mb_str()));
+
     try
       {
-        MyFrame *frame = new MyFrame(wxT("Tiggit - the indie game installer"));
+        // Do auto update step. This requires us to immediately exit
+        // in some cases.
+        Updater upd;
+        if(upd.doAutoUpdate())
+          return false;
+
+        MyFrame *frame = new MyFrame(wxT("Tiggit - The Indie Game Installer"),
+                                     upd.version);
         frame->Show(true);
         time = new MyTimer(frame);
         return true;

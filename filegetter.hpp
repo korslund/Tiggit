@@ -10,22 +10,20 @@ struct FileGetter
 
   boost::filesystem::path base;
 
-  FileGetter()
-  {
-#ifdef __linux__
-    base = getenv("HOME");
-    base /= ".tiggit";
-#else
-    base = "./";
-#endif
+  FileGetter() : tmp(NULL) {}
 
-    // Make sure the base dir exists
+  void setBase(boost::filesystem::path bdir)
+  {
+    base = bdir;
+
+    // Make sure the dir exists
     boost::filesystem::create_directories(base);
 
+    if(tmp) delete tmp;
     tmp = new TmpDir(base / "tmp");
   }
 
-  ~FileGetter() { delete tmp; }
+  ~FileGetter() { if(tmp) delete tmp; }
 
   // Convert a relative filename to base-centered filename. Also
   // creates any required directories needed to create the resulting
@@ -100,7 +98,15 @@ struct FileGetter
 
     return file;
   }
-};
+
+  /* Gets a file from the given URL and stores it in the give relative
+     base path. Returns the full path.
+  */
+  std::string getTo(const std::string &url, const std::string &dest)
+  {
+    return copyTo(getFile(url), dest);
+  }
+ };
 
 FileGetter get;
 

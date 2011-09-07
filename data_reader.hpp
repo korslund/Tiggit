@@ -32,7 +32,7 @@ struct TigListReader
   /* Decode a .tig file. Returns false if the file is invalid or
      should otherwise be rejected.
    */
-  bool decodeTigFile(const std::string &file, DataList::TigInfo &t)
+  static bool decodeTigFile(const std::string &file, DataList::TigInfo &t)
   {
     using namespace Json;
 
@@ -52,7 +52,7 @@ struct TigListReader
     t.launch = root["launch"].asString();
     t.version = root["version"].asString();
 
-    if(t.url == "" || t.launch == "")
+    if(t.url == "")
       return false;
 
     return true;
@@ -106,7 +106,7 @@ struct TigListReader
 
         // Parse it
         DataList::TigInfo ti;
-        if(!decodeTigFile(tigf, ti))
+        if(!decodeTigFile(tigf, ti) || ti.launch == "")
           continue;
 
         // Push the game into the list
@@ -117,5 +117,4 @@ struct TigListReader
       }
   }
 };
-
 #endif
