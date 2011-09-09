@@ -37,6 +37,8 @@ struct Updater
         }
         remove(f_updated);
 
+        /* WIP
+
         // Copy ourselves in place
         remove(f_bin);
         copy_file(f_newbin, f_bin);
@@ -44,6 +46,7 @@ struct Updater
         // Store new version number
         ofstream of(f_version.c_str());
         of << version;
+        */
 
         // Continue running.
         return false;
@@ -56,6 +59,10 @@ struct Updater
       if(inf)
         inf >> version;
     }
+
+    return false;
+
+    /* WIP
 
     // Updates are only available for windows at the moment.
     if((wxGetOsVersion() & wxOS_WINDOWS) == 0)
@@ -89,6 +96,7 @@ struct Updater
       return false;
 
     return true;
+    */
   }
 };
 #endif
