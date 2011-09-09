@@ -1,5 +1,8 @@
+#define wxUSE_UNICODE 1
+
 #include <wx/wx.h>
 #include <wx/stdpaths.h>
+#include <wx/listctrl.h>
 
 #include <iostream>
 #include <assert.h>
@@ -24,16 +27,6 @@ void writeConfig()
   jinst.write(data);
 }
 
-// Update data from stored all_games.json
-void updateData()
-{
-  data.arr.resize(0);
-  string lstfile = (get.base / "all_games.json").string();
-  TigListReader lst;
-  lst.loadData(lstfile, data);
-  jinst.read(data);
-}
-
 // Refresh all_games.json from the net. Call updateData() after
 // calling this.
 void refreshData()
@@ -41,6 +34,21 @@ void refreshData()
   string url = "http://tiggit.net/api/all_games.json";
   string tmpfile = get.getFile(url);
   get.copyTo(tmpfile, "all_games.json");
+}
+
+// Update data from stored all_games.json
+void updateData()
+{
+  data.arr.resize(0);
+  string lstfile = (get.base / "all_games.json").string();
+
+  // Try getting the file if it doesn't exist (TODO: Should use cache for this)
+  if(!boost::filesystem::exists(lstfile))
+    refreshData();
+
+  TigListReader lst;
+  lst.loadData(lstfile, data);
+  jinst.read(data);
 }
 
 class MyList : public wxListCtrl
@@ -62,7 +70,7 @@ public:
     col.SetText( wxT("Name") );
     col.SetWidth(200);
     InsertColumn(0, col);
-        
+
     col.SetId(1);
     col.SetText( wxT("Description") );
     col.SetWidth(230);
@@ -599,7 +607,7 @@ public:
   {
     if (!wxApp::OnInit())
       return false;
- 
+
     SetAppName(wxT("tiggit"));
 
     // Set up the config directory
@@ -611,8 +619,7 @@ public:
         // Do auto update step. This requires us to immediately exit
         // in some cases.
         Updater upd;
-        if(upd.doAutoUpdate())
-          return false;
+        //if(upd.doAutoUpdate()) return false;
 
         MyFrame *frame = new MyFrame(wxT("Tiggit - The Indie Game Installer"),
                                      upd.version);
