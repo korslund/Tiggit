@@ -5,3 +5,5 @@ CMakeFiles
 cmake_install.cmake
 *_test
 tiggit
+tiggit.exe
+*.dll
