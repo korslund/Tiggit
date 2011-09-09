@@ -157,22 +157,22 @@ class MyFrame : public wxFrame
   wxButton *b1, *b2;
   MyList *list;
   int select;
+  std::string version;
 
   typedef std::set<int> IntSet;
   IntSet updateList;
 
 public:
   MyFrame(const wxString& title, const std::string &ver)
-    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(800, 600))
+    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(800, 600)),
+      version(ver)
   {
     Centre();
 
     wxMenu *menuFile = new wxMenu;
 
-    /*
     menuFile->Append(wxID_ABOUT, _("&About..."));
     menuFile->AppendSeparator();
-    */
     menuFile->Append(wxID_EXIT, _("E&xit"));
 
     wxMenu *menuList = new wxMenu;
@@ -232,19 +232,20 @@ public:
     Connect(myID_MENU_REFRESH, wxEVT_COMMAND_MENU_SELECTED,
             wxCommandEventHandler(MyFrame::onRefresh));
 
-    updateList();
+    updateListData();
     list->SetFocus();
   }
 
   void onRefresh(wxCommandEvent &event)
   {
     refreshData();
-    updateList();
+    updateListData();
   }
 
   void onAbout(wxCommandEvent &event)
   {
-    cout << "About tiggit\n";
+    std::string str = "TIGGIT - The Indie Game Installer\nVersion " + version;
+    wxMessageBox(wxString(str.c_str(), wxConvUTF8), wxT("About"), wxOK);
   }
 
   void onExit(wxCommandEvent &event)
@@ -252,7 +253,7 @@ public:
     Close();
   }
 
-  void updateList() { list->update(); }
+  void updateListData() { list->update(); }
 
   // Create a nice size string
   wxString sizify(int size)
@@ -480,6 +481,11 @@ public:
               {
                 string program = (dir / e.tigInfo.launch).string();
 
+                // Change the working directory before running. Since
+                // none of our own code uses relative paths, this
+                // shouldn't affect our own operation.
+                wxSetWorkingDirectory(wxString(dir.string().c_str(), wxConvUTF8));
+
                 int res = wxExecute(wxString(program.c_str(), wxConvUTF8));
                 if(res == -1)
                   cout << "Failed to launch " << program << endl;
@@ -619,7 +625,7 @@ public:
         // Do auto update step. This requires us to immediately exit
         // in some cases.
         Updater upd;
-        //if(upd.doAutoUpdate()) return false;
+        if(upd.doAutoUpdate()) return false;
 
         MyFrame *frame = new MyFrame(wxT("Tiggit - The Indie Game Installer"),
                                      upd.version);
