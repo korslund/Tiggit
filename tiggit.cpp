@@ -224,14 +224,14 @@ public:
     Connect(myID_MENU_REFRESH, wxEVT_COMMAND_MENU_SELECTED,
             wxCommandEventHandler(MyFrame::onRefresh));
 
-    updateData();
+    updateList();
     list->SetFocus();
   }
 
   void onRefresh(wxCommandEvent &event)
   {
     refreshData();
-    updateData();
+    updateList();
   }
 
   void onAbout(wxCommandEvent &event)
@@ -244,7 +244,7 @@ public:
     Close();
   }
 
-  void updateData() { list->update(); }
+  void updateList() { list->update(); }
 
   // Create a nice size string
   wxString sizify(int size)
