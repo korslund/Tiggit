@@ -46,13 +46,17 @@ struct CurlGet
     // Set up callback
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &out);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, stream_write);
- 
+
     // For https. Ignore security and just get the file.
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
 
     // This is required for multithreading
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+
+    // We need to be able to follow redirects
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+    curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 20);
 
     // Progress reports
     if(fn)
@@ -61,7 +65,7 @@ struct CurlGet
         curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, fn);
         curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, data);
       }
- 
+
     // Set user agent string
     curl_easy_setopt(curl, CURLOPT_USERAGENT,
                      "Tiggit client/1.0 - see http://tiggit.net/");
