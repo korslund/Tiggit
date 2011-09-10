@@ -110,7 +110,7 @@ struct TigListReader
           continue;
 
         // Push the game into the list
-        data.add(0, (chan/key).string(),
+        data.add(0, key, (chan/key).string(),
                  game["title"].asString(), game["desc"].asString(),
                  game["fpshot"].asString(), game["tigurl"].asString(),
                  ti);

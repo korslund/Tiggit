@@ -165,7 +165,8 @@ public:
           }
 
         // If the action was aborted, don't bother looping around to
-        // find a good one. check() will be called again soon enough.
+        // find a good one. check() will be called again soon
+        // enough. The abort() function has already deleted the file.
       }
 
     // Next, handle the parameter element
@@ -189,14 +190,21 @@ public:
     return stat;
   }
 
-  // Abort a given unpack operation (not implemented)
+  // Abort a given unpack operation
   void abort(void* p)
   {
-    /* This is slightly involved, since we would have to tell the
-       thread to abort, then wait to delete the object until we've
-       gotten a proper status response. Not hard to do, but also not a
-       critically important function atm.
-     */
+    assert(p);
+    Job *e = (Job*)p;
+
+    // Unless we're running, we can safely delete the zip file at this
+    // point.
+    if(e != current)
+      {
+        e->status = 4;
+        boost::filesystem::remove(e->zip);
+      }
+
+    // At the moment, running installs cannot be aborted
   }
 };
 

@@ -63,6 +63,9 @@ wxThread::ExitCode MyThread::Entry()
 {
   CurlGet get;
   get.get(url, file, &progress, data);
+
+  if(data->status >= 3)
+    boost::filesystem::remove(file);
 }
 
 int MyThread::progress(void *data,
