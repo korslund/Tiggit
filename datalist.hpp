@@ -23,7 +23,7 @@ struct DataList
     int status;
 
     // idname = channel/urlname
-    wxString idname, name, desc, fpshot, tigurl;
+    wxString urlname, idname, name, desc, fpshot, tigurl;
 
     TigInfo tigInfo;
 
@@ -37,15 +37,18 @@ struct DataList
 
   std::vector<Entry> arr;
 
-  void add(int status, const wxString &idname, const wxString &name,
-           const wxString &desc, const wxString &fpshot,
-           const wxString &tigurl, const TigInfo &tiginfo)
+  void add(int status, const wxString &urlname, const wxString &idname,
+           const wxString &name, const wxString &desc,
+           const wxString &fpshot, const wxString &tigurl,
+           const TigInfo &tiginfo)
   {
-    Entry e = { status, idname, name, desc, fpshot, tigurl, tiginfo, NULL, wxT("") };
+    Entry e = { status, urlname, idname, name, desc, fpshot,
+                tigurl, tiginfo, NULL, wxT("") };
     arr.push_back(e);
   }
 
   void add(int status,
+           const std::string &urlname,
            const std::string &idname,
            const std::string &name,
            const std::string &desc,
@@ -54,6 +57,7 @@ struct DataList
            const TigInfo &tiginfo)
   {
     add(status,
+        wxString(urlname.c_str(), wxConvUTF8),
         wxString(idname.c_str(), wxConvUTF8),
         wxString(name.c_str(), wxConvUTF8),
         wxString(desc.c_str(), wxConvUTF8),

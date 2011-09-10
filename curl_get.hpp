@@ -58,6 +58,13 @@ struct CurlGet
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
     curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 20);
 
+    // Don't silently accept failed downloads
+    curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
+
+    // Pass along referer information whenever we're following a
+    // redirect.
+    curl_easy_setopt(curl, CURLOPT_AUTOREFERER, 1);
+
     // Progress reports
     if(fn)
       {

@@ -62,7 +62,18 @@ struct ThreadGet
 wxThread::ExitCode MyThread::Entry()
 {
   CurlGet get;
-  get.get(url, file, &progress, data);
+  try
+    {
+      get.get(url, file, &progress, data);
+    }
+  catch(...)
+    {
+      // TODO: Log error somewhere
+      data->status = 3;
+    }
+
+  if(data->status >= 3)
+    boost::filesystem::remove(file);
 }
 
 int MyThread::progress(void *data,

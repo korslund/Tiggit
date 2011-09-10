@@ -7,18 +7,18 @@
 #include "unzip.hpp"
 
 /*
-  Multi-threading game installer.
+  Multi-threaded zip installer.
 
   Since there's little to gain in terms of multi-threaded unpacking
-  (CPU and disk bandwidth are the limiters, not to mention disk
+  (CPU and disk bandwidth are shared, not to mention disk
   fragmentation issues), this struct only uses one installer thread at
   any given time.
 
-  However, doing this in a thread does free up the rest of the
-  program.
+  However, doing this in a thread does free up the rest of the program
+  to work while unpacking is taking place.
 
   Install commands are queued by queue(), and are performed serially
-  in a working thread.
+  by one worker thread.
 
   We avoid locking and all the other the other complicated
   inter-thread communication issues by simply starting a new thread
@@ -111,7 +111,7 @@ public:
      Returns a handle usable for calling check()
   */
   void *queue(const std::string &zip,
-             const std::string &where)
+              const std::string &where)
   {
     Job *e = new Job(zip, where);
     list.push(e);
@@ -165,7 +165,8 @@ public:
           }
 
         // If the action was aborted, don't bother looping around to
-        // find a good one. check() will be called again soon enough.
+        // find a good one. check() will be called again soon
+        // enough. The abort() function has already deleted the file.
       }
 
     // Next, handle the parameter element
@@ -189,14 +190,21 @@ public:
     return stat;
   }
 
-  // Abort a given unpack operation (not implemented)
+  // Abort a given unpack operation
   void abort(void* p)
   {
-    /* This is slightly involved, since we would have to tell the
-       thread to abort, then wait to delete the object until we've
-       gotten a proper status response. Not hard to do, but also not a
-       critically important function atm.
-     */
+    assert(p);
+    Job *e = (Job*)p;
+
+    // Unless we're running, we can safely delete the zip file at this
+    // point.
+    if(e != current)
+      {
+        e->status = 4;
+        boost::filesystem::remove(e->zip);
+      }
+
+    // At the moment, running installs cannot be aborted
   }
 };
 

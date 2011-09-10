@@ -7,3 +7,5 @@ cmake_install.cmake
 tiggit
 tiggit.exe
 *.dll
+install
+install.exe

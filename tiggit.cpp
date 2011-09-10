@@ -3,6 +3,8 @@
 #include <wx/wx.h>
 #include <wx/stdpaths.h>
 #include <wx/listctrl.h>
+#include <wx/accel.h>
+#include <wx/imaglist.h>
 
 #include <iostream>
 #include <assert.h>
@@ -55,6 +57,7 @@ class MyList : public wxListCtrl
 {
   wxListItemAttr green, orange;
   wxString textNotInst, textReady;
+  wxImageList images;
 
 public:
   MyList(wxWindow *parent, int ID=wxID_ANY)
@@ -86,6 +89,16 @@ public:
 
     orange.SetBackgroundColour(wxColour(255,240,180));
     orange.SetTextColour(wxColour(0,0,0));
+
+    /* For later. Works, but doesn't look good.
+    images.Create(80,50,false);
+    SetImageList(&images, wxIMAGE_LIST_SMALL);
+
+    wxImage::AddHandler(new wxPNGHandler);
+    wxImage img(wxT("tmp.png"));
+    wxBitmap bmp(img);
+    images.Add(bmp);
+    */
   }
 
   void setSelect(int index)
@@ -149,6 +162,7 @@ public:
 
 #define myID_BUTTON1 21
 #define myID_BUTTON2 22
+#define myID_GAMEPAGE 24
 #define myID_LIST 25
 #define myID_MENU_REFRESH 30
 
@@ -195,19 +209,33 @@ public:
 
     wxBoxSizer *leftPane = new wxBoxSizer(wxVERTICAL);
     leftPane->Add(list, 1, wxGROW | wxALL, 10);
-    leftPane->Add(new wxStaticText(this, wxID_ANY, wxT("Mouse: double-click to install / play\nKeyboard: arrow keys + enter")), 0, wxALL, 10);
+    leftPane->Add(new wxStaticText(this, wxID_ANY, wxT("Mouse: double-click to install / play\nKeyboard: arrow keys + enter, delete")), 0, wxALL, 10);
 
     wxBoxSizer *rightPane = new wxBoxSizer(wxVERTICAL);
+
     b1 = new wxButton(this, myID_BUTTON1, wxT("No action"));
-    b2 = new wxButton(this, myID_BUTTON2, wxT("No action"));
     rightPane->Add(b1, 0, wxBOTTOM | wxRIGHT, 10);
+
+    b2 = new wxButton(this, myID_BUTTON2, wxT("No action"));
     rightPane->Add(b2, 0, wxBOTTOM | wxRIGHT, 10);
+
+    wxButton *b3 = new wxButton(this, myID_GAMEPAGE, wxT("Homepage"));
+    rightPane->Add(b3, 0, wxBOTTOM | wxRIGHT, 10);
 
     wxBoxSizer *panes = new wxBoxSizer(wxHORIZONTAL);
     panes->Add(leftPane, 1, wxGROW);
     panes->Add(rightPane, 0, wxGROW | wxTOP, 35);
 
     SetSizer(panes);
+
+    // Add delete = 2nd button accelerator
+    wxAcceleratorEntry entries[1];
+    entries[0].Set(wxACCEL_NORMAL, WXK_DELETE, myID_BUTTON2);
+    wxAcceleratorTable accel(1, entries);
+    SetAcceleratorTable(accel);
+
+    Connect(myID_GAMEPAGE, wxEVT_COMMAND_BUTTON_CLICKED,
+            wxCommandEventHandler(MyFrame::onGamePage));
 
     Connect(myID_BUTTON1, wxEVT_COMMAND_BUTTON_CLICKED,
             wxCommandEventHandler(MyFrame::onButton));
@@ -342,8 +370,6 @@ public:
                 // Abort.
                 e.status = 0;
                 e.extra = NULL;
-
-                // TODO: Clean up files
               }
 
             // We don't need the downloader anymore
@@ -453,8 +479,19 @@ public:
       }
     else if(e.status == 1 || e.status == 3)
       {
+        if(e.status == 1) // Downloading
+          {
+            ThreadGet *g = (ThreadGet*)e.extra;
+            if(b == 2) // Abort
+              g->status = 4;
+          }
+        else if(e.status == 3) // Installing
+          {
+            if(b == 2) // Abort
+              inst.abort(e.extra);
+          }
         /*
-        if(activate)
+        if(activate) // Disable enter/double-click?
           cout << "No action";
         else if(b == 1)
           cout << "Pausing";
@@ -519,6 +556,14 @@ public:
       }
   }
 
+  void onGamePage(wxCommandEvent &event)
+  {
+    if(select < 0 || select >= data.arr.size())
+      return;
+
+    wxLaunchDefaultBrowser(wxT("http://tiggit.net/game/") + data.arr[select].urlname);
+  }
+
   void onButton(wxCommandEvent &event)
   {
     int b = event.GetId()-20;
@@ -566,9 +611,8 @@ public:
         b1->SetLabel(wxT("Pause"));
         b2->SetLabel(wxT("Abort"));
 
-        // Neither are implemented yet
+        // Pausing is not implemented yet
         b1->Disable();
-        b2->Disable();
       }
     else if(s == 2)
       {
@@ -625,7 +669,7 @@ public:
         // Do auto update step. This requires us to immediately exit
         // in some cases.
         Updater upd;
-        if(upd.doAutoUpdate()) return false;
+        if(upd.doAutoUpdate(this)) return false;
 
         MyFrame *frame = new MyFrame(wxT("Tiggit - The Indie Game Installer"),
                                      upd.version);
