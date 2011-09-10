@@ -111,7 +111,7 @@ public:
      Returns a handle usable for calling check()
   */
   void *queue(const std::string &zip,
-             const std::string &where)
+              const std::string &where)
   {
     Job *e = new Job(zip, where);
     list.push(e);

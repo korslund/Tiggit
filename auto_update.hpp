@@ -89,24 +89,52 @@ struct Updater
       }
 
     // Download complete! Start unpacking
+    string dest = get.getPath("update/");
+    void *handle = inst.queue(zip, dest);
 
+    // Do another semi-busy loop
+    int status;
+    while(true)
+      {
+        app->Yield();
+        wxMilliSleep(40);
 
-    // Don't need this anymore
+        // Ignore 'cancel' commands while unpacking.
+        dlg->Pulse();
+
+        status = inst.check(handle);
+
+        // Are we done?
+        if(status >= 2)
+          break;
+      }
+
+    // Shut down the window
     dlg->Destroy();
 
-    return false;
+    // Give up if there were errors
+    if(status >= 3)
+      return false;
 
-    /* OLD scrap code
+    // Success! Launch the NEW install.exe, after copying it to a
+    // better location first.
+    string install = get.getPath("update/install.exe");
+    string cmd = get.copyTo(install, "install.exe");
+
     // On unix only
-    //system(("chmod a+x " + bin).c_str());
+    //wxShell(("chmod a+x " + cmd).c_str());
 
-    // Launch the new binary
-    int res = wxExecute(wxString(bin.c_str(), wxConvUTF8));
+    // Add parameters
+    cmd += " " + dest + " " + get.getPath("bin/") + " tiggit.exe";
+
+    // Run it!
+    int res = wxExecute(wxString(cmd.c_str(), wxConvUTF8));
     if(res == -1)
       return false;
 
+    // If things went as planned, exit quickly so the installer can do
+    // its thang.
     return true;
-    */
   }
 };
 #endif
