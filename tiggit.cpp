@@ -669,7 +669,7 @@ public:
         // Do auto update step. This requires us to immediately exit
         // in some cases.
         Updater upd;
-        if(upd.doAutoUpdate()) return false;
+        if(upd.doAutoUpdate(this)) return false;
 
         MyFrame *frame = new MyFrame(wxT("Tiggit - The Indie Game Installer"),
                                      upd.version);

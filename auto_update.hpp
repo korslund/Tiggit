@@ -2,6 +2,7 @@
 #define _AUTO_UPDATE_HPP
 
 #include <wx/wx.h>
+#include <wx/progdlg.h>
 #include "data_reader.hpp"
 
 struct Updater
@@ -15,58 +16,19 @@ struct Updater
 
     If it returns true, you should immediately exit the application.
   */
-  bool doAutoUpdate()
+  bool doAutoUpdate(wxApp *app)
   {
     using namespace Json;
     using namespace boost::filesystem;
     using namespace std;
 
-    string f_updated = get.getPath("updated");
-    string f_version = get.getPath("version");
-    string f_bin = get.getPath("bin/tiggit.exe");
-    string f_newbin = get.getPath("bin/new.exe");
-
-    // First, check if this is an update run
-    if(exists(f_updated))
-      {
-        // Get new version
-        {
-          ifstream inf(f_updated.c_str());
-          if(inf)
-            inf >> version;
-        }
-        remove(f_updated);
-
-        /* WIP
-
-        // Copy ourselves in place
-        remove(f_bin);
-        copy_file(f_newbin, f_bin);
-
-        // Store new version number
-        ofstream of(f_version.c_str());
-        of << version;
-        */
-
-        // Continue running.
-        return false;
-      }
-
     // Get current version
     version = "none";
     {
-      ifstream inf(f_version.c_str());
+      ifstream inf(get.getPath("bin/version").c_str());
       if(inf)
         inf >> version;
     }
-
-    return false;
-
-    /* WIP
-
-    // Updates are only available for windows at the moment.
-    if((wxGetOsVersion() & wxOS_WINDOWS) == 0)
-      return false;
 
     // Fetch the latest client information
     string tig = get.getTo("http://tiggit.net/client/latest.tig", "latest.tig");
@@ -80,13 +42,61 @@ struct Updater
       // Yup. Nothing more to do.
       return false;
 
-    // Download the latest version
-    string bin = get.getTo(ti.url, "bin/new.exe");
+    // Set up the progress dialog
+    wxProgressDialog *dlg =
+      new wxProgressDialog(wxT("Updating Tiggit"),
+                           wxT("Downloading latest update, please wait..."),
+                           100, NULL, wxPD_APP_MODAL|wxPD_CAN_ABORT);
+    dlg->Show(1);
 
-    // Tell it that we're upgrading
-    ofstream of(f_updated.c_str());
-    of << ti.version;
+    // Start downloading the latest version
+    ThreadGet getter;
+    string zip = get.getPath("update.zip");
+    getter.start(ti.url, zip);
 
+    // Poll-loop until it's done
+    while(true)
+      {
+        app->Yield();
+        wxMilliSleep(40);
+
+        bool res;
+        if(getter.total != 0)
+          {
+            // Calculate progress
+            int prog = (int)(getter.current*100.0/getter.total);
+            res = dlg->Update(prog);
+          }
+        else
+          res = dlg->Pulse();
+
+        // Did the user click 'Cancel'?
+        if(!res)
+          // Abort download thread
+          getter.status = 4;
+
+        // Did we finish, one way or another?
+        if(getter.status > 1)
+          break;
+      }
+
+    // If something went wrong, just forget about it and continue
+    // running the old version instead.
+    if(getter.status > 2)
+      {
+        dlg->Destroy();
+        return false;
+      }
+
+    // Download complete! Start unpacking
+
+
+    // Don't need this anymore
+    dlg->Destroy();
+
+    return false;
+
+    /* OLD scrap code
     // On unix only
     //system(("chmod a+x " + bin).c_str());
 

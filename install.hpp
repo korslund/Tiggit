@@ -7,18 +7,18 @@
 #include "unzip.hpp"
 
 /*
-  Multi-threading game installer.
+  Multi-threaded zip installer.
 
   Since there's little to gain in terms of multi-threaded unpacking
-  (CPU and disk bandwidth are the limiters, not to mention disk
+  (CPU and disk bandwidth are shared, not to mention disk
   fragmentation issues), this struct only uses one installer thread at
   any given time.
 
-  However, doing this in a thread does free up the rest of the
-  program.
+  However, doing this in a thread does free up the rest of the program
+  to work while unpacking is taking place.
 
   Install commands are queued by queue(), and are performed serially
-  in a working thread.
+  by one worker thread.
 
   We avoid locking and all the other the other complicated
   inter-thread communication issues by simply starting a new thread
