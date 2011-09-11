@@ -205,28 +205,30 @@ public:
     // you move the mouse. Probably some weird bug.
     SendSizeEvent();
 
-    list = new MyList(this, myID_LIST);
+    wxPanel *panel = new wxPanel(this);
+
+    list = new MyList(panel, myID_LIST);
 
     wxBoxSizer *leftPane = new wxBoxSizer(wxVERTICAL);
     leftPane->Add(list, 1, wxGROW | wxALL, 10);
-    leftPane->Add(new wxStaticText(this, wxID_ANY, wxT("Mouse: double-click to install / play\nKeyboard: arrow keys + enter, delete")), 0, wxALL, 10);
+    leftPane->Add(new wxStaticText(panel, wxID_ANY, wxT("Mouse: double-click to install / play\nKeyboard: arrow keys + enter, delete")), 0, wxALL, 10);
 
     wxBoxSizer *rightPane = new wxBoxSizer(wxVERTICAL);
 
-    b1 = new wxButton(this, myID_BUTTON1, wxT("No action"));
+    b1 = new wxButton(panel, myID_BUTTON1, wxT("No action"));
     rightPane->Add(b1, 0, wxBOTTOM | wxRIGHT, 10);
 
-    b2 = new wxButton(this, myID_BUTTON2, wxT("No action"));
+    b2 = new wxButton(panel, myID_BUTTON2, wxT("No action"));
     rightPane->Add(b2, 0, wxBOTTOM | wxRIGHT, 10);
 
-    wxButton *b3 = new wxButton(this, myID_GAMEPAGE, wxT("Homepage"));
+    wxButton *b3 = new wxButton(panel, myID_GAMEPAGE, wxT("Homepage"));
     rightPane->Add(b3, 0, wxBOTTOM | wxRIGHT, 10);
 
     wxBoxSizer *panes = new wxBoxSizer(wxHORIZONTAL);
     panes->Add(leftPane, 1, wxGROW);
     panes->Add(rightPane, 0, wxGROW | wxTOP, 35);
 
-    SetSizer(panes);
+    panel->SetSizer(panes);
 
     // Add delete = 2nd button accelerator
     wxAcceleratorEntry entries[1];

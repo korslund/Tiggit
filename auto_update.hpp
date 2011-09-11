@@ -39,8 +39,6 @@ struct Updater
     path canon_path = get.getPath("bin");
     string canon_exe = (canon_path/"tiggit.exe").string();
 
-    wxMessageBox(this_wx, wxT("New version"), wxOK);
-
     if(!boost::iequals(this_exe, canon_exe))
       {
         // Check if there is a download update available
