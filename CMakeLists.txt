@@ -20,6 +20,3 @@ include( ${wxWidgets_USE_FILE} )
 
 add_executable(tiggit tiggit.cpp ${JSON})
 target_link_libraries(tiggit ${LIBS})
-
-add_executable(install install.cpp)
-target_link_libraries(install ${Boost_LIBRARIES})

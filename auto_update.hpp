@@ -11,6 +11,8 @@ struct Updater
   // Current program version.
   std::string version;
 
+  Updater() : version("unknown") {}
+
   /*
     This funtion performs all our auto-update steps, transparently to
     the rest of the application.
@@ -22,6 +24,10 @@ struct Updater
     using namespace Json;
     using namespace boost::filesystem;
     using namespace std;
+
+    // Unless we're on windows, there's not much more to do right now.
+    if((wxGetOsVersion() & wxOS_WINDOWS) == 0)
+      return false;
 
     // Our own exe path
     string this_exe = string(wxStandardPaths::Get().GetExecutablePath().mb_str());
@@ -42,7 +48,6 @@ struct Updater
         remove_all(dest);
 
     // Get current version
-    version = "none";
     {
       ifstream inf(get.getPath("bin/version").c_str());
       if(inf)
