@@ -29,23 +29,68 @@ struct Updater
     if((wxGetOsVersion() & wxOS_WINDOWS) == 0)
       return false;
 
+    // Update destination
+    string up_dest = get.getPath("update/");
+
     // Our own exe path
-    string this_exe = string(wxStandardPaths::Get().GetExecutablePath().mb_str());
+    wxString this_wx = wxStandardPaths::Get().GetExecutablePath();
+    string this_exe = string(this_wx.mb_str());
     // Canonical path
     path canon_path = get.getPath("bin");
     string canon_exe = (canon_path/"tiggit.exe").string();
-    if(!boost::iequals(this_exe, canon_exe))
-        {
-            string str = this_exe + " " + canon_exe;
-            wxString msg(str.c_str(), wxConvUTF8);
-            wxMessageBox(msg, wxT("Dirs"), wxOK);
-            return false;
-        }
 
-    // Kill the update/ folder if there is one
-    string dest = get.getPath("update/");
-    if(exists(dest))
-        remove_all(dest);
+    wxMessageBox(this_wx, wxT("New version"), wxOK);
+
+    if(!boost::iequals(this_exe, canon_exe))
+      {
+        // Check if there is a download update available
+        if(exists(up_dest))
+          {
+            // Yup. Most likely we are running update/tiggit.exe right
+            // now. In any case, since the bin/ version is not
+            // running, we can overwrite it.
+
+            // Wait a little while in case bin/ launched us, to give
+            // it time to exit. (Not a terribly robust solution, I
+            // know, fix it later.)
+            wxSleep(1);
+
+            // Copy files over
+            directory_iterator iter(up_dest), end;
+            for(; iter != end; ++iter)
+              {
+                path p = iter->path();
+
+                // Only process files
+                if(!is_regular_file(p)) continue;
+
+                // Destination
+                path dest = canon_path / p.leaf();
+
+                // Remove destination, if it exists
+                if(exists(dest))
+                  remove(dest);
+
+                // Copy the file
+                copy_file(p, dest);
+              }
+          }
+
+        // In any case, run the canonical path and exit the current
+        // instance
+        wxExecute(wxString(canon_exe.c_str(), wxConvUTF8));
+        return true;
+      }
+    else
+      {
+        // Kill the update/ folder if there is one
+        if(exists(up_dest))
+          {
+            // Wait a sec to give the program a shot to exit
+            wxSleep(1);
+            remove_all(up_dest);
+          }
+      }
 
     // Get current version
     {
@@ -66,10 +111,14 @@ struct Updater
       // Yup. Nothing more to do.
       return false;
 
+    string vermsg = "Downloading latest update, please wait...\n"
+      + version + " -> " + ti.version;
+    wxString xvermsg = wxString(vermsg.c_str(), wxConvUTF8);
+
     // Set up the progress dialog
     wxProgressDialog *dlg =
-      new wxProgressDialog(wxT("Updating Tiggit"),
-                           wxT("Downloading latest update, please wait..."),
+      new wxProgressDialog(wxT("Updating Tiggit"), xvermsg,
+                           //wxT("Downloading latest update, please wait..."),
                            100, NULL, wxPD_APP_MODAL|wxPD_CAN_ABORT|wxPD_AUTO_HIDE);
     dlg->Show(1);
 
@@ -115,7 +164,7 @@ struct Updater
       }
 
     // Download complete! Start unpacking
-    void *handle = inst.queue(zip, dest);
+    void *handle = inst.queue(zip, up_dest);
 
     // Do another semi-busy loop
     int status;
@@ -135,7 +184,7 @@ struct Updater
       }
 
     // Shut down the window
-    dlg->Update(100);
+    dlg->Update(100); // Trigger auto-hide
     dlg->Destroy();
 
     // Give up if there were errors
