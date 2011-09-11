@@ -3,6 +3,7 @@
 
 #include <wx/wx.h>
 #include <wx/progdlg.h>
+#include <boost/algorithm/string.hpp>
 #include "data_reader.hpp"
 
 struct Updater
@@ -21,6 +22,24 @@ struct Updater
     using namespace Json;
     using namespace boost::filesystem;
     using namespace std;
+
+    // Our own exe path
+    string this_exe = string(wxStandardPaths::Get().GetExecutablePath().mb_str());
+    // Canonical path
+    path canon_path = get.getPath("bin");
+    string canon_exe = (canon_path/"tiggit.exe").string();
+    if(!boost::iequals(this_exe, canon_exe))
+        {
+            string str = this_exe + " " + canon_exe;
+            wxString msg(str.c_str(), wxConvUTF8);
+            wxMessageBox(msg, wxT("Dirs"), wxOK);
+            return false;
+        }
+
+    // Kill the update/ folder if there is one
+    string dest = get.getPath("update/");
+    if(exists(dest))
+        remove_all(dest);
 
     // Get current version
     version = "none";
@@ -46,7 +65,7 @@ struct Updater
     wxProgressDialog *dlg =
       new wxProgressDialog(wxT("Updating Tiggit"),
                            wxT("Downloading latest update, please wait..."),
-                           100, NULL, wxPD_APP_MODAL|wxPD_CAN_ABORT);
+                           100, NULL, wxPD_APP_MODAL|wxPD_CAN_ABORT|wxPD_AUTO_HIDE);
     dlg->Show(1);
 
     // Start downloading the latest version
@@ -65,6 +84,8 @@ struct Updater
           {
             // Calculate progress
             int prog = (int)(getter.current*100.0/getter.total);
+            // Avoid auto-closing the window
+            if(prog >= 100) prog=99;
             res = dlg->Update(prog);
           }
         else
@@ -89,7 +110,6 @@ struct Updater
       }
 
     // Download complete! Start unpacking
-    string dest = get.getPath("update/");
     void *handle = inst.queue(zip, dest);
 
     // Do another semi-busy loop
@@ -110,30 +130,23 @@ struct Updater
       }
 
     // Shut down the window
+    dlg->Update(100);
     dlg->Destroy();
 
     // Give up if there were errors
     if(status >= 3)
       return false;
 
-    // Success! Launch the NEW install.exe, after copying it to a
-    // better location first.
-    string install = get.getPath("update/install.exe");
-    string cmd = get.copyTo(install, "install.exe");
-
     // On unix only
-    //wxShell(("chmod a+x " + cmd).c_str());
+    //wxShell(("chmod a+x " + run).c_str());
 
-    // Add parameters
-    cmd += " " + dest + " " + get.getPath("bin/") + " tiggit.exe";
-
-    // Run it!
-    int res = wxExecute(wxString(cmd.c_str(), wxConvUTF8));
+    // Run the new exe, and let it figure out the rest
+    string run = get.getPath("update/tiggit.exe");
+    int res = wxExecute(wxString(run.c_str(), wxConvUTF8));
     if(res == -1)
       return false;
 
-    // If things went as planned, exit quickly so the installer can do
-    // its thang.
+    // If things went as planned, exit so the new version can do its thang.
     return true;
   }
 };
