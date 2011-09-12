@@ -23,33 +23,25 @@ using namespace std;
 
 DataList data;
 JsonInstalled jinst;
+TigListReader tig_reader;
 
 void writeConfig()
 {
   jinst.write(data);
 }
 
-// Refresh all_games.json from the net. Call updateData() after
-// calling this.
-void refreshData()
-{
-  string url = "http://tiggit.net/api/all_games.json";
-  string tmpfile = get.getFile(url);
-  get.copyTo(tmpfile, "all_games.json");
-}
-
-// Update data from stored all_games.json
+// Update data from all_games.json
 void updateData()
 {
   data.arr.resize(0);
   string lstfile = (get.base / "all_games.json").string();
 
-  // Try getting the file if it doesn't exist (TODO: Should use cache for this)
-  if(!boost::filesystem::exists(lstfile))
-    refreshData();
+  // Get the latest list from the net
+  string url = "http://tiggit.net/api/all_games.json";
+  string tmpfile = get.getFile(url);
+  get.copyTo(tmpfile, "all_games.json");
 
-  TigListReader lst;
-  lst.loadData(lstfile, data);
+  tig_reader.loadData(lstfile, data);
   jinst.read(data);
 }
 
@@ -221,8 +213,10 @@ public:
     b2 = new wxButton(panel, myID_BUTTON2, wxT("No action"));
     rightPane->Add(b2, 0, wxBOTTOM | wxRIGHT, 10);
 
+    /*
     wxButton *b3 = new wxButton(panel, myID_GAMEPAGE, wxT("Homepage"));
     rightPane->Add(b3, 0, wxBOTTOM | wxRIGHT, 10);
+    */
 
     wxBoxSizer *panes = new wxBoxSizer(wxHORIZONTAL);
     panes->Add(leftPane, 1, wxGROW);
@@ -268,7 +262,6 @@ public:
 
   void onRefresh(wxCommandEvent &event)
   {
-    refreshData();
     updateListData();
   }
 
@@ -433,6 +426,9 @@ public:
         return;
       }
 
+    /* TODO: We should update the tigfile before downloading.
+     */
+
     // Start theaded downloading
     ThreadGet *tg = new ThreadGet;
 
@@ -503,10 +499,9 @@ public:
       }
     else if(e.status == 2)
       {
-        // TODO: All these path and file operations need to be
-        // outsourced to an external module. One "repository"
-        // module that doesn't know about the rest of the program
-        // is the best bet.
+        // TODO: All these path and file operations could be out-
+        // sourced to an external module. One "repository" module that
+        // doesn't know about the rest of the program is the best bet.
 
         // Construct the install path
         boost::filesystem::path dir = "data";

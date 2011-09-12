@@ -2,6 +2,7 @@
 #define _FILEGETTER_HPP_
 
 #include <stdlib.h>
+#include <stdexcept>
 #include "tmpdir.hpp"
 
 struct FileGetter
@@ -56,17 +57,44 @@ struct FileGetter
     return dest.string();
   }
 
-  // Get the file from the given local position within the base
-  // dir. If it doesn't exist, fetch it from the given url. Returns
-  // the final path.
-  std::string getCache(const std::string &local, const std::string &url)
+  /* Get the file from the given local position within the base
+     dir. If it doesn't exist, fetch it from the given url. Returns
+     the final path.
+
+     If cacheFirst is true (default behavior), use cache if it
+     exists. If it's false, only fall back on cache if download fails.
+
+     In any case, the function throws an exception if neither the url
+     nor the cached file are retrievable.
+  */
+  std::string getCache(const std::string &local, const std::string &url,
+                       bool cacheFirst=true)
   {
     using namespace boost::filesystem;
 
     // This is the final path
     path dest = base / local;
 
-    // Check if it exists
+    if(!cacheFirst)
+      {
+        try
+          {
+            // Try getting the url first
+            std::string tmp = getFile(url);
+            copyTo(tmp, local);
+            return dest.string();
+          }
+        catch(...) {}
+
+        // Nope. Fall back on cache
+        if(exists(dest))
+          return dest.string();
+
+        // Neither worked. Fail.
+        throw std::runtime_error(("Failed to fetch " + url).c_str());
+      }
+
+    // Check if cached file exists
     if(!exists(dest))
       {
         // Nope, we need to download it

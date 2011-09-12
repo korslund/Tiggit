@@ -17,16 +17,23 @@ struct TigListReader
     throw std::runtime_error("ERROR parsing '" + filename + "':\n\n" + msg);
   }
 
-  // Get the tigfile, from local cache if possible
-  std::string getTigFile(const std::string &name, const std::string &url)
+  // Get the tigfile, from local cache if possible. Returns "" if the
+  // fetch fails.
+  std::string getTigFile(const std::string &name, const std::string &url,
+                         bool cacheFirst = true)
   {
+    // Not allowed on a non-initialized list object.
+    assert(filename != "");
+
     boost::filesystem::path dir;
 
     dir = "tigfiles";
     dir /= channel;
     dir /= name + ".tig";
 
-    return get.getCache(dir.string(), url);
+    try { return get.getCache(dir.string(), url, cacheFirst); }
+    catch(...) {}
+    return ""; // Empty string on error
   }
 
   /* Decode a .tig file. Returns false if the file is invalid or
@@ -56,6 +63,24 @@ struct TigListReader
       return false;
 
     return true;
+  }
+
+  // Combines getTigFile and decodeTigFile into one
+  bool decodeTigUrl(const std::string &name,
+                    const std::string &url,
+                    DataList::TigInfo &data,
+                    bool cacheFirst = true)
+  {
+    // Get the tigfile
+    std::string tigf = getTigFile(name, url, cacheFirst);
+
+    // Skip missing files
+    if(tigf == "")
+      return false;
+
+    // Parse it
+    DataList::TigInfo ti;
+    return decodeTigFile(tigf, data);
   }
 
   void loadData(const std::string &file, DataList &data)
@@ -101,12 +126,9 @@ struct TigListReader
         const std::string &key = *it;
         Value game = root[key];
 
-        // Get the tigfile
-        std::string tigf = getTigFile(key, game["tigurl"].asString());
-
-        // Parse it
+        // Get and parse tigfile
         DataList::TigInfo ti;
-        if(!decodeTigFile(tigf, ti) || ti.launch == "")
+        if(!decodeTigUrl(key, game["tigurl"].asString(), ti) || ti.launch == "")
           continue;
 
         // Push the game into the list
