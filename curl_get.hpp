@@ -84,7 +84,10 @@ struct CurlGet
     curl_easy_cleanup(curl);
 
     if(res != CURLE_OK && res != CURLE_ABORTED_BY_CALLBACK)
-      throw std::runtime_error("Error fetching " + url);
+      {
+        std::string msg = curl_easy_strerror(res);
+        throw std::runtime_error("Error fetching " + url + ":\n" + msg);
+      }
   }
 };
 #endif

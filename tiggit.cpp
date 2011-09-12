@@ -371,7 +371,9 @@ public:
                 e.extra = NULL;
 
                 if(g->status == 3)
-                  wxMessageBox(wxT("Download failed for ") + e.name, wxT("Error"), wxOK | wxICON_ERROR);
+                  wxMessageBox(wxT("Download failed for ") + e.name +
+                               wxT(":\n") + wxString(g->errMsg.c_str(), wxConvUTF8),
+                               wxT("Error"), wxOK | wxICON_ERROR);
               }
 
             // We don't need the downloader anymore

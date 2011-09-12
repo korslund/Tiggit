@@ -91,7 +91,7 @@ struct FileGetter
           return dest.string();
 
         // Neither worked. Fail.
-        throw std::runtime_error(("Failed to fetch " + url).c_str());
+        throw std::runtime_error("Failed to fetch " + url);
       }
 
     // Check if cached file exists

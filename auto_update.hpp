@@ -134,17 +134,16 @@ struct Updater
       return false;
 
     // We need to update, so crank up the ol' progress bar
-    string vermsg = "Downloading latest update, please wait...\n"
-      + version + " -> " + ti.version;
-    wxString xvermsg = wxString(vermsg.c_str(), wxConvUTF8);
-
     wxProgressDialog *dlg =
-      new wxProgressDialog(wxT("Updating Tiggit"), xvermsg,
+      new wxProgressDialog(wxT("Updating Tiggit"), wxT("Updating"),
                            //wxT("Downloading latest update, please wait..."),
                            100, NULL, wxPD_APP_MODAL|wxPD_CAN_ABORT|wxPD_AUTO_HIDE);
     dlg->Show(1);
 
-    bool ok = doUpdate(ti.url, up_dest, dlg);
+    string vermsg = "Downloading latest update, please wait...\n"
+      + version + " -> " + ti.version;
+
+    bool ok = doUpdate(ti.url, up_dest, dlg, vermsg);
 
     if(!ok)
       {
@@ -166,7 +165,7 @@ struct Updater
     if(!checkVersion("http://tiggit.net/client/dlls.tig", ti, dll_version))
       {
         // Get the DLL files as well
-        ok = doUpdate(ti.url, up_dest, dlg);
+        ok = doUpdate(ti.url, up_dest, dlg, vermsg);
       }
 
     // Shut down the window
@@ -200,8 +199,11 @@ struct Updater
   // progress dialog. Returns true on success.
   bool doUpdate(const std::string &url,
                 const std::string &up_dest,
-                wxProgressDialog *dlg)
+                wxProgressDialog *dlg,
+                const std::string &vermsg)
   {
+    dlg->Update(0, wxString((vermsg + "\n" + url).c_str(), wxConvUTF8));
+
     // Start downloading the latest version
     ThreadGet getter;
     std::string zip = get.getPath("update.zip");
@@ -238,10 +240,9 @@ struct Updater
     // If something went wrong, just forget about it and continue
     // running the old version instead.
     if(getter.status > 2)
-      {
-        dlg->Destroy();
-        return false;
-      }
+      return false;
+
+    dlg->Update(0, wxString((vermsg + "\nUnpacking...").c_str(), wxConvUTF8));
 
     // Download complete! Start unpacking
     void *handle = inst.queue(zip, up_dest);

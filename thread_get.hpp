@@ -37,6 +37,8 @@ struct ThreadGet
   // Current status
   int current, total;
 
+  std::string errMsg;
+
   /*
     0 - no download
     1 - in progress
@@ -66,10 +68,10 @@ wxThread::ExitCode MyThread::Entry()
     {
       get.get(url, file, &progress, data);
     }
-  catch(...)
+  catch(std::exception &e)
     {
-      // TODO: Log error somewhere
       data->status = 3;
+      data->errMsg = e.what();
     }
 
   if(data->status >= 3)
