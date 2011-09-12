@@ -325,9 +325,13 @@ public:
           }
         else if(res > 2)
           {
+            // Install was aborted. Revert to "not installed" status.
             e.status = 0;
             e.extra = NULL;
-            // Install was aborted. Revert to "not installed" status.
+
+            // If there was an error, report it to the user
+            if(res == 3)
+              wxMessageBox(wxT("Unpacking failed for ") + e.name, wxT("Error"), wxOK | wxICON_ERROR);
           }
         /*
         else if(res == 0)
@@ -365,6 +369,9 @@ public:
                 // Abort.
                 e.status = 0;
                 e.extra = NULL;
+
+                if(g->status == 3)
+                  wxMessageBox(wxT("Download failed for ") + e.name, wxT("Error"), wxOK | wxICON_ERROR);
               }
 
             // We don't need the downloader anymore
@@ -665,8 +672,9 @@ public:
       {
         // Do auto update step. This requires us to immediately exit
         // in some cases.
-        Updater upd;
-        if(upd.doAutoUpdate(this)) return false;
+        Updater upd(this);
+        if(upd.doAutoUpdate())
+          return false;
 
         MyFrame *frame = new MyFrame(wxT("Tiggit - The Indie Game Installer"),
                                      upd.version);

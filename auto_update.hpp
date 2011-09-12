@@ -10,8 +10,29 @@ struct Updater
 {
   // Current program version.
   std::string version;
+  wxApp *app;
 
-  Updater() : version("unknown") {}
+  Updater(wxApp *_app)
+    : version("unknown"), app(_app) {}
+
+  // Check if a given version is current. Returns true if no update is
+  // needed.
+  bool checkVersion(const std::string &url,
+                    DataList::TigInfo &ti,
+                    const std::string &ver)
+  {
+    // Fetch the latest client information
+    std::string tig = get.getFile(url);
+
+    if(!TigListReader::decodeTigFile(tig, ti))
+      return true;
+
+    // Do we have the latest version?
+    if(ver == ti.version)
+      return true;
+
+    return false;
+  }
 
   /*
     This funtion performs all our auto-update steps, transparently to
@@ -19,7 +40,7 @@ struct Updater
 
     If it returns true, you should immediately exit the application.
   */
-  bool doAutoUpdate(wxApp *app)
+  bool doAutoUpdate()
   {
     using namespace Json;
     using namespace boost::filesystem;
@@ -38,6 +59,9 @@ struct Updater
     // Canonical path
     path canon_path = get.getPath("bin");
     string canon_exe = (canon_path/"tiggit.exe").string();
+
+    // Temporary exe used for updates
+    string tmp_exe = (canon_path/"update.exe").string();
 
     if(!boost::iequals(this_exe, canon_exe))
       {
@@ -81,12 +105,18 @@ struct Updater
       }
     else
       {
+        // We are running a correctly installed exe
+
         // Kill the update/ folder if there is one
         if(exists(up_dest))
           {
             // Wait a sec to give the program a shot to exit
             wxSleep(1);
             remove_all(up_dest);
+
+            // Ditto for tmp_exe
+            if(exists(tmp_exe))
+              remove(tmp_exe);
           }
       }
 
@@ -98,32 +128,84 @@ struct Updater
     }
 
     // Fetch the latest client information
-    string tig = get.getTo("http://tiggit.net/client/latest.tig", "latest.tig");
-
     DataList::TigInfo ti;
-    if(!TigListReader::decodeTigFile(tig, ti))
+    if(checkVersion("http://tiggit.net/client/latest.tig", ti, version))
+      // Current version is current, nothing more to do.
       return false;
 
-    // Do we have the latest version?
-    if(version == ti.version)
-      // Yup. Nothing more to do.
-      return false;
-
+    // We need to update, so crank up the ol' progress bar
     string vermsg = "Downloading latest update, please wait...\n"
       + version + " -> " + ti.version;
     wxString xvermsg = wxString(vermsg.c_str(), wxConvUTF8);
 
-    // Set up the progress dialog
     wxProgressDialog *dlg =
       new wxProgressDialog(wxT("Updating Tiggit"), xvermsg,
                            //wxT("Downloading latest update, please wait..."),
                            100, NULL, wxPD_APP_MODAL|wxPD_CAN_ABORT|wxPD_AUTO_HIDE);
     dlg->Show(1);
 
+    bool ok = doUpdate(ti.url, up_dest, dlg);
+
+    if(!ok)
+      {
+        // Shut down the window
+        dlg->Update(100);
+        dlg->Destroy();
+        return false;
+      }
+
+    // Check if there are any new dll files as well
+    string dll_version;
+    {
+      // Current dll version
+      ifstream inf(get.getPath("bin/dll_version").c_str());
+      if(inf)
+        inf >> dll_version;
+    }
+    ok = false;
+    if(!checkVersion("http://tiggit.net/client/dlls.tig", ti, dll_version))
+      {
+        // Get the DLL files as well
+        ok = doUpdate(ti.url, up_dest, dlg);
+      }
+
+    // Shut down the window
+    dlg->Update(100); // Trigger auto-hide
+    dlg->Destroy();
+
+    // Figure out what to run at this point
+    string run = get.getPath("update/tiggit.exe");
+
+    if(!ok)
+      {
+        // No new DLLs. We need to copy the new exe in with the old
+        // DLLs to make sure it runs.
+        copy_file(run, tmp_exe);
+        run = tmp_exe;
+      }
+
+    // On unix only
+    //wxShell(("chmod a+x " + run).c_str());
+
+    // Run the new exe, and let it figure out the rest
+    int res = wxExecute(wxString(run.c_str(), wxConvUTF8));
+    if(res == -1)
+      return false;
+
+    // If things went as planned, exit so the new version can do its thang.
+    return true;
+  }
+
+  // Unpack a zip file from url into up_dest, while updating the given
+  // progress dialog. Returns true on success.
+  bool doUpdate(const std::string &url,
+                const std::string &up_dest,
+                wxProgressDialog *dlg)
+  {
     // Start downloading the latest version
     ThreadGet getter;
-    string zip = get.getPath("update.zip");
-    getter.start(ti.url, zip);
+    std::string zip = get.getPath("update.zip");
+    getter.start(url, zip);
 
     // Poll-loop until it's done
     while(true)
@@ -172,7 +254,11 @@ struct Updater
         wxMilliSleep(40);
 
         // Ignore 'cancel' commands while unpacking.
-        dlg->Pulse();
+
+        // Disabled this because it looks crap on windows. On
+        // linux/gtk it worked exactly like it should though.
+
+        //dlg->Pulse();
 
         status = inst.check(handle);
 
@@ -181,24 +267,10 @@ struct Updater
           break;
       }
 
-    // Shut down the window
-    dlg->Update(100); // Trigger auto-hide
-    dlg->Destroy();
-
     // Give up if there were errors
     if(status >= 3)
       return false;
 
-    // On unix only
-    //wxShell(("chmod a+x " + run).c_str());
-
-    // Run the new exe, and let it figure out the rest
-    string run = get.getPath("update/tiggit.exe");
-    int res = wxExecute(wxString(run.c_str(), wxConvUTF8));
-    if(res == -1)
-      return false;
-
-    // If things went as planned, exit so the new version can do its thang.
     return true;
   }
 };
