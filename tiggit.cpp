@@ -272,14 +272,19 @@ public:
     Connect(myID_MENU_REFRESH, wxEVT_COMMAND_MENU_SELECTED,
             wxCommandEventHandler(MyFrame::onRefresh));
 
-    list->update();
+    updateListData();
     list->SetFocus();
+  }
+
+  void updateListData()
+  {
+    list->update();
   }
 
   void onRefresh(wxCommandEvent &event)
   {
     updateData(true);
-    list->update();
+    updateListData();
   }
 
   void onAbout(wxCommandEvent &event)
@@ -696,10 +701,9 @@ public:
             return false;
 
           version = upd.version;
-
-          upd.setMsg(wxT("Loading game data"));
-          updateData(false);
         }
+
+        updateData(false);
 
         MyFrame *frame = new MyFrame(wxT("Tiggit - The Indie Game Installer"),
                                      version);

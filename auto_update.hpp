@@ -14,26 +14,32 @@ struct Updater
   wxProgressDialog *dlg;
 
   Updater(wxApp *_app)
-    : version("unknown"), app(_app)
-  {
-    // Crank up the ol' progress bar
-    dlg = new wxProgressDialog(wxT("Information"), wxT("Tiggit is checking for updates, please wait..."),
-                               100, NULL, wxPD_APP_MODAL|wxPD_CAN_ABORT|wxPD_AUTO_HIDE);
-    dlg->Show(1);
-    app->Yield();
-  }
+    : version("unknown"), app(_app), dlg(NULL)
+  {}
 
   ~Updater()
   {
     // Shut down the window
-    dlg->Update(100);
-    dlg->Destroy();
-    app->Yield();
+    if(dlg)
+      {
+        dlg->Update(100);
+        dlg->Destroy();
+        app->Yield();
+      }
   }
 
-  void setMsg(const wxString &str)
+  void setMsg(const wxString &str, int value=0)
   {
-    dlg->Update(0, str);
+    if(!dlg)
+      {
+        // Crank up the ol' progress bar
+        dlg = new wxProgressDialog(wxT("Information"), wxT("Tiggit is checking for updates..."),
+                                   100, NULL, wxPD_APP_MODAL|wxPD_CAN_ABORT|wxPD_AUTO_HIDE);
+        dlg->Show(1);
+      }
+
+    dlg->Show(true);
+    dlg->Update(value, str);
     app->Yield();
   }
 
@@ -72,8 +78,9 @@ struct Updater
     if((wxGetOsVersion() & wxOS_WINDOWS) == 0)
       return false;
 
-    // Update destination
-    string up_dest = get.getPath("update/");
+    // Update destination. (Don't use getPath, that creates the
+    // directory!)
+    string up_dest = (get.base / "update").string();
 
     // Our own exe path
     wxString this_wx = wxStandardPaths::Get().GetExecutablePath();
@@ -94,8 +101,7 @@ struct Updater
             // now. In any case, since the bin/ version is not
             // running, we can overwrite it.
 
-            dlg->Update(50, wxT("Installing update..."));
-            app->Yield();
+            setMsg(wxT("Installing update..."));
 
             // Wait a little while in case bin/ launched us, to give
             // it time to exit. (Not a terribly robust solution, I
@@ -140,8 +146,7 @@ struct Updater
         // Kill the update/ folder if there is one
         if(exists(up_dest))
           {
-            dlg->Update(50, wxT("Cleaning up..."));
-            app->Yield();
+            setMsg(wxT("Cleaning up..."));
 
             // Wait a sec to give the program a shot to exit
             wxSleep(1);
@@ -169,7 +174,7 @@ struct Updater
     string vermsg = "Downloading latest update, please wait...\n"
       + version + " -> " + ti.version;
 
-    bool ok = doUpdate(ti.url, up_dest, dlg, vermsg);
+    bool ok = doUpdate(ti.url, up_dest, vermsg);
 
     if(!ok)
       return false;
@@ -186,7 +191,7 @@ struct Updater
     if(!checkVersion("http://tiggit.net/client/dlls.tig", ti, dll_version))
       {
         // Get the DLL files as well
-        ok = doUpdate(ti.url, up_dest, dlg, vermsg);
+        ok = doUpdate(ti.url, up_dest, vermsg);
       }
 
     // Figure out what to run at this point
@@ -216,10 +221,9 @@ struct Updater
   // progress dialog. Returns true on success.
   bool doUpdate(const std::string &url,
                 const std::string &up_dest,
-                wxProgressDialog *dlg,
                 const std::string &vermsg)
   {
-    dlg->Update(0, wxString((vermsg + "\n" + url).c_str(), wxConvUTF8));
+    setMsg(wxString((vermsg + "\n" + url).c_str(), wxConvUTF8));
 
     // Start downloading the latest version
     ThreadGet getter;
