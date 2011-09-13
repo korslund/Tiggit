@@ -11,9 +11,31 @@ struct Updater
   // Current program version.
   std::string version;
   wxApp *app;
+  wxProgressDialog *dlg;
 
   Updater(wxApp *_app)
-    : version("unknown"), app(_app) {}
+    : version("unknown"), app(_app)
+  {
+    // Crank up the ol' progress bar
+    dlg = new wxProgressDialog(wxT("Information"), wxT("Tiggit is checking for updates, please wait..."),
+                               100, NULL, wxPD_APP_MODAL|wxPD_CAN_ABORT|wxPD_AUTO_HIDE);
+    dlg->Show(1);
+    app->Yield();
+  }
+
+  ~Updater()
+  {
+    // Shut down the window
+    dlg->Update(100);
+    dlg->Destroy();
+    app->Yield();
+  }
+
+  void setMsg(const wxString &str)
+  {
+    dlg->Update(0, str);
+    app->Yield();
+  }
 
   // Check if a given version is current. Returns true if no update is
   // needed.
@@ -72,6 +94,9 @@ struct Updater
             // now. In any case, since the bin/ version is not
             // running, we can overwrite it.
 
+            dlg->Update(50, wxT("Installing update..."));
+            app->Yield();
+
             // Wait a little while in case bin/ launched us, to give
             // it time to exit. (Not a terribly robust solution, I
             // know, fix it later.)
@@ -107,9 +132,17 @@ struct Updater
       {
         // We are running a correctly installed exe
 
+        // TODO: At some later point, we will use this spot to check
+        // for updates previously unpacked at runtime. This is less
+        // disruptive than downloading updates at startup, as we are
+        // currently doing below.
+
         // Kill the update/ folder if there is one
         if(exists(up_dest))
           {
+            dlg->Update(50, wxT("Cleaning up..."));
+            app->Yield();
+
             // Wait a sec to give the program a shot to exit
             wxSleep(1);
             remove_all(up_dest);
@@ -133,25 +166,13 @@ struct Updater
       // Current version is current, nothing more to do.
       return false;
 
-    // We need to update, so crank up the ol' progress bar
-    wxProgressDialog *dlg =
-      new wxProgressDialog(wxT("Updating Tiggit"), wxT("Updating"),
-                           //wxT("Downloading latest update, please wait..."),
-                           100, NULL, wxPD_APP_MODAL|wxPD_CAN_ABORT|wxPD_AUTO_HIDE);
-    dlg->Show(1);
-
     string vermsg = "Downloading latest update, please wait...\n"
       + version + " -> " + ti.version;
 
     bool ok = doUpdate(ti.url, up_dest, dlg, vermsg);
 
     if(!ok)
-      {
-        // Shut down the window
-        dlg->Update(100);
-        dlg->Destroy();
-        return false;
-      }
+      return false;
 
     // Check if there are any new dll files as well
     string dll_version;
@@ -167,10 +188,6 @@ struct Updater
         // Get the DLL files as well
         ok = doUpdate(ti.url, up_dest, dlg, vermsg);
       }
-
-    // Shut down the window
-    dlg->Update(100); // Trigger auto-hide
-    dlg->Destroy();
 
     // Figure out what to run at this point
     string run = get.getPath("update/tiggit.exe");

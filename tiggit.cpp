@@ -9,6 +9,7 @@
 #include <iostream>
 #include <assert.h>
 #include <set>
+#include <time.h>
 
 #include "curl_get.hpp"
 #include "decodeurl.hpp"
@@ -30,16 +31,32 @@ void writeConfig()
   jinst.write(data);
 }
 
-// Update data from all_games.json
-void updateData()
+// Update data from all_games.json. If the parameter is true, force
+// download. If not, download only if the existing file is too old.
+void updateData(bool download)
 {
   data.arr.resize(0);
-  string lstfile = (get.base / "all_games.json").string();
 
-  // Get the latest list from the net
-  string url = "http://tiggit.net/api/all_games.json";
-  string tmpfile = get.getFile(url);
-  get.copyTo(tmpfile, "all_games.json");
+  string lstfile = get.getPath("all_games.json");
+
+  // Do we check file age?
+  if(!download && boost::filesystem::exists(lstfile))
+    {
+      // Yup, check file age
+      time_t ft = boost::filesystem::last_write_time(lstfile);
+      time_t now = time(0);
+
+      // 24 hour updates should be ok
+      if(difftime(now,ft) > 60*60*24)
+        download = true;
+    }
+
+  if(download)
+    {
+      // Get the latest list from the net
+      string url = "http://tiggit.net/api/all_games.json";
+      get.getTo(url, "all_games.json");
+    }
 
   tig_reader.loadData(lstfile, data);
   jinst.read(data);
@@ -100,7 +117,6 @@ public:
 
   void update()
   {
-    updateData();
     SetItemCount(data.arr.size());
     setSelect(0);
   }
@@ -256,13 +272,14 @@ public:
     Connect(myID_MENU_REFRESH, wxEVT_COMMAND_MENU_SELECTED,
             wxCommandEventHandler(MyFrame::onRefresh));
 
-    updateListData();
+    list->update();
     list->SetFocus();
   }
 
   void onRefresh(wxCommandEvent &event)
   {
-    updateListData();
+    updateData(true);
+    list->update();
   }
 
   void onAbout(wxCommandEvent &event)
@@ -275,8 +292,6 @@ public:
   {
     Close();
   }
-
-  void updateListData() { list->update(); }
 
   // Create a nice size string
   wxString sizify(int size)
@@ -672,14 +687,22 @@ public:
 
     try
       {
-        // Do auto update step. This requires us to immediately exit
-        // in some cases.
-        Updater upd(this);
-        if(upd.doAutoUpdate())
-          return false;
+        string version;
+        {
+          // Do auto update step. This requires us to immediately exit
+          // in some cases.
+          Updater upd(this);
+          if(upd.doAutoUpdate())
+            return false;
+
+          version = upd.version;
+
+          upd.setMsg(wxT("Loading game data"));
+          updateData(false);
+        }
 
         MyFrame *frame = new MyFrame(wxT("Tiggit - The Indie Game Installer"),
-                                     upd.version);
+                                     version);
         frame->Show(true);
         time = new MyTimer(frame);
         return true;
