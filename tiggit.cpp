@@ -569,15 +569,25 @@ public:
             // Button2 == Uninstall
 
             // Kill all the files
-            boost::filesystem::remove_all(dir);
+	    try
+	      {
+		boost::filesystem::remove_all(dir);
 
-            // Revert status
-            data.arr[index].status = 0;
-            if(index == select) fixButtons();
-            list->RefreshItem(index);
+		// Revert status
+		data.arr[index].status = 0;
+		if(index == select) fixButtons();
+		list->RefreshItem(index);
 
-            // Make sure we update the config file
-            writeConfig();
+		// Make sure we update the config file
+		writeConfig();
+	      }
+	    catch(exceptin &e)
+	      {
+		wxString msg = wxT("Could not uninstall ") + e.name +
+		  wxT(": ") + wxString(string(e.what).c_str, wxConvUTF8)
+		  + wxT("\nPerhaps the game is still running?");
+		wxMessageBox(msg, wxT("Error"), wxOK | wxICON_ERROR);
+	      }
           }
       }
   }
