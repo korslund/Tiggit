@@ -581,10 +581,10 @@ public:
 		// Make sure we update the config file
 		writeConfig();
 	      }
-	    catch(exceptin &e)
+	    catch(exception &ex)
 	      {
 		wxString msg = wxT("Could not uninstall ") + e.name +
-		  wxT(": ") + wxString(string(e.what).c_str, wxConvUTF8)
+		  wxT(": ") + wxString(string(ex.what()).c_str(), wxConvUTF8)
 		  + wxT("\nPerhaps the game is still running?");
 		wxMessageBox(msg, wxT("Error"), wxOK | wxICON_ERROR);
 	      }
