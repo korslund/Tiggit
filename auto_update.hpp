@@ -92,6 +92,7 @@ struct Updater
     // Temporary exe used for updates
     string tmp_exe = (canon_path/"update.exe").string();
 
+    // Are we running from the canonical path?
     if(!boost::iequals(this_exe, canon_exe))
       {
         // Check if there is a download update available
@@ -143,14 +144,17 @@ struct Updater
         // disruptive than downloading updates at startup, as we are
         // currently doing below.
 
-        // Kill the update/ folder if there is one
-        if(exists(up_dest))
+        // Kill update remains if there are any
+        if(exists(up_dest) || exists(tmp_exe))
           {
             setMsg(wxT("Cleaning up..."));
 
             // Wait a sec to give the program a shot to exit
             wxSleep(1);
-            remove_all(up_dest);
+
+            // Kill update/
+            if(exists(up_dest))
+              remove_all(up_dest);
 
             // Ditto for tmp_exe
             if(exists(tmp_exe))
