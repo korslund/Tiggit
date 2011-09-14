@@ -5,6 +5,6 @@ CMakeFiles
 cmake_install.cmake
 *_test
 tiggit
-tiggit.exe
 *.dll
-setup_stub.exe
+*.exe
+payload.zip

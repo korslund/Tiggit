@@ -27,6 +27,8 @@ int main()
   SizeInfo si;
 
   si.sign = 0x13737FAB;
+  si.start = 0;
+  si.size = 0;
 
   char buf[1024];
   while(!exe.eof())

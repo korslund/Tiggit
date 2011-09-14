@@ -44,7 +44,8 @@ void extractPayload(const std::string &exe,
 
   // Read the payload descriptor
   SizeInfo si;
-  inf.seekg(-sizeof(SizeInfo), std::iosbase::end);
+  inf.seekg(0, std::ios::end);
+  inf.seekg((int)inf.tellg()-sizeof(SizeInfo));
   inf.read((char*)&si, sizeof(SizeInfo));
 
   if(si.sign != 0x13737FAB)
@@ -52,7 +53,7 @@ void extractPayload(const std::string &exe,
 
   // Seek to the data
   inf.clear();
-  inf.seekg(si.start)
+  inf.seekg(si.start);
 
   // Set up the destination file
   std::ofstream of(dest.c_str(), std::ios::binary);
@@ -61,7 +62,7 @@ void extractPayload(const std::string &exe,
   char buf[4096];
   while(si.size > 0)
     {
-      inf.read(buff, sizeof(buf));
+      inf.read(buf, sizeof(buf));
       size_t count = inf.gcount();
       of.write(buf, count);
       si.size -= count;
