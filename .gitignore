@@ -7,3 +7,4 @@ cmake_install.cmake
 tiggit
 tiggit.exe
 *.dll
+setup_stub.exe
