@@ -158,7 +158,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
       z.unpack(zip, bin.string());
 
       // Create shortcuts
-      createLinks("Open Game Loader", dest_exe);
+      createLinks("Tiggit Game Installer", dest_exe);
     }
   catch(std::exception &e)
     {

@@ -12,7 +12,7 @@ int main()
 {
   ifstream exe("setup_stub.exe", ios::binary);
   ifstream zip("payload.zip", ios::binary);
-  ofstream out("ogl_setup.exe", ios::binary);
+  ofstream out("tiggit_setup.exe", ios::binary);
 
   if(!exe || !zip || !out)
     {
@@ -20,7 +20,7 @@ int main()
       cout << "This program uses:\n";
       cout << "  setup_stub.exe   (input)\n";
       cout << "  payload.zip      (input)\n";
-      cout << "  ogl_setup.exe    (output)\n";
+      cout << "  tiggit_setup.exe (output)\n";
       return 1;
     }
 
