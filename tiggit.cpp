@@ -457,7 +457,7 @@ public:
 
     {
       // Update the .tig info
-      TigInfo ti;
+      DataList::TigInfo ti;
 
       // TODO: In future versions, this will be outsourced to a worker
       // thread to keep from blocking the app.
