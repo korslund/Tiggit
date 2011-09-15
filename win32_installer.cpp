@@ -1,7 +1,6 @@
 #include <windows.h>
 #include <shlobj.h>
 #include <shellapi.h>
-#include <atlbase.h>
 
 #include <boost/filesystem.hpp>
 #include <string>
@@ -86,16 +85,29 @@ void extractPayload(const std::string &exe,
 
 void createLinks(const std::string name, const std::string &exe)
 {
-  CCoInitialize init;
-  CComPtr<IShellLink> spsl;
-  spsl.CoCreateInstance(CLSID_ShellLink);
-  spsl->SetPath(exe.c_str());
-  spsl->SetDescription(name.c_str());
+  CoInitialize(NULL);
+  HRESULT res;
+  IShellLink *lnk = NULL;
 
-  CComQIPtr<IPersistFile> pf(spsl);
+  hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER,
+                          IID_IShellLink, reinterpret_cast<void**>(&lnk));
+  if(!SUCCEED(hres))
+    fail("Couldn't create shortcut links");
+
+  lnk->SetPath(exe.c_str());
+  lnk->SetDescription(name.c_str());
+  //lnk->SetIconLocation("where", 0);
+
+  IPersistFile *pf = NULL;
+  hres = lnk->QueryInterface(IID_IPersistFile, reinterpret_cast<void**>(&pf));
+  if(!SUCCEED(hres))
+    {
+      lnk->Release();
+      fail("Couldn't create shortcut links");
+    }
 
   // Use this for links you don't want to highlight, ie. everything
-  // except the main program link
+  // except the main program link. May need some rewriting.
   /*
   PROPVARIANT pvar;
   pvar.vt = VT_BOOL;
@@ -107,7 +119,7 @@ void createLinks(const std::string name, const std::string &exe)
 
   // Save desktop link
   fs::path link = getPathCSIDL(CSIDL_DESKTOPDIRECTORY) / lname;
-  pf.Save(toWide(link.string()), TRUE);
+  pf->Save(toWide(link.string()), TRUE);
 
   // Create start menu directory
   link = getPathCSIDL(CSIDL_PROGRAMS) / name;
@@ -115,7 +127,10 @@ void createLinks(const std::string name, const std::string &exe)
 
   // Save the start menu link
   link /= lname;
-  pf.Save(toWide(link.string()), TRUE);
+  pf->Save(toWide(link.string()), TRUE);
+
+  pf->Release();
+  lnk->Release();
 }
 
 
