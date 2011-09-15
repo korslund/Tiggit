@@ -89,9 +89,9 @@ void createLinks(const std::string name, const std::string &exe)
   HRESULT res;
   IShellLink *lnk = NULL;
 
-  hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER,
-                          IID_IShellLink, reinterpret_cast<void**>(&lnk));
-  if(!SUCCEED(hres))
+  res = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER,
+                         IID_IShellLink, reinterpret_cast<void**>(&lnk));
+  if(!SUCCEEDED(res))
     fail("Couldn't create shortcut links");
 
   lnk->SetPath(exe.c_str());
@@ -99,8 +99,8 @@ void createLinks(const std::string name, const std::string &exe)
   //lnk->SetIconLocation("where", 0);
 
   IPersistFile *pf = NULL;
-  hres = lnk->QueryInterface(IID_IPersistFile, reinterpret_cast<void**>(&pf));
-  if(!SUCCEED(hres))
+  res = lnk->QueryInterface(IID_IPersistFile, reinterpret_cast<void**>(&pf));
+  if(!SUCCEEDED(res))
     {
       lnk->Release();
       fail("Couldn't create shortcut links");
