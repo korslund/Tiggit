@@ -32,8 +32,8 @@ struct Updater
   {
     if(!dlg)
       {
-        // Crank up the ol' progress bar
-        dlg = new wxProgressDialog(wxT("Information"), wxT("Tiggit is checking for updates..."),
+        // Crank up the ol' progress bar. Give the text some space to grow.
+        dlg = new wxProgressDialog(wxT("Information"), wxT("Tiggit is checking for updates, please wait...        \n\n "),
                                    100, NULL, wxPD_APP_MODAL|wxPD_CAN_ABORT|wxPD_AUTO_HIDE);
         dlg->Show(1);
       }

@@ -455,8 +455,23 @@ public:
         return;
       }
 
-    /* TODO: We should update the tigfile before downloading.
-     */
+    {
+      // Update the .tig info
+      TigInfo ti;
+
+      // TODO: In future versions, this will be outsourced to a worker
+      // thread to keep from blocking the app.
+      if(tig_reader.decodeTigUrl
+         (string(e.urlname.mb_str()), // url-name
+          string(e.tigurl.mb_str()),  // url to tigfile
+          ti,                         // where to store result
+          false))                     // ONLY use cache if fetch fails
+        {
+          // Copy new data if the fetch was successful
+          if(ti.launch != "")
+            e.tigInfo = ti;
+        }
+    }
 
     // Start theaded downloading
     ThreadGet *tg = new ThreadGet;
