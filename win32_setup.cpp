@@ -23,7 +23,7 @@ fs::path getBinPath(const std::string &appName)
   return getPathCSIDL(CSIDL_LOCAL_APPDATA) / appName / "bin";
 }
 
-fs:path getExe()
+fs::path getExe()
 {
   GetModuleFileName(NULL, pathbuf, MAX_PATH);
   return fs::path(pathbuf);
@@ -93,6 +93,8 @@ void createLinks(const std::string name, const std::string &exe)
 
 void copy_files(fs::path from, fs::path to)
 {
+  using namespace boost::filesystem;
+
   // Copy files over
   directory_iterator iter(from), end;
   for(; iter != end; ++iter)
@@ -140,18 +142,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   catch(std::exception &e)
     {
       MessageBox(NULL, e.what(), "Error", MB_ICONERROR);
-      failed = 1;
+      return 1;
     }
 
-  // Kill the zip file
-  fs::remove(zip);
+  // Run the installed program
+  ShellExecute(NULL, "open", dest_exe.c_str(),
+               NULL, NULL, SW_SHOW);
 
-  if(failed == 0)
-    {
-      // Run the installed program
-      ShellExecute(NULL, "open", dest_exe.c_str(),
-                   NULL, NULL, SW_SHOW);
-    }
-
-  return failed;
+  return 0;
 }
