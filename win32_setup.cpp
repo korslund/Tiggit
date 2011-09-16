@@ -7,8 +7,6 @@
 #include <stdexcept>
 #include <fstream>
 
-#include "unzip.hpp"
-
 namespace fs = boost::filesystem;
 
 TCHAR pathbuf[MAX_PATH];
@@ -16,13 +14,19 @@ WCHAR wbuf[MAX_PATH];
 
 fs::path getPathCSIDL(int csidl)
 {
-  SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, pathbuf);
+  SHGetFolderPath(NULL, csidl, NULL, 0, pathbuf);
   return fs::path(pathbuf);
 }
 
 fs::path getBinPath(const std::string &appName)
 {
   return getPathCSIDL(CSIDL_LOCAL_APPDATA) / appName / "bin";
+}
+
+fs:path getExe()
+{
+  GetModuleFileName(NULL, pathbuf, MAX_PATH);
+  return fs::path(pathbuf);
 }
 
 // Note: pointer only valid until next run
@@ -32,55 +36,9 @@ WCHAR *toWide(const std::string &str)
   return wbuf;
 }
 
-std::string getExe()
-{
-  GetModuleFileName(NULL, pathbuf, MAX_PATH);
-  return std::string(pathbuf);
-}
-
 void fail(const std::string &msg)
 {
   throw std::runtime_error(msg);
-}
-
-struct SizeInfo
-{
-  int sign, start, size;
-};
-
-// Extract payload from an exe file to the given destination folder
-void extractPayload(const std::string &exe,
-                    const std::string &dest)
-{
-  std::ifstream inf(exe.c_str(), std::ios::binary);
-  if(!inf)
-    fail("Failed to open " + exe);
-
-  // Read the payload descriptor
-  SizeInfo si;
-  inf.seekg(0, std::ios::end);
-  inf.seekg((int)inf.tellg()-sizeof(SizeInfo));
-  inf.read((char*)&si, sizeof(SizeInfo));
-
-  if(si.sign != 0x13737FAB)
-    fail("Missing payload in " + exe);
-
-  // Seek to the data
-  inf.clear();
-  inf.seekg(si.start);
-
-  // Set up the destination file
-  std::ofstream of(dest.c_str(), std::ios::binary);
-
-  // Read and dump file
-  char buf[4096];
-  while(si.size > 0)
-    {
-      inf.read(buf, sizeof(buf));
-      size_t count = inf.gcount();
-      of.write(buf, count);
-      si.size -= count;
-    }
 }
 
 void createLinks(const std::string name, const std::string &exe)
@@ -133,32 +91,51 @@ void createLinks(const std::string name, const std::string &exe)
   lnk->Release();
 }
 
+void copy_files(fs::path from, fs::path to)
+{
+  // Copy files over
+  directory_iterator iter(from), end;
+  for(; iter != end; ++iter)
+    {
+      path p = iter->path();
+
+      // Only process files
+      if(!is_regular_file(p)) continue;
+
+      // Skip setup.exe
+      if(p.leaf() == "setup.exe")
+        continue;
+
+      // Destination
+      path dest = to / p.leaf();
+
+      // Remove destination, if it exists
+      if(exists(dest))
+        remove(dest);
+
+      // Copy the file
+      copy_file(p, dest);
+    }
+}
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
                    LPSTR lpCmdLine, INT nCmdShow)
 {
   fs::path bin = getBinPath("tiggit");
-  std::string exe = getExe();
   std::string dest_exe = (bin/"tiggit.exe").string();
+  std::string name = "Tiggit Game Installer";
 
-  // Make sure bin/ exists
-  fs::create_directories(bin);
-
-  // Destination zip file
-  std::string zip = (bin / "tmp.zip").string();
-
-  int failed = 0;
   try
     {
-      // Extract embedded ZIP file
-      extractPayload(exe, zip);
+      // Make sure bin/ exists
+      fs::create_directories(bin);
 
-      // Unpack the contents into the bin/ folder
-      UnZip z;
-      z.unpack(zip, bin.string());
+      // Copy all our sibling files to bin/
+      fs::path from = getExe().branch_path();
+      copy_files(from, bin);
 
       // Create shortcuts
-      createLinks("Tiggit Game Installer", dest_exe);
+      createLinks(name, dest_exe);
     }
   catch(std::exception &e)
     {
