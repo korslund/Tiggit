@@ -78,19 +78,25 @@ struct Updater
     if((wxGetOsVersion() & wxOS_WINDOWS) == 0)
       return false;
 
-    // Update destination. (Don't use getPath, that creates the
-    // directory!)
-    string up_dest = (get.base / "update").string();
-
     // Our own exe path
     wxString this_wx = wxStandardPaths::Get().GetExecutablePath();
     string this_exe = string(this_wx.mb_str());
+
+    // Is there an override file in our current dir?
+    if(exists(path(this_exe).branch_path() / "override"))
+      // If so, skip auto update and just run the current version.
+      return false;
+
     // Canonical path
     path canon_path = get.getPath("bin");
     string canon_exe = (canon_path/"tiggit.exe").string();
 
     // Temporary exe used for updates
     string tmp_exe = (canon_path/"update.exe").string();
+
+    // Update destination. (Don't use getPath, that creates the
+    // directory!)
+    string up_dest = (get.base / "update").string();
 
     // Are we running from the canonical path?
     if(!boost::iequals(this_exe, canon_exe))

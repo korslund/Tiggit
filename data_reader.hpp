@@ -17,6 +17,26 @@ struct TigListReader
     throw std::runtime_error("ERROR parsing '" + filename + "':\n\n" + msg);
   }
 
+  // Process URL. This is a poor mans urlencode, but does the trick
+  // for 99% of cases.
+  static std::string URL(std::string res)
+  {
+    for(int i=0; i<res.size(); i++)
+      {
+        switch(res[i])
+          {
+          case ' ': res.replace(i, 1, "%20"); break;
+          case '!': res.replace(i, 1, "%21"); break;
+          case '"': res.replace(i, 1, "%22"); break;
+          case '\'': res.replace(i, 1, "%27"); break;
+          case '(': res.replace(i, 1, "%28"); break;
+          case ')': res.replace(i, 1, "%29"); break;
+          case '+': res.replace(i, 1, "%2B"); break;
+          }
+      }
+    return res;
+  }
+
   // Get the tigfile, from local cache if possible. Returns "" if the
   // fetch fails.
   std::string getTigFile(const std::string &name, const std::string &url,
@@ -55,8 +75,9 @@ struct TigListReader
         return false;
     }
 
-    t.url = root["url"].asString();
+    t.url = URL(root["url"].asString());
     t.launch = root["launch"].asString();
+    t.subdir = root["subdir"].asString();
     t.version = root["version"].asString();
 
     if(t.url == "")
@@ -106,7 +127,7 @@ struct TigListReader
 
     channel = root["channel"].asString();
     desc = root["desc"].asString();
-    location = root["location"].asString();
+    location = URL(root["location"].asString());
     homepage = root["homepage"].asString();
 
     // This must be present, the rest are optional
@@ -128,14 +149,16 @@ struct TigListReader
 
         // Get and parse tigfile
         DataList::TigInfo ti;
-        if(!decodeTigUrl(key, game["tigurl"].asString(), ti) || ti.launch == "")
+
+        std::string tigurl = URL(game["tigurl"].asString());
+
+        if(!decodeTigUrl(key, tigurl, ti) || ti.launch == "")
           continue;
 
         // Push the game into the list
         data.add(0, key, (chan/key).string(),
                  game["title"].asString(), game["desc"].asString(),
-                 game["fpshot"].asString(), game["tigurl"].asString(),
-                 ti);
+                 game["fpshot"].asString(), tigurl, ti);
       }
   }
 };

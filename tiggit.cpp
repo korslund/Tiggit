@@ -555,37 +555,56 @@ public:
         if(b == 1)
           {
             // Button1 == Launching
-            if((wxGetOsVersion() & wxOS_WINDOWS) != 0)
-              {
-                string program = (dir / e.tigInfo.launch).string();
 
-                // Change the working directory before running. Since
-                // none of our own code uses relative paths, this
-                // shouldn't affect our own operation.
-                wxSetWorkingDirectory(wxString(dir.string().c_str(), wxConvUTF8));
+            // Program to launch
+            string program = (dir / e.tigInfo.launch).string();
 
-                int res = wxExecute(wxString(program.c_str(), wxConvUTF8));
-                if(res == -1)
-                  cout << "Failed to launch " << program << endl;
-              }
+            /*
+            if((wxGetOsVersion() & wxOS_UNIX) != 0)
+              // Add 'wine' to the command. Just assume that all the
+              // games are windows-native atm. This is pretty flimsy,
+              // but acceptible for testing purposes.
+              program = "wine " + program;
+
             else
-              cout << "Launching currently only available on Windows\n";
+            */
+
+            if((wxGetOsVersion() & wxOS_WINDOWS) != 0)
+              cout << "WARNING: Launching will probably not work on your platform.\n";
+
+            // Change the working directory before running. Since none
+            // of our own code uses relative paths, this shouldn't
+            // affect our own operation.
+            boost::filesystem::path workDir = dir;
+            if(e.tigInfo.subdir != "")
+              workDir /= e.tigInfo.subdir;
+
+            wxSetWorkingDirectory(wxString(workDir.string().c_str(), wxConvUTF8));
+
+            int res = wxExecute(wxString(program.c_str(), wxConvUTF8));
+            if(res == -1)
+              cout << "Failed to launch " << program << endl;
 
             /* wxExecute allows a callback for when the program exists
                as well, letting us do things like (optionally)
                disabling downloads while running the program. I assume
-               this needs to be handled in a thread-like manner, and
-               we also need an intuitive backup plan in case the
-               callback is never called.
+               this needs to be handled in a thread-like reentrant
+               manner, and we also need an intuitive backup plan in
+               case the callback is never called, or if it's called
+               several times.
             */
           }
         else if(b == 2)
           {
             // Button2 == Uninstall
 
-            // Kill all the files
 	    try
 	      {
+                // First, make sure we are not killing our own working
+                // directory.
+                wxSetWorkingDirectory(wxString(get.base.string().c_str(), wxConvUTF8));
+
+                // Kill all the files
 		boost::filesystem::remove_all(dir);
 
 		// Revert status
@@ -703,6 +722,11 @@ class MyApp : public wxApp
 {
   MyTimer *time;
 
+  void test(const std::string &inp)
+  {
+    cout << inp << "  =>  " << tig_reader.URL(inp) << endl;
+  }
+
 public:
   virtual bool OnInit()
   {
@@ -734,6 +758,7 @@ public:
                                      version);
         frame->Show(true);
         time = new MyTimer(frame);
+
         return true;
       }
     catch(std::exception &e)

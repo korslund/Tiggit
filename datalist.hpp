@@ -9,7 +9,7 @@ struct DataList
 {
   struct TigInfo
   {
-    std::string url, launch, version;
+    std::string url, launch, subdir, version;
   };
 
   struct Entry
