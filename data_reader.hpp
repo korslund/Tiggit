@@ -8,6 +8,8 @@
 #include <boost/filesystem.hpp>
 #include "filegetter.hpp"
 
+#include "config.hpp"
+
 struct TigListReader
 {
   std::string filename, channel, desc, location, homepage;
@@ -93,6 +95,14 @@ struct TigListReader
     t.subdir = root["subdir"].asString();
     t.version = root["version"].asString();
 
+    t.title = root["title"].asString();
+    t.desc = root["desc"].asString();
+    t.shot = root["shot"].asString();
+    t.shot80x50 = root["shot80x50"].asString();
+    t.location = root["location"].asString();
+    t.devname = root["devname"].asString();
+    t.homepage = root["homepage"].asString();
+
     if(t.url == "")
       return false;
 
@@ -125,7 +135,7 @@ struct TigListReader
     Value root = readJson(file);
 
     // Check file type
-    if(root["type"] != "tiglist 1.0")
+    if(root["type"] != "tiglist 1.1")
       failThis("Not a valid tiglist");
 
     channel = root["channel"].asString();
@@ -148,20 +158,42 @@ struct TigListReader
     for(it = keys.begin(); it != keys.end(); it++)
       {
         const std::string &key = *it;
-        Value game = root[key];
+        std::string tigurl = URL(root[key].asString());
 
         // Get and parse tigfile
         DataList::TigInfo ti;
 
-        std::string tigurl = URL(game["tigurl"].asString());
+        // Prefer using cached .tig files, unless config tells us we
+        // need to update.
+        bool cacheFirst = !conf.updateTigs;
 
-        if(!decodeTigUrl(key, tigurl, ti) || ti.launch == "")
+        if(!decodeTigUrl(key, tigurl, ti, cacheFirst) || ti.launch == "")
           continue;
+
+        /* TODO: Use this later more generically, also for the list
+           file itself.
+
+        // If the location has changed, redirect to the new url
+        for(int i=0; i<10; i++)
+          {
+            if(ti.location == "" || ti.location == tigurl)
+              break;
+
+            DataList::TigInfo ti2;
+
+            // Fetch and decode the new location
+            if(!decodeTigUrl(key, ti.location, ti2, true))
+              break;
+
+            // We got a new valid file. Override existing info.
+            tigurl = ti.location;
+            ti = ti2;
+          }
+        */
 
         // Push the game into the list
         data.add(0, key, (chan/key).string(),
-                 game["title"].asString(), game["desc"].asString(),
-                 game["fpshot"].asString(), tigurl, ti);
+                 ti.title, ti.desc, tigurl, ti);
       }
   }
 };

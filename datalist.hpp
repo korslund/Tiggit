@@ -9,7 +9,8 @@ struct DataList
 {
   struct TigInfo
   {
-    std::string url, launch, subdir, version;
+    std::string url, launch, subdir, version, title, desc,
+      shot, shot80x50, location, devname, homepage;
   };
 
   struct Entry
@@ -23,7 +24,7 @@ struct DataList
     int status;
 
     // idname = channel/urlname
-    wxString urlname, idname, name, desc, fpshot, tigurl;
+    wxString urlname, idname, name, desc, tigurl;
 
     TigInfo tigInfo;
 
@@ -39,10 +40,9 @@ struct DataList
 
   void add(int status, const wxString &urlname, const wxString &idname,
            const wxString &name, const wxString &desc,
-           const wxString &fpshot, const wxString &tigurl,
-           const TigInfo &tiginfo)
+           const wxString &tigurl, const TigInfo &tiginfo)
   {
-    Entry e = { status, urlname, idname, name, desc, fpshot,
+    Entry e = { status, urlname, idname, name, desc,
                 tigurl, tiginfo, NULL, wxT("") };
     arr.push_back(e);
   }
@@ -52,7 +52,6 @@ struct DataList
            const std::string &idname,
            const std::string &name,
            const std::string &desc,
-           const std::string &fpshot,
            const std::string &tigurl,
            const TigInfo &tiginfo)
   {
@@ -61,7 +60,6 @@ struct DataList
         wxString(idname.c_str(), wxConvUTF8),
         wxString(name.c_str(), wxConvUTF8),
         wxString(desc.c_str(), wxConvUTF8),
-        wxString(fpshot.c_str(), wxConvUTF8),
         wxString(tigurl.c_str(), wxConvUTF8),
         tiginfo);
   }

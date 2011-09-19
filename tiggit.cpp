@@ -752,7 +752,9 @@ public:
           version = upd.version;
         }
 
-        updateData(false);
+        conf.load(get.base);
+
+        updateData(conf.updateList);
 
         MyFrame *frame = new MyFrame(wxT("Tiggit - The Indie Game Installer"),
                                      version);
