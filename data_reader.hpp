@@ -12,9 +12,31 @@ struct TigListReader
 {
   std::string filename, channel, desc, location, homepage;
 
-  void fail(const std::string &msg)
+  static void fail(const std::string &msg)
   {
-    throw std::runtime_error("ERROR parsing '" + filename + "':\n\n" + msg);
+    throw std::runtime_error(msg);
+  }
+
+  void failThis(const std::string &msg)
+  {
+    fail("ERROR parsing '" + filename + "':\n\n" + msg);
+  }
+
+  static Json::Value readJson(const std::string &file)
+  {
+    using namespace Json;
+
+    std::ifstream inf(file.c_str());
+    if(!inf)
+      fail("Cannot read " + file);
+
+    Value root;
+
+    Reader reader;
+    if(!reader.parse(inf, root))
+      fail(reader.getFormatedErrorMessages() + " reading " + file);
+
+    return root;
   }
 
   // Process URL. This is a poor mans urlencode, but does the trick
@@ -61,19 +83,10 @@ struct TigListReader
    */
   static bool decodeTigFile(const std::string &file, DataList::TigInfo &t)
   {
-    using namespace Json;
+    Json::Value root;
 
-    Value root;
-
-    {
-      std::ifstream inf(file.c_str());
-      if(!inf)
-        return false;
-
-      Reader reader;
-      if(!reader.parse(inf, root))
-        return false;
-    }
+    try { root = readJson(file); }
+    catch(...) { return false; }
 
     t.url = URL(root["url"].asString());
     t.launch = root["launch"].asString();
@@ -109,21 +122,11 @@ struct TigListReader
     using namespace Json;
     filename = file;
 
-    Value root;
-
-    {
-      std::ifstream inf(file.c_str());
-      if(!inf)
-        fail("Cannot read file");
-
-      Reader reader;
-      if(!reader.parse(inf, root))
-        fail(reader.getFormatedErrorMessages());
-    }
+    Value root = readJson(file);
 
     // Check file type
     if(root["type"] != "tiglist 1.0")
-      fail("Not a valid tiglist");
+      failThis("Not a valid tiglist");
 
     channel = root["channel"].asString();
     desc = root["desc"].asString();
@@ -131,7 +134,7 @@ struct TigListReader
     homepage = root["homepage"].asString();
 
     // This must be present, the rest are optional
-    if(channel == "") fail("Missing or invalid channel name");
+    if(channel == "") failThis("Missing or invalid channel name");
 
     // Traverse the list
     root = root["list"];

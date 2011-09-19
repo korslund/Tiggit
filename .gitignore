@@ -7,3 +7,4 @@ tiggit
 *.dll
 *.exe
 icon.res
+override
