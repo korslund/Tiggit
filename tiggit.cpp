@@ -50,16 +50,35 @@ void updateData(bool download)
       if(difftime(now,ft) > 60*60*24)
         download = true;
     }
+  else
+    // If the file didn't exist, download it.
+    download = true;
 
-  if(download)
+  try
     {
-      // Get the latest list from the net
-      string url = "http://tiggit.net/api/all_games.json";
-      get.getTo(url, "all_games.json");
-    }
+      if(download)
+        {
+          // Get the latest list from the net
+          string url = "http://tiggit.net/api/all_games.json";
+          get.getTo(url, "all_games.json");
+        }
 
-  tig_reader.loadData(lstfile, data);
-  jinst.read(data);
+      tig_reader.loadData(lstfile, data);
+      jinst.read(data);
+    }
+  catch(std::exception &e)
+    {
+      // Did we already try downloading?
+      if(download)
+        {
+          // Then fail, nothing more to do
+          wxString msg(e.what(), wxConvUTF8);
+          wxMessageBox(msg, wxT("Error"), wxOK | wxICON_ERROR);
+        }
+      else
+        // Nope. Try again, this time force a download.
+        updateData(true);
+    }
 }
 
 class MyList : public wxListCtrl
@@ -597,6 +616,14 @@ public:
         else if(b == 2)
           {
             // Button2 == Uninstall
+
+            // Are you sure?
+            int res = wxMessageBox(wxT("Are you sure you want to uninstall ") + e.name +
+                                   wxT("? All savegames and configuration will be lost."),
+                                   wxT("Really uninstall?"),
+                                   wxOK | wxCANCEL | wxICON_QUESTION);
+
+            if(res != wxOK) return;
 
 	    try
 	      {

@@ -167,7 +167,9 @@ struct TigListReader
         // need to update.
         bool cacheFirst = !conf.updateTigs;
 
-        if(!decodeTigUrl(key, tigurl, ti, cacheFirst) || ti.launch == "")
+        if(!decodeTigUrl(key, tigurl, ti, cacheFirst) ||
+           ti.launch == "" || ti.title == "")
+          // Skip the file if not enough info was found.
           continue;
 
         /* TODO: Use this later more generically, also for the list
