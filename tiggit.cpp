@@ -187,6 +187,13 @@ public:
   }
 };
 
+// Ask the user an OK/Cancel question.
+bool ask(const wxString &question)
+{
+  return wxMessageBox(question, wxT("Please confirm"),
+                      wxOK | wxCANCEL | wxICON_QUESTION) == wxOK;
+}
+
 #define myID_BUTTON1 21
 #define myID_BUTTON2 22
 #define myID_GAMEPAGE 24
@@ -203,10 +210,12 @@ class MyFrame : public wxFrame
   typedef std::set<int> IntSet;
   IntSet updateList;
 
+  time_t last_launch;
+
 public:
   MyFrame(const wxString& title, const std::string &ver)
     : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(800, 600)),
-      version(ver)
+      version(ver), last_launch(0)
   {
     Centre();
 
@@ -575,20 +584,20 @@ public:
           {
             // Button1 == Launching
 
+            // Check if we double-tapped
+            time_t now = time(0);
+
+            // Did we just start something?
+            if(difftime(now,last_launch) <= 10)
+              {
+                if(!ask(wxT("You just started a game. Are you sure you want to launch again?\n\nSome games may take a few seconds to start.")))
+                  return;
+              }
+
             // Program to launch
             string program = (dir / e.tigInfo.launch).string();
 
-            /*
-            if((wxGetOsVersion() & wxOS_UNIX) != 0)
-              // Add 'wine' to the command. Just assume that all the
-              // games are windows-native atm. This is pretty flimsy,
-              // but acceptible for testing purposes.
-              program = "wine " + program;
-
-            else
-            */
-
-            if((wxGetOsVersion() & wxOS_WINDOWS) != 0)
+            if((wxGetOsVersion() & wxOS_WINDOWS) == 0)
               cout << "WARNING: Launching will probably not work on your platform.\n";
 
             // Change the working directory before running. Since none
@@ -604,6 +613,9 @@ public:
             if(res == -1)
               cout << "Failed to launch " << program << endl;
 
+            // Update the last launch time
+            last_launch = now;
+
             /* wxExecute allows a callback for when the program exists
                as well, letting us do things like (optionally)
                disabling downloads while running the program. I assume
@@ -618,12 +630,9 @@ public:
             // Button2 == Uninstall
 
             // Are you sure?
-            int res = wxMessageBox(wxT("Are you sure you want to uninstall ") + e.name +
-                                   wxT("? All savegames and configuration will be lost."),
-                                   wxT("Really uninstall?"),
-                                   wxOK | wxCANCEL | wxICON_QUESTION);
-
-            if(res != wxOK) return;
+            if(!ask(wxT("Are you sure you want to uninstall ") + e.name +
+                    wxT("? All savegames and configuration will be lost.")))
+              return;;
 
 	    try
 	      {
