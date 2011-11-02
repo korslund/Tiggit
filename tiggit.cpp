@@ -20,6 +20,8 @@
 #include "json_installed.hpp"
 #include "auto_update.hpp"
 
+#include "auth.hpp"
+
 using namespace std;
 
 DataList data;
@@ -483,6 +485,14 @@ public:
         return;
       }
 
+    // Are we allowed to download games?
+    if(auth.isAdmin())
+      {
+        wxMessageBox(wxT("Administrators may not install games"),
+                     wxT("Error"), wxOK | wxICON_ERROR);
+        return;
+      }
+
     {
       // Update the .tig info
       DataList::TigInfo ti;
@@ -789,6 +799,7 @@ public:
         }
 
         conf.load(get.base);
+        auth.load();
 
         updateData(conf.updateList);
 
