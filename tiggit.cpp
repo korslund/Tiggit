@@ -605,21 +605,27 @@ public:
               }
 
             // Program to launch
-            string program = (dir / e.tigInfo.launch).string();
+            boost::filesystem::path program = dir / e.tigInfo.launch;
 
             if((wxGetOsVersion() & wxOS_WINDOWS) == 0)
               cout << "WARNING: Launching will probably not work on your platform.\n";
 
             // Change the working directory before running. Since none
-            // of our own code uses relative paths, this shouldn't
+            // of our own code uses relative paths, this should not
             // affect our own operation.
-            boost::filesystem::path workDir = dir;
+            boost::filesystem::path workDir;
+
+            // Calculate full working directory path
             if(e.tigInfo.subdir != "")
-              workDir /= e.tigInfo.subdir;
+              // Use user-requested sub-directory
+              workDir = dir / e.tigInfo.subdir;
+            else
+              // Use base path of the executable
+              workDir = program.branch_path();
 
             wxSetWorkingDirectory(wxString(workDir.string().c_str(), wxConvUTF8));
 
-            int res = wxExecute(wxString(program.c_str(), wxConvUTF8));
+            int res = wxExecute(wxString(program.string().c_str(), wxConvUTF8));
             if(res == -1)
               cout << "Failed to launch " << program << endl;
 
