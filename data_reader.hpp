@@ -3,6 +3,7 @@
 
 #include "datalist.hpp"
 #include <stdexcept>
+#include <stdlib.h>
 #include <json/json.h>
 #include <fstream>
 #include <boost/filesystem.hpp>
@@ -135,7 +136,7 @@ struct TigListReader
     Value root = readJson(file);
 
     // Check file type
-    if(root["type"] != "tiglist 1.1")
+    if(root["type"] != "tiglist 1.2")
       failThis("Not a valid tiglist");
 
     channel = root["channel"].asString();
@@ -158,7 +159,11 @@ struct TigListReader
     for(it = keys.begin(); it != keys.end(); it++)
       {
         const std::string &key = *it;
-        std::string tigurl = URL(root[key].asString());
+
+        Value game = root[key];
+        std::string tigurl = URL(game["tigurl"].asString());
+
+        int64_t add_time = atoll(game["add_time"].asString().c_str());
 
         // Get and parse tigfile
         DataList::TigInfo ti;
@@ -195,7 +200,8 @@ struct TigListReader
 
         // Push the game into the list
         data.add(0, key, (chan/key).string(),
-                 ti.title, ti.desc, tigurl, ti);
+                 ti.title, ti.desc, tigurl,
+                 add_time, ti);
       }
   }
 };

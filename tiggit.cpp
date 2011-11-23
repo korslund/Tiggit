@@ -9,7 +9,11 @@
 #include <iostream>
 #include <assert.h>
 #include <set>
+#include <vector>
 #include <time.h>
+#include <algorithm>
+
+#include <boost/algorithm/string.hpp>
 
 #include "curl_get.hpp"
 #include "decodeurl.hpp"
@@ -33,11 +37,177 @@ void writeConfig()
   jinst.write(data);
 }
 
+class ListKeeper
+{
+  std::vector<int> selection;
+  std::vector<int> indices;
+
+  bool setup;
+  bool ready;
+
+  /* 0 - title
+     1 - date
+   */
+  int sortBy;
+  bool reverse;
+
+  // Current search string
+  std::string search;
+
+  struct SortBase
+  {
+    virtual bool isLess(DataList::Entry &a, DataList::Entry &b) = 0;
+
+    bool operator()(int a, int b)
+    {
+      return isLess(data.arr[a], data.arr[b]);
+    }
+  };
+
+  struct TitleSort : SortBase
+  {
+    bool isLess(DataList::Entry &a, DataList::Entry &b)
+    {
+      return boost::algorithm::ilexicographical_compare(a.tigInfo.title,
+                                                        b.tigInfo.title);
+    }
+  };
+
+  struct DateSort : SortBase
+  {
+    bool isLess(DataList::Entry &a, DataList::Entry &b)
+    {
+      return a.add_time > b.add_time;
+    }
+  };
+
+  void doSort()
+  {
+    assert(ready && setup);
+
+    if(sortBy == 0)
+      {
+        if(reverse)
+          sort(indices.rbegin(), indices.rend(), TitleSort());
+        else
+          sort(indices.begin(), indices.end(), TitleSort());
+      }
+    else
+      {
+        // Some repeated code, thanks to C++ actually being quite a
+        // sucky language.
+        if(reverse)
+          sort(indices.rbegin(), indices.rend(), DateSort());
+        else
+          sort(indices.begin(), indices.end(), DateSort());
+      }
+  }
+
+  void makeSetup()
+  {
+    if(!setup)
+      {
+        // Are we searching?
+        if(search == "")
+          {
+            // Nope. Select all elements.
+            selection.resize(data.arr.size());
+            for(int i=0; i<selection.size(); i++)
+              selection[i] = i;
+          }
+        else
+          {
+            selection.resize(0);
+            selection.reserve(data.arr.size());
+
+            // Add all games that match the search. This is a dumb,
+            // slow and useless algorithm, but at current list sizes
+            // it's ok. Never optimize until you get hate mail.
+            for(int i=0; i<data.arr.size(); i++)
+              if(boost::algorithm::icontains(data.arr[i].tigInfo.title, search))
+                selection.push_back(i);
+          }
+
+        setup = true;
+        ready = false;
+      }
+
+    assert(setup);
+  }
+
+  void makeReady()
+  {
+    makeSetup();
+
+    if(!ready)
+      {
+        // Copy the search selection
+        indices.resize(selection.size());
+        for(int i=0; i<indices.size(); i++)
+          indices[i] = selection[i];
+
+        ready = true;
+
+        // Apply current sorting
+        doSort();
+      }
+
+    assert(indices.size() == selection.size());
+    assert(ready && setup);
+  }
+
+  void setSort(int type)
+  {
+    sortBy = type;
+    ready = false;
+  }
+
+public:
+
+  ListKeeper() : setup(false), ready(false), sortBy(0), reverse(false) {}
+
+  void sortTitle() { setSort(0); }
+  void sortDate() { setSort(1); }
+
+  void setReverse(bool rev)
+  {
+    reverse = rev;
+    ready = false;
+  }
+
+  void setSearch(const std::string &str)
+  {
+    search = str;
+    setup = false;
+  }
+
+  DataList::Entry &get(int index)
+  {
+    assert(index >= 0 && index < size());
+    makeReady();
+
+    return data.arr[indices[index]];
+  }
+
+  // Called whenever the source data list changes. It basically means
+  // we have to throw everything out.
+  void reset() { ready = false; setup = false; }
+
+  int size()
+  {
+    makeReady();
+    return indices.size();
+  }
+};
+
+ListKeeper lister;
+
 // Update data from all_games.json. If the parameter is true, force
 // download. If not, download only if the existing file is too old.
 void updateData(bool download)
 {
   data.arr.resize(0);
+  lister.reset();
 
   string lstfile = get.getPath("all_games.json");
 
@@ -66,6 +236,7 @@ void updateData(bool download)
         }
 
       tig_reader.loadData(lstfile, data);
+      lister.reset();
       jinst.read(data);
     }
   catch(std::exception &e)
@@ -101,12 +272,12 @@ public:
 
     col.SetId(0);
     col.SetText( wxT("Name") );
-    col.SetWidth(200);
+    col.SetWidth(300);
     InsertColumn(0, col);
 
     col.SetId(1);
-    col.SetText( wxT("Description") );
-    col.SetWidth(230);
+    col.SetText( wxT("Date added") );
+    col.SetWidth(120);
     InsertColumn(1, col);
 
     col.SetId(2);
@@ -138,13 +309,13 @@ public:
 
   void update()
   {
-    SetItemCount(data.arr.size());
+    SetItemCount(lister.size());
     setSelect(0);
   }
 
   wxListItemAttr *OnGetItemAttr(long item) const
   {
-    int s = data.arr[item].status;
+    int s = lister.get(item).status;
     if(s == 0) return NULL;
     if(s == 2) return (wxListItemAttr*)&green;
     return (wxListItemAttr*)&orange;
@@ -164,13 +335,13 @@ public:
   {
     static int i = 0;
 
-    const DataList::Entry &e = data.arr[item];
+    const DataList::Entry &e = lister.get(item);
 
     if(column == 0)
       return e.name;
 
     if(column == 1)
-      return e.desc;
+      return e.timeString;
 
     assert(column == 2);
 
@@ -201,6 +372,10 @@ bool ask(const wxString &question)
 #define myID_GAMEPAGE 24
 #define myID_LIST 25
 #define myID_MENU_REFRESH 30
+#define myID_SORT_TITLE 41
+#define myID_SORT_DATE 42
+#define myID_SORT_REVERSE 43
+#define myID_SEARCH_BOX 45
 
 class MyFrame : public wxFrame
 {
@@ -216,7 +391,7 @@ class MyFrame : public wxFrame
 
 public:
   MyFrame(const wxString& title, const std::string &ver)
-    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(800, 600)),
+    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(840, 700)),
       version(ver), last_launch(0)
   {
     Centre();
@@ -259,6 +434,18 @@ public:
     b2 = new wxButton(panel, myID_BUTTON2, wxT("No action"));
     rightPane->Add(b2, 0, wxBOTTOM | wxRIGHT, 10);
 
+    rightPane->Add(new wxRadioButton(panel, myID_SORT_TITLE, wxT("Sort by title"),
+                                     wxDefaultPosition, wxDefaultSize, wxRB_GROUP),
+                   0, wxRIGHT, 10);
+    rightPane->Add(new wxRadioButton(panel, myID_SORT_DATE, wxT("Sort by date")),
+                   0, wxRIGHT, 10);
+    rightPane->Add(new wxCheckBox(panel, myID_SORT_REVERSE, wxT("Reverse order")),
+                   0, wxRIGHT, 10);
+
+    rightPane->Add(new wxStaticText(panel, wxID_ANY, wxT("\nSearch:")), 0, wxRIGHT, 0);
+    rightPane->Add(new wxTextCtrl(panel, myID_SEARCH_BOX),
+                   0, wxRIGHT, 10);
+
     /*
     wxButton *b3 = new wxButton(panel, myID_GAMEPAGE, wxT("Homepage"));
     rightPane->Add(b3, 0, wxBOTTOM | wxRIGHT, 10);
@@ -294,6 +481,16 @@ public:
     Connect(myID_LIST, wxEVT_COMMAND_LIST_ITEM_ACTIVATED,
             wxListEventHandler(MyFrame::onListActivate));
 
+    Connect(myID_SORT_TITLE, wxEVT_COMMAND_RADIOBUTTON_SELECTED,
+            wxCommandEventHandler(MyFrame::onSortChange));
+    Connect(myID_SORT_DATE, wxEVT_COMMAND_RADIOBUTTON_SELECTED,
+            wxCommandEventHandler(MyFrame::onSortChange));
+    Connect(myID_SORT_REVERSE, wxEVT_COMMAND_CHECKBOX_CLICKED,
+            wxCommandEventHandler(MyFrame::onSortChange));
+
+    Connect(myID_SEARCH_BOX, wxEVT_COMMAND_TEXT_UPDATED,
+            wxCommandEventHandler(MyFrame::onSearch));
+
     Connect(wxID_ABOUT, wxEVT_COMMAND_MENU_SELECTED,
             wxCommandEventHandler(MyFrame::onAbout));
     Connect(wxID_EXIT, wxEVT_COMMAND_MENU_SELECTED,
@@ -309,6 +506,32 @@ public:
   void updateListData()
   {
     list->update();
+  }
+
+  void onSearch(wxCommandEvent &event)
+  {
+    string src = string(event.GetString().mb_str());
+    lister.setSearch(src);
+    list->update();
+  }
+
+  // I'm short on change, can you help a fella out?
+  void onSortChange(wxCommandEvent &event)
+  {
+    int id = event.GetId();
+
+    if(id == myID_SORT_REVERSE)
+      lister.setReverse(event.IsChecked());
+
+    else if(id == myID_SORT_TITLE)
+      lister.sortTitle();
+
+    else if(id == myID_SORT_DATE)
+      lister.sortDate();
+
+    else assert(0);
+
+    updateListData();
   }
 
   void onRefresh(wxCommandEvent &event)
@@ -344,7 +567,7 @@ public:
 
   void handleDownload(int index)
   {
-    DataList::Entry &e = data.arr[index];
+    DataList::Entry &e = lister.get(index);
 
     // If this is the current item, make sure the buttons are set
     // correctly.
@@ -471,8 +694,7 @@ public:
 
   void startDownload(int index)
   {
-    assert(index >= 0 && index < data.arr.size());
-    DataList::Entry &e = data.arr[index];
+    DataList::Entry &e = lister.get(index);
 
     if(e.extra)
       {
@@ -536,10 +758,10 @@ public:
 
   void doAction(int index, int b)
   {
-    if(index < 0 || index >= data.arr.size())
+    if(index < 0 || index >= lister.size())
       return;
 
-    const DataList::Entry &e = data.arr[index];
+    const DataList::Entry &e = lister.get(index);
 
     // True called as an 'activate' command, meaning that the list
     // told us the item was activated (it was double clicked or we
@@ -660,7 +882,7 @@ public:
 		boost::filesystem::remove_all(dir);
 
 		// Revert status
-		data.arr[index].status = 0;
+		lister.get(index).status = 0;
 		if(index == select) fixButtons();
 		list->RefreshItem(index);
 
@@ -680,10 +902,10 @@ public:
 
   void onGamePage(wxCommandEvent &event)
   {
-    if(select < 0 || select >= data.arr.size())
+    if(select < 0 || select >= lister.size())
       return;
 
-    wxLaunchDefaultBrowser(wxT("http://tiggit.net/game/") + data.arr[select].urlname);
+    wxLaunchDefaultBrowser(wxT("http://tiggit.net/game/") + lister.get(select).urlname);
   }
 
   void onButton(wxCommandEvent &event)
@@ -708,7 +930,7 @@ public:
   // Fix buttons for the current selected item (if any)
   void fixButtons()
   {
-    if(select < 0 || select >= data.arr.size())
+    if(select < 0 || select >= lister.size())
       {
         b1->Disable();
         b2->Disable();
@@ -717,7 +939,7 @@ public:
         return;
       }
 
-    int s = data.arr[select].status;
+    int s = lister.get(select).status;
 
     b1->Enable();
     b2->Enable();
