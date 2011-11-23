@@ -311,6 +311,10 @@ public:
   {
     SetItemCount(lister.size());
     setSelect(0);
+
+    // Doesn't seem to be needed on Linux. We could remove it there to
+    // make it a slightly less flickering experience.
+    Refresh();
   }
 
   wxListItemAttr *OnGetItemAttr(long item) const
