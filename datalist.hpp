@@ -64,7 +64,7 @@ struct DataList
 
     time_t t = add_time;
     char buf[50];
-    strftime(buf,50, "%F"/*"%F %T"*/, gmtime(&t));
+    strftime(buf,50, "%Y-%m-%d", gmtime(&t));
     e.timeString = wxString(buf, wxConvUTF8);
 
     arr.push_back(e);

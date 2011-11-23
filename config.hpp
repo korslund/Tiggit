@@ -38,15 +38,21 @@ struct Config
         string repo;
         if(f) f >> repo;
 
-        if(repo != "" && repo != "1")
+        if(repo != "" && repo != "1" && repo != "2")
           fail("Unknown repo version. Please update.");
+
+        if(repo == "1")
+          {
+            updateList = true;
+            write();
+          }
       }
   }
 
   void write()
   {
     std::ofstream of(filename.c_str());
-    of << "1";
+    of << "2";
   }
 };
 
