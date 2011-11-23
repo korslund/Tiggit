@@ -5,6 +5,7 @@
 #include <wx/listctrl.h>
 #include <wx/accel.h>
 #include <wx/imaglist.h>
+#include <wx/notebook.h>
 
 #include <iostream>
 #include <assert.h>
@@ -277,12 +278,12 @@ public:
 
     col.SetId(1);
     col.SetText( wxT("Date added") );
-    col.SetWidth(120);
+    col.SetWidth(115);
     InsertColumn(1, col);
 
     col.SetId(2);
     col.SetText( wxT("Status") );
-    col.SetWidth(240);
+    col.SetWidth(235);
     InsertColumn(2, col);
 
     green.SetBackgroundColour(wxColour(180,255,180));
@@ -375,88 +376,48 @@ bool ask(const wxString &question)
 #define myID_BUTTON2 22
 #define myID_GAMEPAGE 24
 #define myID_LIST 25
-#define myID_MENU_REFRESH 30
 #define myID_SORT_TITLE 41
 #define myID_SORT_DATE 42
 #define myID_SORT_REVERSE 43
 #define myID_SEARCH_BOX 45
 
-class MyFrame : public wxFrame
+struct MyPane : wxPanel
 {
   wxButton *b1, *b2;
   MyList *list;
   int select;
-  std::string version;
-
   time_t last_launch;
 
-public:
-  MyFrame(const wxString& title, const std::string &ver)
-    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(840, 700)),
-      version(ver), last_launch(0)
+  MyPane(wxWindow *parent)
+    : wxPanel(parent), select(-1), last_launch(0)
   {
-    Centre();
-
-    wxMenu *menuFile = new wxMenu;
-
-    menuFile->Append(wxID_ABOUT, _("&About..."));
-    menuFile->AppendSeparator();
-    menuFile->Append(wxID_EXIT, _("E&xit"));
-
-    wxMenu *menuList = new wxMenu;
-    menuList->Append(myID_MENU_REFRESH, wxT("&Reload list"));
-
-    wxMenuBar *menuBar = new wxMenuBar;
-    menuBar->Append(menuFile, _("&App"));
-    menuBar->Append(menuList, _("&List"));
-
-    SetMenuBar( menuBar );
-
-    CreateStatusBar();
-    SetStatusText(wxString(("Welcome to tiggit - version " + ver).c_str(), wxConvUTF8));
-
-    // Without this the menubar doesn't appear (in GTK at least) until
-    // you move the mouse. Probably some weird bug.
-    SendSizeEvent();
-
-    wxPanel *panel = new wxPanel(this);
-
-    list = new MyList(panel, myID_LIST);
-
-    wxBoxSizer *leftPane = new wxBoxSizer(wxVERTICAL);
-    leftPane->Add(list, 1, wxGROW | wxALL, 10);
-    leftPane->Add(new wxStaticText(panel, wxID_ANY, wxT("Mouse: double-click to install / play\nKeyboard: arrow keys + enter, delete")), 0, wxALL, 10);
+    list = new MyList(this, myID_LIST);
 
     wxBoxSizer *rightPane = new wxBoxSizer(wxVERTICAL);
 
-    b1 = new wxButton(panel, myID_BUTTON1, wxT("No action"));
+    b1 = new wxButton(this, myID_BUTTON1, wxT("No action"));
     rightPane->Add(b1, 0, wxBOTTOM | wxRIGHT, 10);
 
-    b2 = new wxButton(panel, myID_BUTTON2, wxT("No action"));
+    b2 = new wxButton(this, myID_BUTTON2, wxT("No action"));
     rightPane->Add(b2, 0, wxBOTTOM | wxRIGHT, 10);
 
-    rightPane->Add(new wxRadioButton(panel, myID_SORT_TITLE, wxT("Sort by title"),
+    rightPane->Add(new wxRadioButton(this, myID_SORT_TITLE, wxT("Sort by title"),
                                      wxDefaultPosition, wxDefaultSize, wxRB_GROUP),
                    0, wxRIGHT, 10);
-    rightPane->Add(new wxRadioButton(panel, myID_SORT_DATE, wxT("Sort by date")),
+    rightPane->Add(new wxRadioButton(this, myID_SORT_DATE, wxT("Sort by date")),
                    0, wxRIGHT, 10);
-    rightPane->Add(new wxCheckBox(panel, myID_SORT_REVERSE, wxT("Reverse order")),
-                   0, wxRIGHT, 10);
-
-    rightPane->Add(new wxStaticText(panel, wxID_ANY, wxT("\nSearch:")), 0, wxRIGHT, 0);
-    rightPane->Add(new wxTextCtrl(panel, myID_SEARCH_BOX),
+    rightPane->Add(new wxCheckBox(this, myID_SORT_REVERSE, wxT("Reverse order")),
                    0, wxRIGHT, 10);
 
-    /*
-    wxButton *b3 = new wxButton(panel, myID_GAMEPAGE, wxT("Homepage"));
-    rightPane->Add(b3, 0, wxBOTTOM | wxRIGHT, 10);
-    */
+    rightPane->Add(new wxStaticText(this, wxID_ANY, wxT("\nSearch:")), 0, wxRIGHT, 0);
+    rightPane->Add(new wxTextCtrl(this, myID_SEARCH_BOX),
+                   0, wxRIGHT, 10);
 
     wxBoxSizer *panes = new wxBoxSizer(wxHORIZONTAL);
-    panes->Add(leftPane, 1, wxGROW);
-    panes->Add(rightPane, 0, wxGROW | wxTOP, 35);
+    panes->Add(list, 1, wxGROW);
+    panes->Add(rightPane, 0, wxGROW | wxLEFT | wxTOP, 18);
 
-    panel->SetSizer(panes);
+    SetSizer(panes);
 
     // Add delete = 2nd button accelerator
     wxAcceleratorEntry entries[1];
@@ -465,48 +426,78 @@ public:
     SetAcceleratorTable(accel);
 
     Connect(myID_GAMEPAGE, wxEVT_COMMAND_BUTTON_CLICKED,
-            wxCommandEventHandler(MyFrame::onGamePage));
+            wxCommandEventHandler(MyPane::onGamePage));
 
     Connect(myID_BUTTON1, wxEVT_COMMAND_BUTTON_CLICKED,
-            wxCommandEventHandler(MyFrame::onButton));
+            wxCommandEventHandler(MyPane::onButton));
     Connect(myID_BUTTON2, wxEVT_COMMAND_BUTTON_CLICKED,
-            wxCommandEventHandler(MyFrame::onButton));
+            wxCommandEventHandler(MyPane::onButton));
 
     Connect(myID_LIST, wxEVT_COMMAND_LIST_ITEM_SELECTED,
-            wxListEventHandler(MyFrame::onListSelect));
+            wxListEventHandler(MyPane::onListSelect));
     Connect(myID_LIST, wxEVT_COMMAND_LIST_ITEM_DESELECTED,
-            wxListEventHandler(MyFrame::onListDeselect));
+            wxListEventHandler(MyPane::onListDeselect));
 
     Connect(myID_LIST, wxEVT_COMMAND_LIST_ITEM_RIGHT_CLICK,
-            wxListEventHandler(MyFrame::onListRightClick));
+            wxListEventHandler(MyPane::onListRightClick));
     Connect(myID_LIST, wxEVT_COMMAND_LIST_ITEM_ACTIVATED,
-            wxListEventHandler(MyFrame::onListActivate));
+            wxListEventHandler(MyPane::onListActivate));
 
     Connect(myID_SORT_TITLE, wxEVT_COMMAND_RADIOBUTTON_SELECTED,
-            wxCommandEventHandler(MyFrame::onSortChange));
+            wxCommandEventHandler(MyPane::onSortChange));
     Connect(myID_SORT_DATE, wxEVT_COMMAND_RADIOBUTTON_SELECTED,
-            wxCommandEventHandler(MyFrame::onSortChange));
+            wxCommandEventHandler(MyPane::onSortChange));
     Connect(myID_SORT_REVERSE, wxEVT_COMMAND_CHECKBOX_CLICKED,
-            wxCommandEventHandler(MyFrame::onSortChange));
+            wxCommandEventHandler(MyPane::onSortChange));
 
     Connect(myID_SEARCH_BOX, wxEVT_COMMAND_TEXT_UPDATED,
-            wxCommandEventHandler(MyFrame::onSearch));
+            wxCommandEventHandler(MyPane::onSearch));
 
-    Connect(wxID_ABOUT, wxEVT_COMMAND_MENU_SELECTED,
-            wxCommandEventHandler(MyFrame::onAbout));
-    Connect(wxID_EXIT, wxEVT_COMMAND_MENU_SELECTED,
-            wxCommandEventHandler(MyFrame::onExit));
+    list->update();
+    takeFocus();
+  }
 
-    Connect(myID_MENU_REFRESH, wxEVT_COMMAND_MENU_SELECTED,
-            wxCommandEventHandler(MyFrame::onRefresh));
-
-    updateListData();
+  void takeFocus()
+  {
     list->SetFocus();
   }
 
-  void updateListData()
+  // Fix buttons for the current selected item (if any)
+  void fixButtons()
   {
-    list->update();
+    if(select < 0 || select >= lister.size())
+      {
+        b1->Disable();
+        b2->Disable();
+        b1->SetLabel(wxT("No action"));
+        b2->SetLabel(wxT("No action"));
+        return;
+      }
+
+    int s = lister.get(select).status;
+
+    b1->Enable();
+    b2->Enable();
+
+    if(s == 0)
+      {
+        b1->SetLabel(wxT("Install"));
+        b2->SetLabel(wxT("No action"));
+        b2->Disable();
+      }
+    else if(s == 1 || s == 3)
+      {
+        b1->SetLabel(wxT("Pause"));
+        b2->SetLabel(wxT("Abort"));
+
+        // Pausing is not implemented yet
+        b1->Disable();
+      }
+    else if(s == 2)
+      {
+        b1->SetLabel(wxT("Play Now"));
+        b2->SetLabel(wxT("Uninstall"));
+      }
   }
 
   void onSearch(wxCommandEvent &event)
@@ -532,28 +523,11 @@ public:
 
     else assert(0);
 
-    updateListData();
-  }
-
-  void onRefresh(wxCommandEvent &event)
-  {
-    updateData(true);
-    updateListData();
-  }
-
-  void onAbout(wxCommandEvent &event)
-  {
-    std::string str = "TIGGIT - The Indie Game Installer\nVersion " + version;
-    wxMessageBox(wxString(str.c_str(), wxConvUTF8), wxT("About"), wxOK);
-  }
-
-  void onExit(wxCommandEvent &event)
-  {
-    Close();
+    list->update();
   }
 
   // Create a nice size string
-  wxString sizify(int size)
+  static wxString sizify(int size)
   {
     wxString tmp;
     if(size > 1024*1024)
@@ -671,14 +645,6 @@ public:
 
     // In any case, update the display
     list->RefreshItem(index);
-  }
-
-  // Called regularly by an external timer, used to update
-  // thread-dependent data
-  void tick()
-  {
-    for(int i=0; i<lister.size(); i++)
-      handleDownload(i);
   }
 
   void startDownload(int index)
@@ -914,44 +880,6 @@ public:
     fixButtons();
   }
 
-  // Fix buttons for the current selected item (if any)
-  void fixButtons()
-  {
-    if(select < 0 || select >= lister.size())
-      {
-        b1->Disable();
-        b2->Disable();
-        b1->SetLabel(wxT("No action"));
-        b2->SetLabel(wxT("No action"));
-        return;
-      }
-
-    int s = lister.get(select).status;
-
-    b1->Enable();
-    b2->Enable();
-
-    if(s == 0)
-      {
-        b1->SetLabel(wxT("Install"));
-        b2->SetLabel(wxT("No action"));
-        b2->Disable();
-      }
-    else if(s == 1 || s == 3)
-      {
-        b1->SetLabel(wxT("Pause"));
-        b2->SetLabel(wxT("Abort"));
-
-        // Pausing is not implemented yet
-        b1->Disable();
-      }
-    else if(s == 2)
-      {
-        b1->SetLabel(wxT("Play Now"));
-        b2->SetLabel(wxT("Uninstall"));
-      }
-  }
-
   void onListRightClick(wxListEvent &event)
   {
     cout << "Context menu on " << event.GetIndex() << endl;
@@ -960,6 +888,132 @@ public:
   void onListActivate(wxListEvent &event)
   {
     doAction(event.GetIndex(), 3);
+  }
+};
+
+#define myID_MENU_REFRESH 30
+#define myID_GOLEFT 31
+#define myID_GORIGHT 32
+
+class MyFrame : public wxFrame
+{
+  std::string version;
+  MyPane *pane;
+  wxNotebook *book;
+
+public:
+  MyFrame(const wxString& title, const std::string &ver)
+    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(845, 700)),
+      version(ver)
+  {
+    Centre();
+
+    wxMenu *menuFile = new wxMenu;
+
+    menuFile->Append(wxID_ABOUT, _("&About..."));
+    menuFile->AppendSeparator();
+    menuFile->Append(wxID_EXIT, _("E&xit"));
+
+    wxMenu *menuList = new wxMenu;
+    menuList->Append(myID_MENU_REFRESH, wxT("&Reload list"));
+
+    wxMenuBar *menuBar = new wxMenuBar;
+    menuBar->Append(menuFile, _("&App"));
+    menuBar->Append(menuList, _("&List"));
+
+    SetMenuBar( menuBar );
+
+    CreateStatusBar();
+    SetStatusText(wxString(("Welcome to tiggit - version " + ver).c_str(), wxConvUTF8));
+
+    // Without this the menubar doesn't appear (in GTK on Linux) until
+    // you move the mouse. Probably some weird bug.
+    SendSizeEvent();
+
+    wxPanel *panel = new wxPanel(this);
+    book = new wxNotebook(panel, wxID_ANY);
+    pane = new MyPane(book);
+
+    book->AddPage(pane, wxT("All"), true);
+    book->AddPage(new wxStaticText(book, wxID_ANY, wxT("This is a test")),
+                  wxT("Test"));
+
+    wxBoxSizer *mainSizer = new wxBoxSizer(wxVERTICAL);
+    mainSizer->Add(book, 1, wxGROW | wxALL, 10);
+    mainSizer->Add(new wxStaticText(panel, wxID_ANY, wxT("Mouse: double-click to install / play\nKeyboard: arrow keys + enter, delete")), 0, wxALL, 10);
+
+    panel->SetSizer(mainSizer);
+
+    // Add left/right => control tabs
+    wxAcceleratorEntry entries[2];
+    entries[0].Set(wxACCEL_NORMAL, WXK_LEFT, myID_GOLEFT);
+    entries[1].Set(wxACCEL_NORMAL, WXK_RIGHT, myID_GORIGHT);
+    wxAcceleratorTable accel(2, entries);
+    SetAcceleratorTable(accel);
+
+    Connect(wxID_ABOUT, wxEVT_COMMAND_MENU_SELECTED,
+            wxCommandEventHandler(MyFrame::onAbout));
+    Connect(wxID_EXIT, wxEVT_COMMAND_MENU_SELECTED,
+            wxCommandEventHandler(MyFrame::onExit));
+    Connect(myID_MENU_REFRESH, wxEVT_COMMAND_MENU_SELECTED,
+            wxCommandEventHandler(MyFrame::onRefresh));
+
+    Connect(myID_GOLEFT, wxEVT_COMMAND_BUTTON_CLICKED,
+            wxCommandEventHandler(MyFrame::onLeftRight));
+    Connect(myID_GORIGHT, wxEVT_COMMAND_BUTTON_CLICKED,
+            wxCommandEventHandler(MyFrame::onLeftRight));
+
+    pane->takeFocus();
+  }
+
+  void onLeftRight(wxCommandEvent &event)
+  {
+    if(event.GetId() == myID_GOLEFT)
+      cout << "Going left\n";
+    else
+      cout << "Going right\n";
+
+    // TODO: Use book->AdvanceSelection here
+
+    // TODO: Focus control. We should call pane->takeFocus() on the
+    // appropriate pane. It doesn't do this itself, because that
+    // disturbs normal keyboard usage of the tabs. It should only
+    // steal focus when using these arrow key accelerators.
+  }
+
+  void onRefresh(wxCommandEvent &event)
+  {
+    updateData(true);
+
+    // TODO: Should update ALL panes
+    pane->list->update();
+  }
+
+  void onAbout(wxCommandEvent &event)
+  {
+    std::string str = "TIGGIT - The Indie Game Installer\nVersion " + version;
+    wxMessageBox(wxString(str.c_str(), wxConvUTF8), wxT("About"), wxOK);
+  }
+
+  void onExit(wxCommandEvent &event)
+  {
+    Close();
+  }
+
+  // Called regularly by an external timer, used to update
+  // thread-dependent data
+  void tick()
+  {
+    // This too has to be sent to all panes. Well actually, I'm not
+    // sure. We have mixed up display stuff AND actual thread stuff in
+    // here. BUT I think the status updates only happen once, we are
+    // after all refering to the same Element, so I think it won't
+    // cause any trouble to update all of them. This entire thing will
+    // probably change a lot after we've rewritten the thread system
+    // though.
+
+    for(int i=0; i<lister.size(); i++)
+      pane->handleDownload(i);
   }
 };
 
