@@ -388,9 +388,6 @@ class MyFrame : public wxFrame
   int select;
   std::string version;
 
-  typedef std::set<int> IntSet;
-  IntSet updateList;
-
   time_t last_launch;
 
 public:
@@ -580,9 +577,6 @@ public:
     // Neither downloading or unpacking
     if(e.status != 1 && e.status != 3)
       {
-        // We're done, remove ourselves from the list
-        updateList.erase(index);
-
         // Make sure config is updated
         writeConfig();
         return;
@@ -680,20 +674,11 @@ public:
   }
 
   // Called regularly by an external timer, used to update
-  // thread-dependent
+  // thread-dependent data
   void tick()
   {
-    for(IntSet::const_iterator it = updateList.begin();
-        it != updateList.end();)
-      {
-        int i = *it;
-
-        // Update iterator first, handleDownload() might remove the
-        // item from the list.
-        it++;
-
-        handleDownload(i);
-      }
+    for(int i=0; i<lister.size(); i++)
+      handleDownload(i);
   }
 
   void startDownload(int index)
@@ -754,9 +739,7 @@ public:
     e.status = 1;
     e.extra = tg;
 
-    // Finally, remember to update this entry later, and update it
-    // now.
-    updateList.insert(index);
+    // Finally update this entry now.
     handleDownload(index);
   }
 
