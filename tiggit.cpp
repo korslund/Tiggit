@@ -10,11 +10,7 @@
 #include <iostream>
 #include <assert.h>
 #include <set>
-#include <vector>
 #include <time.h>
-#include <algorithm>
-
-#include <boost/algorithm/string.hpp>
 
 #include "curl_get.hpp"
 #include "decodeurl.hpp"
@@ -24,7 +20,7 @@
 #include "install.hpp"
 #include "json_installed.hpp"
 #include "auto_update.hpp"
-
+#include "listkeeper.hpp"
 #include "auth.hpp"
 
 using namespace std;
@@ -38,177 +34,11 @@ void writeConfig()
   jinst.write(data);
 }
 
-class ListKeeper
-{
-  std::vector<int> selection;
-  std::vector<int> indices;
-
-  bool setup;
-  bool ready;
-
-  /* 0 - title
-     1 - date
-   */
-  int sortBy;
-  bool reverse;
-
-  // Current search string
-  std::string search;
-
-  struct SortBase
-  {
-    virtual bool isLess(DataList::Entry &a, DataList::Entry &b) = 0;
-
-    bool operator()(int a, int b)
-    {
-      return isLess(data.arr[a], data.arr[b]);
-    }
-  };
-
-  struct TitleSort : SortBase
-  {
-    bool isLess(DataList::Entry &a, DataList::Entry &b)
-    {
-      return boost::algorithm::ilexicographical_compare(a.tigInfo.title,
-                                                        b.tigInfo.title);
-    }
-  };
-
-  struct DateSort : SortBase
-  {
-    bool isLess(DataList::Entry &a, DataList::Entry &b)
-    {
-      return a.add_time > b.add_time;
-    }
-  };
-
-  void doSort()
-  {
-    assert(ready && setup);
-
-    if(sortBy == 0)
-      {
-        if(reverse)
-          sort(indices.rbegin(), indices.rend(), TitleSort());
-        else
-          sort(indices.begin(), indices.end(), TitleSort());
-      }
-    else
-      {
-        // Some repeated code, thanks to C++ actually being quite a
-        // sucky language.
-        if(reverse)
-          sort(indices.rbegin(), indices.rend(), DateSort());
-        else
-          sort(indices.begin(), indices.end(), DateSort());
-      }
-  }
-
-  void makeSetup()
-  {
-    if(!setup)
-      {
-        // Are we searching?
-        if(search == "")
-          {
-            // Nope. Select all elements.
-            selection.resize(data.arr.size());
-            for(int i=0; i<selection.size(); i++)
-              selection[i] = i;
-          }
-        else
-          {
-            selection.resize(0);
-            selection.reserve(data.arr.size());
-
-            // Add all games that match the search. This is a dumb,
-            // slow and useless algorithm, but at current list sizes
-            // it's ok. Never optimize until you get hate mail.
-            for(int i=0; i<data.arr.size(); i++)
-              if(boost::algorithm::icontains(data.arr[i].tigInfo.title, search))
-                selection.push_back(i);
-          }
-
-        setup = true;
-        ready = false;
-      }
-
-    assert(setup);
-  }
-
-  void makeReady()
-  {
-    makeSetup();
-
-    if(!ready)
-      {
-        // Copy the search selection
-        indices.resize(selection.size());
-        for(int i=0; i<indices.size(); i++)
-          indices[i] = selection[i];
-
-        ready = true;
-
-        // Apply current sorting
-        doSort();
-      }
-
-    assert(indices.size() == selection.size());
-    assert(ready && setup);
-  }
-
-  void setSort(int type)
-  {
-    sortBy = type;
-    ready = false;
-  }
-
-public:
-
-  ListKeeper() : setup(false), ready(false), sortBy(0), reverse(false) {}
-
-  void sortTitle() { setSort(0); }
-  void sortDate() { setSort(1); }
-
-  void setReverse(bool rev)
-  {
-    reverse = rev;
-    ready = false;
-  }
-
-  void setSearch(const std::string &str)
-  {
-    search = str;
-    setup = false;
-  }
-
-  DataList::Entry &get(int index)
-  {
-    assert(index >= 0 && index < size());
-    makeReady();
-
-    return data.arr[indices[index]];
-  }
-
-  // Called whenever the source data list changes. It basically means
-  // we have to throw everything out.
-  void reset() { ready = false; setup = false; }
-
-  int size()
-  {
-    makeReady();
-    return indices.size();
-  }
-};
-
-ListKeeper lister;
-
 // Update data from all_games.json. If the parameter is true, force
 // download. If not, download only if the existing file is too old.
 void updateData(bool download)
 {
   data.arr.resize(0);
-  lister.reset();
 
   string lstfile = get.getPath("all_games.json");
 
@@ -237,7 +67,6 @@ void updateData(bool download)
         }
 
       tig_reader.loadData(lstfile, data);
-      lister.reset();
       jinst.read(data);
     }
   catch(std::exception &e)
@@ -260,11 +89,13 @@ class MyList : public wxListCtrl
   wxListItemAttr green, orange;
   wxString textNotInst, textReady;
   wxImageList images;
+  ListKeeper &lister;
 
 public:
-  MyList(wxWindow *parent, int ID=wxID_ANY)
+  MyList(wxWindow *parent, int ID, ListKeeper &lst)
     : wxListCtrl(parent, ID, wxDefaultPosition, wxDefaultSize,
-                 wxLC_REPORT | wxLC_VIRTUAL | wxLC_SINGLE_SEL)
+                 wxLC_REPORT | wxLC_VIRTUAL | wxLC_SINGLE_SEL),
+      lister(lst)
   {
     textNotInst = wxT("Not installed");
     textReady = wxT("Ready to play");
@@ -372,6 +203,51 @@ bool ask(const wxString &question)
                       wxOK | wxCANCEL | wxICON_QUESTION) == wxOK;
 }
 
+struct TabBase : wxPanel
+{
+  TabBase(wxWindow *parent)
+    : wxPanel(parent) {}
+
+  // Called when the tab is selected, letting the tab to direct focus
+  // to a sub-element.
+  virtual void takeFocus() = 0;
+
+  // Called regularly to update information. Currently called for all
+  // tabs, will soon only be called for the visible tab.
+  virtual void tick() = 0;
+
+  // Called whenever the root data table has changed, basically
+  // instructing a complete reset on everything that depends on the
+  // game database.
+  virtual void dataChanged() = 0;
+
+  // Get the title of this tab
+  virtual wxString getTitle() = 0;
+};
+
+struct TestTab : TabBase
+{
+  TestTab(wxWindow *parent)
+    : TabBase(parent)
+  {
+    new wxStaticText(this, wxID_ANY, wxT("This is a test tab"));
+  }
+
+  void takeFocus()
+  {
+    cout << "Test tab got focus!\n";
+  }
+
+  void tick() {}
+
+  void dataChanged()
+  {
+    cout << "The world is changing.\n";
+  }
+
+  wxString getTitle() { return wxT("TestTab"); }
+};
+
 #define myID_BUTTON1 21
 #define myID_BUTTON2 22
 #define myID_GAMEPAGE 24
@@ -381,17 +257,21 @@ bool ask(const wxString &question)
 #define myID_SORT_REVERSE 43
 #define myID_SEARCH_BOX 45
 
-struct MyPane : wxPanel
+struct ListTab : TabBase
 {
   wxButton *b1, *b2;
   MyList *list;
   int select;
   time_t last_launch;
+  ListKeeper lister;
 
-  MyPane(wxWindow *parent)
-    : wxPanel(parent), select(-1), last_launch(0)
+  wxString tabName;
+
+  ListTab(wxWindow *parent, const wxString &name)
+    : TabBase(parent), select(-1), last_launch(0),
+      lister(data), tabName(name)
   {
-    list = new MyList(this, myID_LIST);
+    list = new MyList(this, myID_LIST, lister);
 
     wxBoxSizer *rightPane = new wxBoxSizer(wxVERTICAL);
 
@@ -426,35 +306,40 @@ struct MyPane : wxPanel
     SetAcceleratorTable(accel);
 
     Connect(myID_GAMEPAGE, wxEVT_COMMAND_BUTTON_CLICKED,
-            wxCommandEventHandler(MyPane::onGamePage));
+            wxCommandEventHandler(ListTab::onGamePage));
 
     Connect(myID_BUTTON1, wxEVT_COMMAND_BUTTON_CLICKED,
-            wxCommandEventHandler(MyPane::onButton));
+            wxCommandEventHandler(ListTab::onButton));
     Connect(myID_BUTTON2, wxEVT_COMMAND_BUTTON_CLICKED,
-            wxCommandEventHandler(MyPane::onButton));
+            wxCommandEventHandler(ListTab::onButton));
 
     Connect(myID_LIST, wxEVT_COMMAND_LIST_ITEM_SELECTED,
-            wxListEventHandler(MyPane::onListSelect));
+            wxListEventHandler(ListTab::onListSelect));
     Connect(myID_LIST, wxEVT_COMMAND_LIST_ITEM_DESELECTED,
-            wxListEventHandler(MyPane::onListDeselect));
+            wxListEventHandler(ListTab::onListDeselect));
 
     Connect(myID_LIST, wxEVT_COMMAND_LIST_ITEM_RIGHT_CLICK,
-            wxListEventHandler(MyPane::onListRightClick));
+            wxListEventHandler(ListTab::onListRightClick));
     Connect(myID_LIST, wxEVT_COMMAND_LIST_ITEM_ACTIVATED,
-            wxListEventHandler(MyPane::onListActivate));
+            wxListEventHandler(ListTab::onListActivate));
 
     Connect(myID_SORT_TITLE, wxEVT_COMMAND_RADIOBUTTON_SELECTED,
-            wxCommandEventHandler(MyPane::onSortChange));
+            wxCommandEventHandler(ListTab::onSortChange));
     Connect(myID_SORT_DATE, wxEVT_COMMAND_RADIOBUTTON_SELECTED,
-            wxCommandEventHandler(MyPane::onSortChange));
+            wxCommandEventHandler(ListTab::onSortChange));
     Connect(myID_SORT_REVERSE, wxEVT_COMMAND_CHECKBOX_CLICKED,
-            wxCommandEventHandler(MyPane::onSortChange));
+            wxCommandEventHandler(ListTab::onSortChange));
 
     Connect(myID_SEARCH_BOX, wxEVT_COMMAND_TEXT_UPDATED,
-            wxCommandEventHandler(MyPane::onSearch));
+            wxCommandEventHandler(ListTab::onSearch));
 
     list->update();
     takeFocus();
+  }
+
+  wxString getTitle()
+  {
+    return tabName + wxString::Format(wxT(" (%d)"), lister.baseSize());
   }
 
   void takeFocus()
@@ -853,6 +738,12 @@ struct MyPane : wxPanel
       }
   }
 
+  void tick()
+  {
+    for(int i=0; i<lister.size(); i++)
+      handleDownload(i);
+  }
+
   void onGamePage(wxCommandEvent &event)
   {
     if(select < 0 || select >= lister.size())
@@ -889,16 +780,22 @@ struct MyPane : wxPanel
   {
     doAction(event.GetIndex(), 3);
   }
+
+  void dataChanged()
+  {
+    lister.reset();
+    list->update();
+  }
 };
 
 #define myID_MENU_REFRESH 30
 #define myID_GOLEFT 31
 #define myID_GORIGHT 32
+#define myID_BOOK 33
 
 class MyFrame : public wxFrame
 {
   std::string version;
-  MyPane *pane;
   wxNotebook *book;
 
 public:
@@ -931,12 +828,11 @@ public:
     SendSizeEvent();
 
     wxPanel *panel = new wxPanel(this);
-    book = new wxNotebook(panel, wxID_ANY);
-    pane = new MyPane(book);
+    book = new wxNotebook(panel, myID_BOOK);
 
-    book->AddPage(pane, wxT("All"), true);
-    book->AddPage(new wxStaticText(book, wxID_ANY, wxT("This is a test")),
-                  wxT("Test"));
+    book->AddPage(new ListTab(book, wxT("All")), wxT(""), true);
+    book->AddPage(new ListTab(book, wxT("Rest")), wxT(""));
+    book->AddPage(new TestTab(book), wxT(""));
 
     wxBoxSizer *mainSizer = new wxBoxSizer(wxVERTICAL);
     mainSizer->Add(book, 1, wxGROW | wxALL, 10);
@@ -963,30 +859,56 @@ public:
     Connect(myID_GORIGHT, wxEVT_COMMAND_BUTTON_CLICKED,
             wxCommandEventHandler(MyFrame::onLeftRight));
 
-    pane->takeFocus();
+    setTabFocus();
+    setTitles();
+  }
+
+  TabBase *getTab(int i)
+  {
+    assert(book);
+    TabBase *res = dynamic_cast<TabBase*>(book->GetPage(i));
+    assert(res);
+    return res;
+  }
+
+  /* Get current tab. Note: Do NOT use this in tab selection event
+     handling! Because it may refer to EITHER the new or the old tab,
+     depending on platform. Use wxNotebookEvent::GetSelection instead.
+
+     May return NULL if no tab is selected.
+   */
+  TabBase *getCurrentTab()
+  {
+    int sel = book->GetSelection();
+    if(sel >= 0) return getTab(sel);
+    return NULL;
+  }
+
+  void setTabFocus()
+  {
+    TabBase *t = getCurrentTab();
+    if(t) t->takeFocus();
+  }
+
+  void setTitles()
+  {
+    for(int i=0; i<book->GetPageCount(); i++)
+      book->SetPageText(i, getTab(i)->getTitle());
   }
 
   void onLeftRight(wxCommandEvent &event)
   {
-    if(event.GetId() == myID_GOLEFT)
-      cout << "Going left\n";
-    else
-      cout << "Going right\n";
-
-    // TODO: Use book->AdvanceSelection here
-
-    // TODO: Focus control. We should call pane->takeFocus() on the
-    // appropriate pane. It doesn't do this itself, because that
-    // disturbs normal keyboard usage of the tabs. It should only
-    // steal focus when using these arrow key accelerators.
+    book->AdvanceSelection(event.GetId() == myID_GORIGHT);
+    setTabFocus();
   }
 
   void onRefresh(wxCommandEvent &event)
   {
     updateData(true);
 
-    // TODO: Should update ALL panes
-    pane->list->update();
+    // Notify all tabs that data has changed
+    for(int i=0; i<book->GetPageCount(); i++)
+      getTab(i)->dataChanged();
   }
 
   void onAbout(wxCommandEvent &event)
@@ -1004,16 +926,20 @@ public:
   // thread-dependent data
   void tick()
   {
-    // This too has to be sent to all panes. Well actually, I'm not
-    // sure. We have mixed up display stuff AND actual thread stuff in
-    // here. BUT I think the status updates only happen once, we are
-    // after all refering to the same Element, so I think it won't
-    // cause any trouble to update all of them. This entire thing will
-    // probably change a lot after we've rewritten the thread system
-    // though.
+    /* TODO: We have mixed up display stuff AND actual thread handling
+       stuff in tick, so at the moment we have to update all tabs.
 
-    for(int i=0; i<lister.size(); i++)
-      pane->handleDownload(i);
+       After we've rewritten the thread system to handle itself more
+       autonomously though, we'll only need to update the displayed
+       tab since the ticks will be cosmetic.
+    */
+
+    /*
+    TabBase *t = getCurrentTab();
+    if(t) t->tick();
+    */
+    for(int i=0; i<book->GetPageCount(); i++)
+      getTab(i)->tick();
   }
 };
 
