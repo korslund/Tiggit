@@ -91,31 +91,17 @@ class MyList : public wxListCtrl
   wxImageList images;
   ListKeeper &lister;
 
+  // Number of columns
+  int colNum;
+
 public:
   MyList(wxWindow *parent, int ID, ListKeeper &lst)
     : wxListCtrl(parent, ID, wxDefaultPosition, wxDefaultSize,
                  wxLC_REPORT | wxLC_VIRTUAL | wxLC_SINGLE_SEL),
-      lister(lst)
+      lister(lst), colNum(0)
   {
     textNotInst = wxT("Not installed");
     textReady = wxT("Ready to play");
-
-    wxListItem col;
-
-    col.SetId(0);
-    col.SetText( wxT("Name") );
-    col.SetWidth(300);
-    InsertColumn(0, col);
-
-    col.SetId(1);
-    col.SetText( wxT("Date added") );
-    col.SetWidth(115);
-    InsertColumn(1, col);
-
-    col.SetId(2);
-    col.SetText( wxT("Status") );
-    col.SetWidth(235);
-    InsertColumn(2, col);
 
     green.SetBackgroundColour(wxColour(180,255,180));
     green.SetTextColour(wxColour(0,0,0));
@@ -132,6 +118,16 @@ public:
     wxBitmap bmp(img);
     images.Add(bmp);
     */
+  }
+
+  void addColumn(const wxString &name, int width)
+  {
+    wxListItem col;
+    col.SetId(colNum);
+    col.SetText(name);
+    col.SetWidth(width);
+    InsertColumn(colNum, col);
+    colNum++;
   }
 
   void setSelect(int index)
@@ -225,9 +221,9 @@ struct TabBase : wxPanel
   virtual wxString getTitle() = 0;
 };
 
-struct TestTab : TabBase
+struct NewsTab : TabBase
 {
-  TestTab(wxWindow *parent)
+  NewsTab(wxWindow *parent)
     : TabBase(parent)
   {
     new wxStaticText(this, wxID_ANY, wxT("This is a test tab"));
@@ -245,7 +241,7 @@ struct TestTab : TabBase
     cout << "The world is changing.\n";
   }
 
-  wxString getTitle() { return wxT("TestTab"); }
+  wxString getTitle() { return wxT("News"); }
 };
 
 #define myID_BUTTON1 21
@@ -272,6 +268,10 @@ struct ListTab : TabBase
       lister(data), tabName(name)
   {
     list = new MyList(this, myID_LIST, lister);
+
+    list->addColumn(wxT("Name"), 300);
+    list->addColumn(wxT("Date added"), 115);
+    list->addColumn(wxT("Status"), 235);
 
     wxBoxSizer *rightPane = new wxBoxSizer(wxVERTICAL);
 
@@ -830,9 +830,9 @@ public:
     wxPanel *panel = new wxPanel(this);
     book = new wxNotebook(panel, myID_BOOK);
 
-    book->AddPage(new ListTab(book, wxT("All")), wxT(""), true);
-    book->AddPage(new ListTab(book, wxT("Rest")), wxT(""));
-    book->AddPage(new TestTab(book), wxT(""));
+    book->AddPage(new ListTab(book, wxT("Games")), wxT(""), true);
+    book->AddPage(new ListTab(book, wxT("Installed")), wxT(""));
+    //book->AddPage(new NewsTab(book), wxT(""));
 
     wxBoxSizer *mainSizer = new wxBoxSizer(wxVERTICAL);
     mainSizer->Add(book, 1, wxGROW | wxALL, 10);

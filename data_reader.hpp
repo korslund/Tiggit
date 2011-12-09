@@ -200,8 +200,8 @@ struct TigListReader
 
         // Push the game into the list
         data.add(0, key, (chan/key).string(),
-                 ti.title, ti.desc, tigurl,
-                 add_time, ti);
+                 ti.title, tigurl, add_time,
+                 ti);
       }
   }
 };

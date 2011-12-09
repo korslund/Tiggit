@@ -26,7 +26,7 @@ struct DataList
     int status;
 
     // idname = channel/urlname
-    wxString urlname, idname, name, desc, tigurl;
+    wxString urlname, idname, name, tigurl;
 
     // Time added to the channel database
     int64_t add_time;
@@ -47,8 +47,7 @@ struct DataList
   std::vector<Entry> arr;
 
   void add(int status, const wxString &urlname, const wxString &idname,
-           const wxString &name, const wxString &desc,
-           const wxString &tigurl, int64_t add_time,
+           const wxString &name, const wxString &tigurl, int64_t add_time,
            const TigInfo &tigInfo)
   {
     Entry e;
@@ -56,7 +55,6 @@ struct DataList
     e.urlname = urlname;
     e.idname = idname;
     e.name = name;
-    e.desc = desc;
     e.tigurl = tigurl;
     e.add_time = add_time;
     e.tigInfo = tigInfo;
@@ -74,7 +72,6 @@ struct DataList
            const std::string &urlname,
            const std::string &idname,
            const std::string &name,
-           const std::string &desc,
            const std::string &tigurl,
            int64_t add_time,
            const TigInfo &tiginfo)
@@ -83,7 +80,6 @@ struct DataList
         wxString(urlname.c_str(), wxConvUTF8),
         wxString(idname.c_str(), wxConvUTF8),
         wxString(name.c_str(), wxConvUTF8),
-        wxString(desc.c_str(), wxConvUTF8),
         wxString(tigurl.c_str(), wxConvUTF8),
         add_time, tiginfo);
   }
