@@ -12,6 +12,10 @@ class ListKeeper
   // been set up.
   std::vector<int> base;
 
+  // Selection criterium used to set up the base. Set through the
+  // constructor, and cannot be changed later.
+  int selection;
+
   // Items from the base selected after searching.
   std::vector<int> searched;
 
@@ -126,9 +130,24 @@ class ListKeeper
   }
 
 public:
-  ListKeeper(DataList &dt)
-    : isSearched(false), isSorted(false), sortBy(0), reverse(false),
-      data(dt)
+  /*
+    Second parameter to the constructor is the selection. Choose from
+    the following enum values.
+
+    TODO: We could make a flag system out of this or something, but
+    it's not that important. We will probably script the entire thing
+    later at some point anyway.
+   */
+  enum
+    {
+      SL_ALL    = 1,    // All games
+      SL_BROWSE = 2,    // Non-installed games
+      SL_INSTALL= 3     // Games installed or being installed
+    };
+
+  ListKeeper(DataList &dt, int select = SL_ALL)
+    : selection(select), isSearched(false), isSorted(false), sortBy(0),
+      reverse(false), data(dt)
   { reset(); }
 
   void sortTitle() { setSort(0); }
@@ -162,12 +181,28 @@ public:
     isSearched = false;
     isSorted = false;
 
-    // TODO: Implement actual selection later. For now, select the
-    // entire thing.
-    base.resize(data.arr.size());
+    base.resize(0);
+    base.reserve(data.arr.size());
 
-    for(int i=0; i<base.size(); i++)
-      base[i] = i;
+    if(selection == SL_ALL)
+      {
+        // Insert the entire thing
+        base.resize(data.arr.size());
+
+        for(int i=0; i<base.size(); i++)
+          base[i] = i;
+      }
+    else
+      {
+        // Loop through the database and insert matching items
+        for(int i=0; i<data.arr.size(); i++)
+          {
+            const DataList::Entry &e = data.arr[i];
+            if((e.status == 0 && selection == SL_BROWSE) ||
+               (e.status > 0 && selection == SL_INSTALL))
+              base.push_back(i);
+          }
+      }
   }
 
   int baseSize() { return base.size(); }

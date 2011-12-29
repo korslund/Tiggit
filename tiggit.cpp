@@ -84,12 +84,18 @@ void updateData(bool download)
     }
 }
 
+struct ColumnHandler
+{
+  virtual wxString getText(const DataList::Entry &e) = 0;
+};
+
 class MyList : public wxListCtrl
 {
   wxListItemAttr green, orange;
-  wxString textNotInst, textReady;
   wxImageList images;
   ListKeeper &lister;
+
+  std::vector<ColumnHandler*> colHands;
 
   // Number of columns
   int colNum;
@@ -100,9 +106,6 @@ public:
                  wxLC_REPORT | wxLC_VIRTUAL | wxLC_SINGLE_SEL),
       lister(lst), colNum(0)
   {
-    textNotInst = wxT("Not installed");
-    textReady = wxT("Ready to play");
-
     green.SetBackgroundColour(wxColour(180,255,180));
     green.SetTextColour(wxColour(0,0,0));
 
@@ -120,7 +123,7 @@ public:
     */
   }
 
-  void addColumn(const wxString &name, int width)
+  void addColumn(const wxString &name, int width, ColumnHandler *ch)
   {
     wxListItem col;
     col.SetId(colNum);
@@ -128,6 +131,8 @@ public:
     col.SetWidth(width);
     InsertColumn(colNum, col);
     colNum++;
+
+    colHands.push_back(ch);
   }
 
   void setSelect(int index)
@@ -165,30 +170,11 @@ public:
 
   wxString OnGetItemText(long item, long column) const
   {
-    static int i = 0;
+    assert(column >= 0 && column < colHands.size());
+    ColumnHandler *h = colHands[column];
+    assert(h);
 
-    const DataList::Entry &e = lister.get(item);
-
-    if(column == 0)
-      return e.name;
-
-    if(column == 1)
-      return e.timeString;
-
-    assert(column == 2);
-
-    int s = e.status;
-
-    if(s == 0)
-      return textNotInst;
-
-    if(s == 2)
-      return textReady;
-
-    if(s == 1 || s == 3)
-      return e.msg;
-
-    assert(0);
+    return h->getText(lister.get(item));
   }
 };
 
@@ -209,8 +195,9 @@ struct TabBase : wxPanel
   virtual void takeFocus() = 0;
 
   // Called regularly to update information. Currently called for all
-  // tabs, will soon only be called for the visible tab.
-  virtual void tick() = 0;
+  // tabs, will soon only be called for the visible tab. Default is to
+  // do nothing.
+  virtual void tick() {}
 
   // Called whenever the root data table has changed, basically
   // instructing a complete reset on everything that depends on the
@@ -234,8 +221,6 @@ struct NewsTab : TabBase
     cout << "Test tab got focus!\n";
   }
 
-  void tick() {}
-
   void dataChanged()
   {
     cout << "The world is changing.\n";
@@ -253,6 +238,54 @@ struct NewsTab : TabBase
 #define myID_SORT_REVERSE 43
 #define myID_SEARCH_BOX 45
 
+struct TitleCol : ColumnHandler
+{
+  wxString getText(const DataList::Entry &e)
+  {
+    return e.name;
+  }
+};
+
+struct AddDateCol : ColumnHandler
+{
+  wxString getText(const DataList::Entry &e)
+  {
+    return e.timeString;
+  }
+};
+
+struct StatusCol : ColumnHandler
+{
+  wxString textNotInst, textReady;
+
+  StatusCol()
+  {
+    textNotInst = wxT("Not installed");
+    textReady = wxT("Ready to play");
+  }
+
+  wxString getText(const DataList::Entry &e)
+  {
+    int s = e.status;
+
+    if(s == 0)
+      return textNotInst;
+
+    if(s == 2)
+      return textReady;
+
+    if(s == 1 || s == 3)
+      return e.msg;
+
+    assert(0);
+  }
+};
+
+struct SortOptions
+{
+  virtual void addSortOptions(wxWindow *parent, wxBoxSizer *pane) const = 0;
+};
+
 struct ListTab : TabBase
 {
   wxButton *b1, *b2;
@@ -263,15 +296,12 @@ struct ListTab : TabBase
 
   wxString tabName;
 
-  ListTab(wxWindow *parent, const wxString &name)
+  ListTab(wxWindow *parent, const wxString &name, int listType,
+          const SortOptions *sop = NULL)
     : TabBase(parent), select(-1), last_launch(0),
-      lister(data), tabName(name)
+      lister(data, listType), tabName(name)
   {
     list = new MyList(this, myID_LIST, lister);
-
-    list->addColumn(wxT("Name"), 300);
-    list->addColumn(wxT("Date added"), 115);
-    list->addColumn(wxT("Status"), 235);
 
     wxBoxSizer *rightPane = new wxBoxSizer(wxVERTICAL);
 
@@ -281,11 +311,9 @@ struct ListTab : TabBase
     b2 = new wxButton(this, myID_BUTTON2, wxT("No action"));
     rightPane->Add(b2, 0, wxBOTTOM | wxRIGHT, 10);
 
-    rightPane->Add(new wxRadioButton(this, myID_SORT_TITLE, wxT("Sort by title"),
-                                     wxDefaultPosition, wxDefaultSize, wxRB_GROUP),
-                   0, wxRIGHT, 10);
-    rightPane->Add(new wxRadioButton(this, myID_SORT_DATE, wxT("Sort by date")),
-                   0, wxRIGHT, 10);
+    if(sop)
+      sop->addSortOptions(this, rightPane);
+
     rightPane->Add(new wxCheckBox(this, myID_SORT_REVERSE, wxT("Reverse order")),
                    0, wxRIGHT, 10);
 
@@ -738,12 +766,6 @@ struct ListTab : TabBase
       }
   }
 
-  void tick()
-  {
-    for(int i=0; i<lister.size(); i++)
-      handleDownload(i);
-  }
-
   void onGamePage(wxCommandEvent &event)
   {
     if(select < 0 || select >= lister.size())
@@ -785,6 +807,48 @@ struct ListTab : TabBase
   {
     lister.reset();
     list->update();
+  }
+};
+
+// A cludge to work around C++'s crappy handling of virtual functions
+struct GameSortOptions : SortOptions
+{
+  void addSortOptions(wxWindow *parent, wxBoxSizer *pane) const
+  {
+    pane->Add(new wxRadioButton(parent, myID_SORT_TITLE, wxT("Sort by title"),
+                                wxDefaultPosition, wxDefaultSize, wxRB_GROUP),
+              0, wxRIGHT, 10);
+    pane->Add(new wxRadioButton(parent, myID_SORT_DATE, wxT("Sort by date")),
+              0, wxRIGHT, 10);
+  }
+};
+
+struct GameListTab : ListTab
+{
+  GameListTab(wxWindow *parent)
+    : ListTab(parent, wxT("Browse"), ListKeeper::SL_BROWSE, new GameSortOptions)
+  {
+    list->addColumn(wxT("Name"), 300, new TitleCol);
+    list->addColumn(wxT("Date added"), 115, new AddDateCol);
+    //list->addColumn(wxT("Status"), 235, new StatusCol);
+  }
+
+};
+
+struct InstalledListTab : ListTab
+{
+  InstalledListTab(wxWindow *parent)
+    : ListTab(parent, wxT("Installed"), ListKeeper::SL_INSTALL)
+  {
+    list->addColumn(wxT("Name"), 300, new TitleCol);
+    //list->addColumn(wxT("Date added"), 115, new AddDateCol);
+    list->addColumn(wxT("Status"), 235, new StatusCol);
+  }
+
+  void tick()
+  {
+    for(int i=0; i<lister.size(); i++)
+      handleDownload(i);
   }
 };
 
@@ -830,8 +894,8 @@ public:
     wxPanel *panel = new wxPanel(this);
     book = new wxNotebook(panel, myID_BOOK);
 
-    book->AddPage(new ListTab(book, wxT("Games")), wxT(""), true);
-    book->AddPage(new ListTab(book, wxT("Installed")), wxT(""));
+    book->AddPage(new GameListTab(book), wxT(""), true);
+    book->AddPage(new InstalledListTab(book), wxT(""));
     //book->AddPage(new NewsTab(book), wxT(""));
 
     wxBoxSizer *mainSizer = new wxBoxSizer(wxVERTICAL);
@@ -909,6 +973,8 @@ public:
     // Notify all tabs that data has changed
     for(int i=0; i<book->GetPageCount(); i++)
       getTab(i)->dataChanged();
+
+    setTitles();
   }
 
   void onAbout(wxCommandEvent &event)
