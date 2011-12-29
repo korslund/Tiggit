@@ -125,14 +125,14 @@ public:
 
   void addColumn(const wxString &name, int width, ColumnHandler *ch)
   {
+    colHands.push_back(ch);
+
     wxListItem col;
     col.SetId(colNum);
     col.SetText(name);
     col.SetWidth(width);
     InsertColumn(colNum, col);
     colNum++;
-
-    colHands.push_back(ch);
   }
 
   void setSelect(int index)
@@ -170,6 +170,9 @@ public:
 
   wxString OnGetItemText(long item, long column) const
   {
+    if(column < 0 || column >= colHands.size())
+      return wxT("Internal error");
+
     assert(column >= 0 && column < colHands.size());
     ColumnHandler *h = colHands[column];
     assert(h);
@@ -285,6 +288,7 @@ struct SortOptions
 {
   virtual void addSortOptions(wxWindow *parent, wxBoxSizer *pane) const = 0;
 };
+
 
 struct ListTab : TabBase
 {
@@ -904,7 +908,11 @@ public:
 
     panel->SetSizer(mainSizer);
 
-    // Add left/right => control tabs
+    /* Add left/right => control tabs
+
+       This works on Linux but unfortunately not on Windows, and I
+       don't know why.
+     */
     wxAcceleratorEntry entries[2];
     entries[0].Set(wxACCEL_NORMAL, WXK_LEFT, myID_GOLEFT);
     entries[1].Set(wxACCEL_NORMAL, WXK_RIGHT, myID_GORIGHT);
