@@ -140,10 +140,22 @@ public:
     SetItemState(index, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
   }
 
-  void update()
+  // Refresh the list based on new data. If stay=true, then try to
+  // stay at or near the old list position.
+  void update(bool stay=false)
   {
+    int newItem = 0;
+
+    if(stay)
+      {
+        newItem = GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+        if(newItem < 0) newItem = 0;
+      }
+
     SetItemCount(lister.size());
-    setSelect(0);
+    if(newItem >= lister.size())
+      newItem = lister.size() - 1;
+    setSelect(newItem);
 
     // Doesn't seem to be needed on Linux. We could remove it there to
     // make it a slightly less flickering experience.
@@ -152,9 +164,13 @@ public:
 
   wxListItemAttr *OnGetItemAttr(long item) const
   {
+    if(item < 0 || item >= lister.size())
+      return NULL;
+
     int s = lister.get(item).status;
     if(s == 0) return NULL;
-    if(s == 2) return (wxListItemAttr*)&green;
+    //if(s == 2) return (wxListItemAttr*)&green;
+    if(s == 2) return NULL; // Disable green
     return (wxListItemAttr*)&orange;
   }
 
@@ -170,8 +186,9 @@ public:
 
   wxString OnGetItemText(long item, long column) const
   {
-    if(column < 0 || column >= colHands.size())
-      return wxT("Internal error");
+    if(column < 0 || column >= colHands.size() ||
+       item < 0 || item >= lister.size())
+      return wxT("No info");
 
     assert(column >= 0 && column < colHands.size());
     ColumnHandler *h = colHands[column];
@@ -289,6 +306,14 @@ struct SortOptions
   virtual void addSortOptions(wxWindow *parent, wxBoxSizer *pane) const = 0;
 };
 
+// Callback to update all lists when an object moves. I don't like
+// this AT ALL, and it should be done using wx events instead, but fix
+// it later.
+struct StatusNotify
+{
+  virtual void onStatusChanged() = 0;
+  virtual void switchToInstalled() = 0;
+};
 
 struct ListTab : TabBase
 {
@@ -299,11 +324,12 @@ struct ListTab : TabBase
   ListKeeper lister;
 
   wxString tabName;
+  StatusNotify *stat;
 
   ListTab(wxWindow *parent, const wxString &name, int listType,
-          const SortOptions *sop = NULL)
+          StatusNotify *s, const SortOptions *sop = NULL)
     : TabBase(parent), select(-1), last_launch(0),
-      lister(data, listType), tabName(name)
+      lister(data, listType), tabName(name), stat(s)
   {
     list = new MyList(this, myID_LIST, lister);
 
@@ -494,6 +520,7 @@ struct ListTab : TabBase
             // If there was an error, report it to the user
             if(res == 3)
               wxMessageBox(wxT("Unpacking failed for ") + e.name, wxT("Error"), wxOK | wxICON_ERROR);
+            statusChanged();
           }
         /*
         else if(res == 0)
@@ -536,6 +563,7 @@ struct ListTab : TabBase
                   wxMessageBox(wxT("Download failed for ") + e.name +
                                wxT(":\n") + wxString(g->errMsg.c_str(), wxConvUTF8),
                                wxT("Error"), wxOK | wxICON_ERROR);
+                statusChanged();
               }
 
             // We don't need the downloader anymore
@@ -624,6 +652,21 @@ struct ListTab : TabBase
 
     // Finally update this entry now.
     handleDownload(index);
+
+    // The status has changed
+    statusChanged(true);
+  }
+
+  /* Called whenever an item switches lists. This is a cludge and it
+     should die. But we will clean up all this mess later (or so I
+     keep telling myself), and then everything will be much dandier.
+
+     Set newInst to true if we should switch to the "Installed" tab.
+  */
+  void statusChanged(bool newInst=false)
+  {
+    stat->onStatusChanged();
+    if(newInst) stat->switchToInstalled();
   }
 
   void doAction(int index, int b)
@@ -740,7 +783,7 @@ struct ListTab : TabBase
             // Are you sure?
             if(!ask(wxT("Are you sure you want to uninstall ") + e.name +
                     wxT("? All savegames and configuration will be lost.")))
-              return;;
+              return;
 
 	    try
 	      {
@@ -758,6 +801,8 @@ struct ListTab : TabBase
 
 		// Make sure we update the config file
 		writeConfig();
+
+                statusChanged();
 	      }
 	    catch(exception &ex)
 	      {
@@ -810,7 +855,7 @@ struct ListTab : TabBase
   void dataChanged()
   {
     lister.reset();
-    list->update();
+    list->update(true);
   }
 };
 
@@ -829,8 +874,8 @@ struct GameSortOptions : SortOptions
 
 struct GameListTab : ListTab
 {
-  GameListTab(wxWindow *parent)
-    : ListTab(parent, wxT("Browse"), ListKeeper::SL_BROWSE, new GameSortOptions)
+  GameListTab(wxWindow *parent, StatusNotify *s)
+    : ListTab(parent, wxT("Browse"), ListKeeper::SL_BROWSE, s, new GameSortOptions)
   {
     list->addColumn(wxT("Name"), 300, new TitleCol);
     list->addColumn(wxT("Date added"), 115, new AddDateCol);
@@ -841,8 +886,8 @@ struct GameListTab : ListTab
 
 struct InstalledListTab : ListTab
 {
-  InstalledListTab(wxWindow *parent)
-    : ListTab(parent, wxT("Installed"), ListKeeper::SL_INSTALL)
+  InstalledListTab(wxWindow *parent, StatusNotify *s)
+    : ListTab(parent, wxT("Installed"), ListKeeper::SL_INSTALL, s)
   {
     list->addColumn(wxT("Name"), 300, new TitleCol);
     //list->addColumn(wxT("Date added"), 115, new AddDateCol);
@@ -861,7 +906,7 @@ struct InstalledListTab : ListTab
 #define myID_GORIGHT 32
 #define myID_BOOK 33
 
-class MyFrame : public wxFrame
+class MyFrame : public wxFrame, public StatusNotify
 {
   std::string version;
   wxNotebook *book;
@@ -898,9 +943,18 @@ public:
     wxPanel *panel = new wxPanel(this);
     book = new wxNotebook(panel, myID_BOOK);
 
-    book->AddPage(new GameListTab(book), wxT(""), true);
-    book->AddPage(new InstalledListTab(book), wxT(""));
+    book->AddPage(new GameListTab(book, this), wxT(""), true);
+    book->AddPage(new InstalledListTab(book, this), wxT(""));
     //book->AddPage(new NewsTab(book), wxT(""));
+
+    // Check if there are installed games, and if so, start by
+    // selecting the Installed tab.
+    {
+      ListTab *lt = dynamic_cast<ListTab*>(getTab(1));
+      assert(lt);
+      if(lt->lister.baseSize() != 0)
+        book->ChangeSelection(1);
+    }
 
     wxBoxSizer *mainSizer = new wxBoxSizer(wxVERTICAL);
     mainSizer->Add(book, 1, wxGROW | wxALL, 10);
@@ -971,6 +1025,27 @@ public:
   void onLeftRight(wxCommandEvent &event)
   {
     book->AdvanceSelection(event.GetId() == myID_GORIGHT);
+    setTabFocus();
+  }
+
+  // "Event" created internally when a list element moves from one
+  // list to another. This is called as a virtual function from
+  // StatusNotify.
+  void onStatusChanged()
+  {
+    // Notify all tabs that data has changed, but keep current position.
+    for(int i=0; i<book->GetPageCount(); i++)
+      getTab(i)->dataChanged();
+
+    // Update titles.
+    setTitles();
+  }
+
+  // Switches the selected tab to the "Installed" tab. This is a
+  // virtual function from StatusNotify.
+  void switchToInstalled()
+  {
+    book->ChangeSelection(1);
     setTabFocus();
   }
 

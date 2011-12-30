@@ -173,9 +173,15 @@ public:
     return data.arr[searched[index]];
   }
 
-  // Called whenever the source data list changes. It basically means
-  // we have to throw everything out. It is also called from the
-  // constructor.
+  /* Called whenever the source data list changes. It basically means
+     we have to throw everything out. It is also called from the
+     constructor.
+
+     Calling reset() will NOT clear/reset the current search string or
+     sorting selection. It will only throw out our cached lists,
+     forcing the search and sort to be repeated on the new dataset
+     upon the next call to get().
+  */
   void reset()
   {
     isSearched = false;
