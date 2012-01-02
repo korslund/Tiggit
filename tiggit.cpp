@@ -6,6 +6,7 @@
 #include <wx/accel.h>
 #include <wx/imaglist.h>
 #include <wx/notebook.h>
+#include <wx/richtext/richtextctrl.h>
 
 #include <iostream>
 #include <assert.h>
@@ -103,7 +104,7 @@ class MyList : public wxListCtrl
 public:
   MyList(wxWindow *parent, int ID, ListKeeper &lst)
     : wxListCtrl(parent, ID, wxDefaultPosition, wxDefaultSize,
-                 wxLC_REPORT | wxLC_VIRTUAL | wxLC_SINGLE_SEL),
+                 wxBORDER_RAISED | wxLC_REPORT | wxLC_VIRTUAL | wxLC_SINGLE_SEL),
       lister(lst), colNum(0)
   {
     green.SetBackgroundColour(wxColour(180,255,180));
@@ -253,6 +254,7 @@ struct NewsTab : TabBase
 #define myID_BUTTON2 22
 #define myID_GAMEPAGE 24
 #define myID_LIST 25
+#define myID_TEXTVIEW 27
 #define myID_SORT_TITLE 41
 #define myID_SORT_DATE 42
 #define myID_SORT_REVERSE 43
@@ -319,6 +321,7 @@ struct ListTab : TabBase
 {
   wxButton *b1, *b2;
   MyList *list;
+  wxRichTextCtrl *textView;
   int select;
   time_t last_launch;
   ListKeeper lister;
@@ -333,27 +336,51 @@ struct ListTab : TabBase
   {
     list = new MyList(this, myID_LIST, lister);
 
-    wxBoxSizer *rightPane = new wxBoxSizer(wxVERTICAL);
+    /*
+    wxBoxSizer *searchBox = new wxBoxSizer(wxHORIZONTAL);
+    searchBox->Add(new wxStaticText(this, wxID_ANY, wxT("Search:")), 0);
+    searchBox->Add(new wxTextCtrl(this, myID_SEARCH_BOX, wxT(""), wxDefaultPosition,
+                                  wxSize(260,26)), 0, wxRIGHT, 20);
+
+    wxBoxSizer *sortBox = new wxBoxSizer(wxHORIZONTAL);
+    if(sop)
+      sop->addSortOptions(this, sortBox);
+    */
+
+    wxBoxSizer *leftPane = new wxBoxSizer(wxVERTICAL);
+    leftPane->Add(list, 1, wxGROW | wxRIGHT | wxBOTTOM, 10);
+    /*
+    leftPane->Add(searchBox, 0, wxTOP, 12);
+    leftPane->Add(sortBox, 0);
+    leftPane->Add(new wxCheckBox(this, myID_SORT_REVERSE, wxT("Reverse order")),
+                  0);
+    */
+    leftPane->Add(new wxStaticText(this, wxID_ANY, wxString(wxT("Mouse: double-click to ")) +
+                                   ((listType == ListKeeper::SL_BROWSE)?
+                                    wxT("install"):wxT("play")) +
+                                   wxT("\nKeyboard: arrow keys + enter, delete")),
+                  0, wxLEFT | wxBOTTOM, 4);
+
+    textView = new wxRichTextCtrl
+      (this, myID_TEXTVIEW, wxT("Test value"), wxDefaultPosition, wxDefaultSize,
+       wxRE_MULTILINE | wxRE_READONLY);
 
     b1 = new wxButton(this, myID_BUTTON1, wxT("No action"));
-    rightPane->Add(b1, 0, wxBOTTOM | wxRIGHT, 10);
-
     b2 = new wxButton(this, myID_BUTTON2, wxT("No action"));
-    rightPane->Add(b2, 0, wxBOTTOM | wxRIGHT, 10);
 
-    if(sop)
-      sop->addSortOptions(this, rightPane);
+    wxBoxSizer *buttonBar = new wxBoxSizer(wxHORIZONTAL);
+    buttonBar->Add(b1, 0, wxTOP | wxBOTTOM | wxRIGHT, 3);
+    buttonBar->Add(b2, 0, wxTOP | wxBOTTOM | wxRIGHT, 3);
+    buttonBar->Add(new wxButton(this, myID_GAMEPAGE, wxT("Game Website")),
+                   0, wxTOP | wxBOTTOM, 3);
 
-    rightPane->Add(new wxCheckBox(this, myID_SORT_REVERSE, wxT("Reverse order")),
-                   0, wxRIGHT, 10);
-
-    rightPane->Add(new wxStaticText(this, wxID_ANY, wxT("\nSearch:")), 0, wxRIGHT, 0);
-    rightPane->Add(new wxTextCtrl(this, myID_SEARCH_BOX),
-                   0, wxRIGHT, 10);
+    wxBoxSizer *rightPane = new wxBoxSizer(wxVERTICAL);
+    rightPane->Add(textView, 1, wxGROW);
+    rightPane->Add(buttonBar, 0);
 
     wxBoxSizer *panes = new wxBoxSizer(wxHORIZONTAL);
-    panes->Add(list, 1, wxGROW);
-    panes->Add(rightPane, 0, wxGROW | wxLEFT | wxTOP, 18);
+    panes->Add(leftPane, 100, wxGROW);
+    panes->Add(rightPane, 120, wxGROW);
 
     SetSizer(panes);
 
@@ -403,6 +430,7 @@ struct ListTab : TabBase
   void takeFocus()
   {
     list->SetFocus();
+    fixButtons();
   }
 
   // Fix buttons for the current selected item (if any)
@@ -820,7 +848,18 @@ struct ListTab : TabBase
     if(select < 0 || select >= lister.size())
       return;
 
-    wxLaunchDefaultBrowser(wxT("http://tiggit.net/game/") + lister.get(select).urlname);
+    const DataList::Entry &e = lister.get(select);
+
+    wxString url;
+
+    if(e.tigInfo.homepage != "")
+      // Launch game homepage if it exists
+      url = wxString(e.tigInfo.homepage.c_str(), wxConvUTF8);
+    else
+      // Otherwise, just redirect to the tiggit page
+      url = wxT("http://tiggit.net/game/") + e.urlname;
+
+    wxLaunchDefaultBrowser(url);
   }
 
   void onButton(wxCommandEvent &event)
@@ -877,9 +916,8 @@ struct GameListTab : ListTab
   GameListTab(wxWindow *parent, StatusNotify *s)
     : ListTab(parent, wxT("Browse"), ListKeeper::SL_BROWSE, s, new GameSortOptions)
   {
-    list->addColumn(wxT("Name"), 300, new TitleCol);
-    list->addColumn(wxT("Date added"), 115, new AddDateCol);
-    //list->addColumn(wxT("Status"), 235, new StatusCol);
+    list->addColumn(wxT("Name"), 380, new TitleCol);
+    //list->addColumn(wxT("Date added"), 160, new AddDateCol);
   }
 
 };
@@ -889,9 +927,8 @@ struct InstalledListTab : ListTab
   InstalledListTab(wxWindow *parent, StatusNotify *s)
     : ListTab(parent, wxT("Installed"), ListKeeper::SL_INSTALL, s)
   {
-    list->addColumn(wxT("Name"), 300, new TitleCol);
-    //list->addColumn(wxT("Date added"), 115, new AddDateCol);
-    list->addColumn(wxT("Status"), 235, new StatusCol);
+    list->addColumn(wxT("Name"), 270, new TitleCol);
+    list->addColumn(wxT("Status"), 160, new StatusCol);
   }
 
   void tick()
@@ -913,7 +950,7 @@ class MyFrame : public wxFrame, public StatusNotify
 
 public:
   MyFrame(const wxString& title, const std::string &ver)
-    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(845, 700)),
+    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(980, 720)),
       version(ver)
   {
     Centre();
@@ -958,7 +995,6 @@ public:
 
     wxBoxSizer *mainSizer = new wxBoxSizer(wxVERTICAL);
     mainSizer->Add(book, 1, wxGROW | wxALL, 10);
-    mainSizer->Add(new wxStaticText(panel, wxID_ANY, wxT("Mouse: double-click to install / play\nKeyboard: arrow keys + enter, delete")), 0, wxALL, 10);
 
     panel->SetSizer(mainSizer);
 

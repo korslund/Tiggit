@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 
-find_package(wxWidgets COMPONENTS core base REQUIRED)
+find_package(wxWidgets COMPONENTS core base richtext REQUIRED)
 find_package(CURL REQUIRED)
 find_package(Boost COMPONENTS filesystem REQUIRED)
 
