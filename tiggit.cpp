@@ -430,7 +430,44 @@ struct ListTab : TabBase
   void takeFocus()
   {
     list->SetFocus();
+    updateSelection();
+  }
+
+  // Called whenever the selection has changed
+  void updateSelection()
+  {
     fixButtons();
+
+    if(select < 0 || select >= lister.size())
+      return;
+
+    const DataList::Entry &e = lister.get(select);
+
+    // Update the text view
+    textView->Clear();
+
+    textView->BeginBold();
+    textView->BeginFontSize(16);
+    textView->LineBreak();
+    textView->WriteText(e.name);
+    textView->LineBreak();
+    textView->LineBreak();
+    textView->EndFontSize();
+    textView->EndBold();
+
+    /* Eh, no
+    if(e.tigInfo.shot != "")
+      try
+        {
+          std::string shot = "cache/" + std::string(e.idname.mb_str());
+          shot = get.getCache(shot, e.tigInfo.shot);
+          textView->AddImage(wxImage(wxString(shot.c_str(), wxConvUTF8)));
+        }
+      catch(...) {}
+    */
+
+    //textView->AddParagraph(wxString(e.tigInfo.desc.c_str(), wxConvUTF8));
+    textView->WriteText(wxString(e.tigInfo.desc.c_str(), wxConvUTF8));
   }
 
   // Fix buttons for the current selected item (if any)
@@ -680,9 +717,6 @@ struct ListTab : TabBase
 
     // Finally update this entry now.
     handleDownload(index);
-
-    // The status has changed
-    statusChanged(true);
   }
 
   /* Called whenever an item switches lists. This is a cludge and it
@@ -872,13 +906,13 @@ struct ListTab : TabBase
   void onListDeselect(wxListEvent &event)
   {
     select = -1;
-    fixButtons();
+    updateSelection();
   }
 
   void onListSelect(wxListEvent &event)
   {
     select = event.GetIndex();
-    fixButtons();
+    updateSelection();
   }
 
   void onListRightClick(wxListEvent &event)
@@ -1182,6 +1216,8 @@ public:
         auth.load();
 
         updateData(conf.updateList);
+
+        wxInitAllImageHandlers();
 
         MyFrame *frame = new MyFrame(wxT("Tiggit - The Indie Game Installer"),
                                      version);
