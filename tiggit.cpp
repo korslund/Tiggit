@@ -108,7 +108,7 @@ class MyList : public wxListCtrl
 public:
   MyList(wxWindow *parent, int ID, ListKeeper &lst)
     : wxListCtrl(parent, ID, wxDefaultPosition, wxDefaultSize,
-                 wxBORDER_RAISED | wxLC_REPORT | wxLC_VIRTUAL | wxLC_SINGLE_SEL),
+                 wxBORDER_SUNKEN | wxLC_REPORT | wxLC_VIRTUAL | wxLC_SINGLE_SEL),
       lister(lst), colNum(0)
   {
     green.SetBackgroundColour(wxColour(180,255,180));
@@ -369,7 +369,7 @@ struct ListTab : TabBase
 
     textView = new wxTextCtrl
       (this, myID_TEXTVIEW, wxT(""), wxDefaultPosition, wxDefaultSize,
-       wxBORDER_NONE | wxTE_MULTILINE | wxTE_READONLY/* | wxTE_AUTO_URL | wxTE_RICH*/);
+       wxBORDER_NONE | wxTE_MULTILINE | wxTE_READONLY | wxTE_AUTO_URL | wxTE_RICH);
 
     screenshot = new ImageViewer(this, myID_SCREENSHOT, wxDefaultPosition,
                                   wxSize(300,260));
@@ -443,6 +443,14 @@ struct ListTab : TabBase
     updateSelection();
   }
 
+  // Called on "soft" list changes, such as search queries. If
+  // stay=true, try to stay at the same position.
+  void listHasChanged(bool stay=false)
+  {
+    list->update(stay);
+    updateSelection();
+  }
+
   void updateGameInfo()
   {
     if(select < 0 || select >= lister.size())
@@ -461,7 +469,9 @@ struct ListTab : TabBase
     //screenshot->loadImage("filename.jpg");
   }
 
-  // Called whenever the selection has changed
+  // Called whenever there is a chance that a new game has been
+  // selected. This updates the available action buttons as well as
+  // the displayed game info to match the current selection.
   void updateSelection()
   {
     fixButtons();
@@ -510,7 +520,7 @@ struct ListTab : TabBase
   {
     string src = string(event.GetString().mb_str());
     lister.setSearch(src);
-    list->update();
+    listHasChanged();
   }
 
   // I'm short on change, can you help a fella out?
@@ -529,7 +539,7 @@ struct ListTab : TabBase
 
     else assert(0);
 
-    list->update();
+    listHasChanged();
   }
 
   // Create a nice size string
@@ -715,6 +725,14 @@ struct ListTab : TabBase
 
     // Finally update this entry now.
     handleDownload(index);
+
+    /* Update lists and moved to the Installed tab.
+
+       NOTE: this will switch tabs even if download immediately
+       fails. This isn't entirely optimal, but is rare enough that it
+       doesn't matter.
+     */
+    statusChanged(true);
   }
 
   /* Called whenever an item switches lists. This is a cludge and it
@@ -926,7 +944,7 @@ struct ListTab : TabBase
   void dataChanged()
   {
     lister.reset();
-    list->update(true);
+    listHasChanged(true);
   }
 };
 
