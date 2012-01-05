@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 
-find_package(wxWidgets COMPONENTS core base richtext REQUIRED)
+find_package(wxWidgets COMPONENTS core base REQUIRED)
 find_package(CURL REQUIRED)
 find_package(Boost COMPONENTS filesystem REQUIRED)
 
@@ -12,8 +12,6 @@ set(JSON ${JS}/json_reader.cpp ${JS}/json_writer.cpp ${JS}/json_value.cpp)
 set(ZZip_LIBRARIES zzip)
 
 set(LIBS ${CURL_LIBRARIES} ${Boost_LIBRARIES} ${wxWidgets_LIBRARIES} ${ZZip_LIBRARIES})
-
-#add_definitions(-O3)
 
 # This automagically sets up everything for us
 include( ${wxWidgets_USE_FILE} )

@@ -6,13 +6,13 @@
 #include <wx/accel.h>
 #include <wx/imaglist.h>
 #include <wx/notebook.h>
-#include <wx/richtext/richtextctrl.h>
 
 #include <iostream>
 #include <assert.h>
 #include <set>
 #include <time.h>
 
+#include "image_viewer.hpp"
 #include "curl_get.hpp"
 #include "decodeurl.hpp"
 #include "filegetter.hpp"
@@ -58,15 +58,19 @@ void updateData(bool download)
     // If the file didn't exist, download it.
     download = true;
 
-  try
+  if(download)
     {
-      if(download)
+      try
         {
           // Get the latest list from the net
           string url = "http://tiggit.net/api/all_games.json";
           get.getTo(url, "all_games.json");
         }
+      catch(...) {}
+    }
 
+  try
+    {
       tig_reader.loadData(lstfile, data);
       jinst.read(data);
     }
@@ -255,6 +259,7 @@ struct NewsTab : TabBase
 #define myID_GAMEPAGE 24
 #define myID_LIST 25
 #define myID_TEXTVIEW 27
+#define myID_SCREENSHOT 28
 #define myID_SORT_TITLE 41
 #define myID_SORT_DATE 42
 #define myID_SORT_REVERSE 43
@@ -321,7 +326,8 @@ struct ListTab : TabBase
 {
   wxButton *b1, *b2;
   MyList *list;
-  wxRichTextCtrl *textView;
+  wxTextCtrl *textView;
+  ImageViewer *screenshot;
   int select;
   time_t last_launch;
   ListKeeper lister;
@@ -336,12 +342,12 @@ struct ListTab : TabBase
   {
     list = new MyList(this, myID_LIST, lister);
 
-    /*
     wxBoxSizer *searchBox = new wxBoxSizer(wxHORIZONTAL);
     searchBox->Add(new wxStaticText(this, wxID_ANY, wxT("Search:")), 0);
     searchBox->Add(new wxTextCtrl(this, myID_SEARCH_BOX, wxT(""), wxDefaultPosition,
-                                  wxSize(260,26)), 0, wxRIGHT, 20);
+                                  wxSize(260,22)),1, wxGROW);
 
+    /*
     wxBoxSizer *sortBox = new wxBoxSizer(wxHORIZONTAL);
     if(sop)
       sop->addSortOptions(this, sortBox);
@@ -349,8 +355,8 @@ struct ListTab : TabBase
 
     wxBoxSizer *leftPane = new wxBoxSizer(wxVERTICAL);
     leftPane->Add(list, 1, wxGROW | wxRIGHT | wxBOTTOM, 10);
+    leftPane->Add(searchBox, 0, wxBOTTOM, 2);
     /*
-    leftPane->Add(searchBox, 0, wxTOP, 12);
     leftPane->Add(sortBox, 0);
     leftPane->Add(new wxCheckBox(this, myID_SORT_REVERSE, wxT("Reverse order")),
                   0);
@@ -361,9 +367,12 @@ struct ListTab : TabBase
                                    wxT("\nKeyboard: arrow keys + enter, delete")),
                   0, wxLEFT | wxBOTTOM, 4);
 
-    textView = new wxRichTextCtrl
-      (this, myID_TEXTVIEW, wxT("Test value"), wxDefaultPosition, wxDefaultSize,
-       wxRE_MULTILINE | wxRE_READONLY);
+    textView = new wxTextCtrl
+      (this, myID_TEXTVIEW, wxT(""), wxDefaultPosition, wxDefaultSize,
+       wxBORDER_NONE | wxTE_MULTILINE | wxTE_READONLY/* | wxTE_AUTO_URL | wxTE_RICH*/);
+
+    screenshot = new ImageViewer(this, myID_SCREENSHOT, wxDefaultPosition,
+                                  wxSize(300,260));
 
     b1 = new wxButton(this, myID_BUTTON1, wxT("No action"));
     b2 = new wxButton(this, myID_BUTTON2, wxT("No action"));
@@ -375,12 +384,13 @@ struct ListTab : TabBase
                    0, wxTOP | wxBOTTOM, 3);
 
     wxBoxSizer *rightPane = new wxBoxSizer(wxVERTICAL);
-    rightPane->Add(textView, 1, wxGROW);
+    rightPane->Add(textView, 1, wxGROW | wxALL, 5);
+    rightPane->Add(screenshot, 0, wxLEFT | wxTOP, 5);
     rightPane->Add(buttonBar, 0);
 
     wxBoxSizer *panes = new wxBoxSizer(wxHORIZONTAL);
     panes->Add(leftPane, 100, wxGROW);
-    panes->Add(rightPane, 120, wxGROW);
+    panes->Add(rightPane, 60, wxGROW);
 
     SetSizer(panes);
 
@@ -433,41 +443,29 @@ struct ListTab : TabBase
     updateSelection();
   }
 
-  // Called whenever the selection has changed
-  void updateSelection()
+  void updateGameInfo()
   {
-    fixButtons();
-
     if(select < 0 || select >= lister.size())
-      return;
+      {
+        textView->Clear();
+        //screenshot->clear();
+        return;
+      }
 
     const DataList::Entry &e = lister.get(select);
 
     // Update the text view
-    textView->Clear();
+    textView->ChangeValue(wxString(e.tigInfo.desc.c_str(), wxConvUTF8));
 
-    textView->BeginBold();
-    textView->BeginFontSize(16);
-    textView->LineBreak();
-    textView->WriteText(e.name);
-    textView->LineBreak();
-    textView->LineBreak();
-    textView->EndFontSize();
-    textView->EndBold();
+    // And the screenshot
+    //screenshot->loadImage("filename.jpg");
+  }
 
-    /* Eh, no
-    if(e.tigInfo.shot != "")
-      try
-        {
-          std::string shot = "cache/" + std::string(e.idname.mb_str());
-          shot = get.getCache(shot, e.tigInfo.shot);
-          textView->AddImage(wxImage(wxString(shot.c_str(), wxConvUTF8)));
-        }
-      catch(...) {}
-    */
-
-    //textView->AddParagraph(wxString(e.tigInfo.desc.c_str(), wxConvUTF8));
-    textView->WriteText(wxString(e.tigInfo.desc.c_str(), wxConvUTF8));
+  // Called whenever the selection has changed
+  void updateSelection()
+  {
+    fixButtons();
+    updateGameInfo();
   }
 
   // Fix buttons for the current selected item (if any)
@@ -961,8 +959,8 @@ struct InstalledListTab : ListTab
   InstalledListTab(wxWindow *parent, StatusNotify *s)
     : ListTab(parent, wxT("Installed"), ListKeeper::SL_INSTALL, s)
   {
-    list->addColumn(wxT("Name"), 270, new TitleCol);
-    list->addColumn(wxT("Status"), 160, new StatusCol);
+    list->addColumn(wxT("Name"), 300, new TitleCol);
+    list->addColumn(wxT("Status"), 170, new StatusCol);
   }
 
   void tick()
@@ -984,7 +982,7 @@ class MyFrame : public wxFrame, public StatusNotify
 
 public:
   MyFrame(const wxString& title, const std::string &ver)
-    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(980, 720)),
+    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(850, 700)),
       version(ver)
   {
     Centre();
