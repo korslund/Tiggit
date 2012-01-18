@@ -2,13 +2,10 @@
 #define _DATA_READER_HPP_
 
 #include "datalist.hpp"
-#include <stdexcept>
 #include <stdlib.h>
-#include <json/json.h>
-#include <fstream>
 #include <boost/filesystem.hpp>
 #include "filegetter.hpp"
-
+#include "readjson.hpp"
 #include "config.hpp"
 
 struct TigListReader
@@ -23,23 +20,6 @@ struct TigListReader
   void failThis(const std::string &msg)
   {
     fail("ERROR parsing '" + filename + "':\n\n" + msg);
-  }
-
-  static Json::Value readJson(const std::string &file)
-  {
-    using namespace Json;
-
-    std::ifstream inf(file.c_str());
-    if(!inf)
-      fail("Cannot read " + file);
-
-    Value root;
-
-    Reader reader;
-    if(!reader.parse(inf, root))
-      fail(reader.getFormatedErrorMessages() + " reading " + file);
-
-    return root;
   }
 
   // Process URL. This is a poor mans urlencode, but does the trick
@@ -104,6 +84,13 @@ struct TigListReader
     t.devname = root["devname"].asString();
     t.homepage = root["homepage"].asString();
 
+    // Check whether the tigfile has a valid "paypal" entry. We don't
+    // need the actual value.
+    t.hasPaypal = (root["paypal"].asString() != "");
+
+    // The game is a demo if it has "type":"demo" in the tigfile.
+    t.isDemo = (root["type"].asString() == "demo");
+
     if(t.url == "")
       return false;
 
@@ -124,7 +111,6 @@ struct TigListReader
       return false;
 
     // Parse it
-    DataList::TigInfo ti;
     return decodeTigFile(tigf, data);
   }
 
@@ -152,6 +138,8 @@ struct TigListReader
 
     boost::filesystem::path chan = channel;
 
+    int64_t maxTime = 0;
+
     // We have to do it this way because the jsoncpp iterators are
     // b0rked.
     Value::Members keys = root.getMemberNames();
@@ -164,6 +152,14 @@ struct TigListReader
         std::string tigurl = URL(game["tigurl"].asString());
 
         int64_t add_time = atoll(game["add_time"].asString().c_str());
+
+        // Figure out if this game is new
+        bool isNew = false;
+        if(add_time > conf.lastTime)
+          isNew = true;
+
+        // Calculate the latest game time
+        if(add_time > maxTime) maxTime = add_time;
 
         // Get and parse tigfile
         DataList::TigInfo ti;
@@ -200,9 +196,13 @@ struct TigListReader
 
         // Push the game into the list
         data.add(0, key, (chan/key).string(),
-                 ti.title, tigurl, add_time,
+                 ti.title, tigurl, add_time, isNew,
                  ti);
       }
+
+    // Inform config if our latest time stamp has changed
+    if(maxTime > conf.lastTime)
+      conf.setLastTime(maxTime);
   }
 };
 #endif

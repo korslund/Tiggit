@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 
 find_package(wxWidgets COMPONENTS core base REQUIRED)
 find_package(CURL REQUIRED)
-find_package(Boost COMPONENTS filesystem REQUIRED)
+find_package(Boost COMPONENTS filesystem system REQUIRED)
 
 include_directories("libs/jsoncpp/include/")
 

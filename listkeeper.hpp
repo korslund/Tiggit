@@ -140,9 +140,11 @@ public:
    */
   enum
     {
-      SL_ALL    = 1,    // All games
-      SL_BROWSE = 2,    // Non-installed games
-      SL_INSTALL= 3     // Games installed or being installed
+      SL_ALL      = 1,    // All games
+      SL_FREEWARE = 2,    // Non-installed, non-new freeware games
+      SL_DEMOS    = 3,    // Non-installed, non-new demos
+      SL_NEW      = 4,    // New, non-installed games (of all types)
+      SL_INSTALL  = 8     // Games installed or being installed (of all types)
     };
 
   ListKeeper(DataList &dt, int select = SL_ALL)
@@ -204,8 +206,28 @@ public:
         for(int i=0; i<data.arr.size(); i++)
           {
             const DataList::Entry &e = data.arr[i];
-            if((e.status == 0 && selection == SL_BROWSE) ||
-               (e.status > 0 && selection == SL_INSTALL))
+
+            bool keep = false;
+
+            // Installed tab
+            if(selection == SL_INSTALL)
+              {
+                // We list everything that's got a non-zero install
+                // status
+                if(e.status > 0) keep = true;
+              }
+
+            // Installed games may not be listed anywhere else, so
+            // skip this game.
+            else if(e.status > 0) continue;
+
+            // Insert into each tab according to their own criteria
+            if(selection == SL_NEW && e.isNew ||
+               selection == SL_FREEWARE && !e.tigInfo.isDemo ||
+               selection == SL_DEMOS && e.tigInfo.isDemo)
+              keep = true;
+
+            if(keep)
               base.push_back(i);
           }
       }

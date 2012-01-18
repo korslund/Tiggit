@@ -212,8 +212,15 @@ bool ask(const wxString &question)
 
 struct TabBase : wxPanel
 {
-  TabBase(wxWindow *parent)
-    : wxPanel(parent) {}
+  wxNotebook *book;
+
+  // Current tab placement in the wxNotebook. MUST be set to -1 when
+  // not inserted!
+  int tabNum;
+
+  TabBase(wxNotebook *parent)
+    : wxPanel(parent), book(parent), tabNum(-1)
+  {}
 
   // Called when the tab is selected, letting the tab to direct focus
   // to a sub-element.
@@ -229,13 +236,32 @@ struct TabBase : wxPanel
   // game database.
   virtual void dataChanged() = 0;
 
-  // Get the title of this tab
-  virtual wxString getTitle() = 0;
+  // Insert this tab into the wxNotebook, if it has any content
+  virtual void insertMe()
+  {
+    assert(book);
+    book->AddPage(this, wxT(""));
+    tabNum = book->GetPageCount() - 1;
+  }
+
+  // Select this tab, if it is inserted into the book. Returns true if
+  // selection was successful.
+  bool selectMe()
+  {
+    assert(book);
+    if(tabNum >= 0)
+      {
+        book->ChangeSelection(tabNum);
+        return true;
+      }
+    return false;
+  }
 };
 
+// Not currently in use, will be expanded later
 struct NewsTab : TabBase
 {
-  NewsTab(wxWindow *parent)
+  NewsTab(wxNotebook *parent)
     : TabBase(parent)
   {
     new wxStaticText(this, wxID_ANY, wxT("This is a test tab"));
@@ -251,7 +277,8 @@ struct NewsTab : TabBase
     cout << "The world is changing.\n";
   }
 
-  wxString getTitle() { return wxT("News"); }
+  // Currently doesn't insert itself at all
+  void insertMe() { tabNum = -1; }
 };
 
 #define myID_BUTTON1 21
@@ -335,7 +362,7 @@ struct ListTab : TabBase
   wxString tabName;
   StatusNotify *stat;
 
-  ListTab(wxWindow *parent, const wxString &name, int listType,
+  ListTab(wxNotebook *parent, const wxString &name, int listType,
           StatusNotify *s, const SortOptions *sop = NULL)
     : TabBase(parent), select(-1), last_launch(0),
       lister(data, listType), tabName(name), stat(s)
@@ -362,8 +389,8 @@ struct ListTab : TabBase
                   0);
     */
     leftPane->Add(new wxStaticText(this, wxID_ANY, wxString(wxT("Mouse: double-click to ")) +
-                                   ((listType == ListKeeper::SL_BROWSE)?
-                                    wxT("install"):wxT("play")) +
+                                   ((listType == ListKeeper::SL_INSTALL)?
+                                    wxT("play"):wxT("install")) +
                                    wxT("\nKeyboard: arrow keys + enter, delete")),
                   0, wxLEFT | wxBOTTOM, 4);
 
@@ -432,9 +459,11 @@ struct ListTab : TabBase
     takeFocus();
   }
 
-  wxString getTitle()
+  void insertMe()
   {
-    return tabName + wxString::Format(wxT(" (%d)"), lister.baseSize());
+    TabBase::insertMe();
+    wxString name = tabName + wxString::Format(wxT(" (%d)"), lister.baseSize());
+    book->SetPageText(tabNum, name);
   }
 
   void takeFocus()
@@ -948,7 +977,10 @@ struct ListTab : TabBase
   }
 };
 
-// A cludge to work around C++'s crappy handling of virtual functions
+/* A cludge to work around C++'s crappy handling of virtual
+   functions. This function should be virtual in ListTab, but then the
+   constructor doesn't call the right one.
+ */
 struct GameSortOptions : SortOptions
 {
   void addSortOptions(wxWindow *parent, wxBoxSizer *pane) const
@@ -961,10 +993,40 @@ struct GameSortOptions : SortOptions
   }
 };
 
-struct GameListTab : ListTab
+// List tab that only displays itself when non-empty
+struct ListTabNonEmpty : ListTab
 {
-  GameListTab(wxWindow *parent, StatusNotify *s)
-    : ListTab(parent, wxT("Browse"), ListKeeper::SL_BROWSE, s, new GameSortOptions)
+  ListTabNonEmpty(wxNotebook *parent, const wxString &name, int listType,
+                  StatusNotify *s, const SortOptions *sop = NULL)
+    : ListTab(parent, name, listType, s, sop)
+  {}
+
+  void insertMe()
+  {
+    tabNum = -1;
+
+    // Only show the "New" tab if there are new games to show.
+    if(lister.baseSize() > 0)
+      ListTab::insertMe();
+  }
+};
+
+// Lists newly added games
+struct NewGameListTab : ListTabNonEmpty
+{
+  NewGameListTab(wxNotebook *parent, StatusNotify *s)
+    : ListTabNonEmpty(parent, wxT("New"), ListKeeper::SL_NEW, s, new GameSortOptions)
+  {
+    list->addColumn(wxT("Name"), 380, new TitleCol);
+    //list->addColumn(wxT("Date added"), 160, new AddDateCol);
+  }
+};
+
+// Lists freeware games
+struct FreewareListTab : ListTab
+{
+  FreewareListTab(wxNotebook *parent, StatusNotify *s)
+    : ListTab(parent, wxT("Browse"), ListKeeper::SL_FREEWARE, s, new GameSortOptions)
   {
     list->addColumn(wxT("Name"), 380, new TitleCol);
     //list->addColumn(wxT("Date added"), 160, new AddDateCol);
@@ -972,9 +1034,19 @@ struct GameListTab : ListTab
 
 };
 
+struct DemoListTab : ListTabNonEmpty
+{
+  DemoListTab(wxNotebook *parent, StatusNotify *s)
+    : ListTabNonEmpty(parent, wxT("Demos"), ListKeeper::SL_DEMOS, s, new GameSortOptions)
+  {
+    list->addColumn(wxT("Name"), 380, new TitleCol);
+    //list->addColumn(wxT("Date added"), 160, new AddDateCol);
+  }
+};
+
 struct InstalledListTab : ListTab
 {
-  InstalledListTab(wxWindow *parent, StatusNotify *s)
+  InstalledListTab(wxNotebook *parent, StatusNotify *s)
     : ListTab(parent, wxT("Installed"), ListKeeper::SL_INSTALL, s)
   {
     list->addColumn(wxT("Name"), 300, new TitleCol);
@@ -997,6 +1069,12 @@ class MyFrame : public wxFrame, public StatusNotify
 {
   std::string version;
   wxNotebook *book;
+
+  NewGameListTab *newTab;
+  FreewareListTab *freewareTab;
+  DemoListTab *demoTab;
+  InstalledListTab *installedTab;
+  NewsTab *newsTab;
 
 public:
   MyFrame(const wxString& title, const std::string &ver)
@@ -1030,18 +1108,13 @@ public:
     wxPanel *panel = new wxPanel(this);
     book = new wxNotebook(panel, myID_BOOK);
 
-    book->AddPage(new GameListTab(book, this), wxT(""), true);
-    book->AddPage(new InstalledListTab(book, this), wxT(""));
-    //book->AddPage(new NewsTab(book), wxT(""));
-
-    // Check if there are installed games, and if so, start by
-    // selecting the Installed tab.
-    {
-      ListTab *lt = dynamic_cast<ListTab*>(getTab(1));
-      assert(lt);
-      if(lt->lister.baseSize() != 0)
-        book->ChangeSelection(1);
-    }
+    // Set up the tabs. They are inserted further down through
+    // setupTabs()
+    newTab = new NewGameListTab(book, this);
+    freewareTab = new FreewareListTab(book, this);
+    demoTab = new DemoListTab(book, this);
+    installedTab = new InstalledListTab(book, this);
+    newsTab = new NewsTab(book);
 
     wxBoxSizer *mainSizer = new wxBoxSizer(wxVERTICAL);
     mainSizer->Add(book, 1, wxGROW | wxALL, 10);
@@ -1072,7 +1145,7 @@ public:
             wxCommandEventHandler(MyFrame::onLeftRight));
 
     setTabFocus();
-    setTitles();
+    setupTabs();
   }
 
   TabBase *getTab(int i)
@@ -1102,10 +1175,34 @@ public:
     if(t) t->takeFocus();
   }
 
-  void setTitles()
+  void setupTabs()
   {
-    for(int i=0; i<book->GetPageCount(); i++)
-      book->SetPageText(i, getTab(i)->getTitle());
+    // Remember which tab was selected
+    TabBase *sel = getCurrentTab();
+
+    // Remove all tabs
+    for(int i=book->GetPageCount()-1; i >= 0; i--)
+      book->RemovePage(i);
+
+    // Re-add them, if they want to be re-added
+    newTab->insertMe();
+    freewareTab->insertMe();
+    demoTab->insertMe();
+    installedTab->insertMe();
+    newsTab->insertMe();
+
+    // Re-select the previously selected tab, if it exists
+    if((sel == NULL) || !sel->selectMe())
+      {
+        // No previously selected tab available.
+
+        // Check if there are installed games, and if so, start by
+        // selecting the Installed tab.
+        if(installedTab->lister.baseSize() != 0)
+          installedTab->selectMe();
+        else
+          freewareTab->selectMe();
+      }
   }
 
   void onLeftRight(wxCommandEvent &event)
@@ -1123,15 +1220,15 @@ public:
     for(int i=0; i<book->GetPageCount(); i++)
       getTab(i)->dataChanged();
 
-    // Update titles.
-    setTitles();
+    // Update tab status and titles
+    setupTabs();
   }
 
   // Switches the selected tab to the "Installed" tab. This is a
   // virtual function from StatusNotify.
   void switchToInstalled()
   {
-    book->ChangeSelection(1);
+    installedTab->selectMe();
     setTabFocus();
   }
 
@@ -1143,7 +1240,7 @@ public:
     for(int i=0; i<book->GetPageCount(); i++)
       getTab(i)->dataChanged();
 
-    setTitles();
+    setupTabs();
   }
 
   void onAbout(wxCommandEvent &event)

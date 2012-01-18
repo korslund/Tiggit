@@ -13,6 +13,8 @@ struct DataList
   {
     std::string url, launch, subdir, version, title, desc,
       shot, shot80x50, location, devname, homepage;
+
+    bool isDemo, hasPaypal;
   };
 
   struct Entry
@@ -34,6 +36,9 @@ struct DataList
     // Used for caching add_time as a string
     wxString timeString;
 
+    // This game is new (add_time newer than last list refresh.)
+    bool isNew;
+
     TigInfo tigInfo;
 
     // Extra data, used for file downloads and other status
@@ -48,7 +53,7 @@ struct DataList
 
   void add(int status, const wxString &urlname, const wxString &idname,
            const wxString &name, const wxString &tigurl, int64_t add_time,
-           const TigInfo &tigInfo)
+           bool isNew, const TigInfo &tigInfo)
   {
     Entry e;
     e.status = status;
@@ -57,6 +62,7 @@ struct DataList
     e.name = name;
     e.tigurl = tigurl;
     e.add_time = add_time;
+    e.isNew = isNew;
     e.tigInfo = tigInfo;
     e.extra = NULL;
 
@@ -74,6 +80,7 @@ struct DataList
            const std::string &name,
            const std::string &tigurl,
            int64_t add_time,
+           bool isNew,
            const TigInfo &tiginfo)
   {
     add(status,
@@ -81,7 +88,7 @@ struct DataList
         wxString(idname.c_str(), wxConvUTF8),
         wxString(name.c_str(), wxConvUTF8),
         wxString(tigurl.c_str(), wxConvUTF8),
-        add_time, tiginfo);
+        add_time, isNew, tiginfo);
   }
 };
 

@@ -1,7 +1,7 @@
 #ifndef _AUTH_HPP_
 #define _AUTH_HPP_
 
-#include "data_reader.hpp"
+#include "readjson.hpp"
 
 struct Auth
 {
@@ -24,7 +24,7 @@ struct Auth
     Json::Value v;
     try
       {
-        v = TigListReader::readJson(get.getPath("auth.json"));
+        v = readJson(get.getPath("auth.json"));
       }
     // A missing auth file is acceptable
     catch(...) { return; }
