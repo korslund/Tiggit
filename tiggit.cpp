@@ -274,11 +274,15 @@ struct NewsTab : TabBase
 
   void dataChanged()
   {
-    cout << "The world is changing.\n";
+    //cout << "The world is changing.\n";
   }
 
   // Currently doesn't insert itself at all
-  void insertMe() { tabNum = -1; }
+  void insertMe()
+  {
+    Hide();
+    tabNum = -1;
+  }
 };
 
 #define myID_BUTTON1 21
@@ -1037,7 +1041,12 @@ struct ListTabNonEmpty : ListTab
 
     // Only show the "New" tab if there are new games to show.
     if(lister.baseSize() > 0)
-      ListTab::insertMe();
+      {
+        Show();
+        ListTab::insertMe();
+      }
+    else
+      Hide();
   }
 };
 
@@ -1104,7 +1113,7 @@ class MyFrame : public wxFrame, public StatusNotify
   FreewareListTab *freewareTab;
   DemoListTab *demoTab;
   InstalledListTab *installedTab;
-  NewsTab *newsTab;
+  //NewsTab *newsTab;
 
 public:
   MyFrame(const wxString& title, const std::string &ver)
@@ -1144,7 +1153,7 @@ public:
     freewareTab = new FreewareListTab(book, this);
     demoTab = new DemoListTab(book, this);
     installedTab = new InstalledListTab(book, this);
-    newsTab = new NewsTab(book);
+    //newsTab = new NewsTab(book);
 
     wxBoxSizer *mainSizer = new wxBoxSizer(wxVERTICAL);
     mainSizer->Add(book, 1, wxGROW | wxALL, 10);
@@ -1219,7 +1228,7 @@ public:
     freewareTab->insertMe();
     demoTab->insertMe();
     installedTab->insertMe();
-    newsTab->insertMe();
+    //newsTab->insertMe();
 
     // Re-select the previously selected tab, if it exists
     if((sel == NULL) || !sel->selectMe())
