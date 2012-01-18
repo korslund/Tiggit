@@ -85,7 +85,7 @@ struct Config
     if(error)
       {
         updateList = true;
-        updateTigs = true;
+        //updateTigs = true;
         write();
       }
   }
