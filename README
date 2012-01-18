@@ -4,7 +4,13 @@ The TIGGIT indie game installer
 This is an alpha version of a new game installer / distribution /
 thingie I'm working on.
 
-For (slightly) more info, check out http://tiggit.net/ .
+For more info, check out http://tiggit.net/ .
 
-The source code is messy, undocumented, early prototypish and not for
-the faint of heart. Oh, and there are NO build instructions. Enjoy :)
+This source code is currently messy, undocumented, early prototypish
+and not for the faint of heart. And there are NO build instructions,
+but you should be able to get going with CMake.
+
+Still, if you want to improve tiggit, all help and suggestions are
+highly welcome.
+
+Send me a mail at korslund@gmail.com or contact me through github.

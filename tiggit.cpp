@@ -283,6 +283,7 @@ struct NewsTab : TabBase
 
 #define myID_BUTTON1 21
 #define myID_BUTTON2 22
+#define myID_SUPPORT 23
 #define myID_GAMEPAGE 24
 #define myID_LIST 25
 #define myID_TEXTVIEW 27
@@ -351,7 +352,7 @@ struct StatusNotify
 
 struct ListTab : TabBase
 {
-  wxButton *b1, *b2;
+  wxButton *b1, *b2, *supportButton;
   MyList *list;
   wxTextCtrl *textView;
   ImageViewer *screenshot;
@@ -399,10 +400,12 @@ struct ListTab : TabBase
        wxBORDER_NONE | wxTE_MULTILINE | wxTE_READONLY | wxTE_AUTO_URL | wxTE_RICH);
 
     screenshot = new ImageViewer(this, myID_SCREENSHOT, wxDefaultPosition,
-                                  wxSize(300,260));
+                                  wxSize(300,200));
 
     b1 = new wxButton(this, myID_BUTTON1, wxT("No action"));
     b2 = new wxButton(this, myID_BUTTON2, wxT("No action"));
+
+    supportButton = new wxButton(this, myID_SUPPORT, wxT("Support Game (Donate)"));
 
     wxBoxSizer *buttonBar = new wxBoxSizer(wxHORIZONTAL);
     buttonBar->Add(b1, 0, wxTOP | wxBOTTOM | wxRIGHT, 3);
@@ -410,10 +413,18 @@ struct ListTab : TabBase
     buttonBar->Add(new wxButton(this, myID_GAMEPAGE, wxT("Game Website")),
                    0, wxTOP | wxBOTTOM, 3);
 
+    wxBoxSizer *buttonHolder = new wxBoxSizer(wxVERTICAL);
+    buttonHolder->Add(supportButton, 0, wxALIGN_RIGHT);
+    buttonHolder->Add(buttonBar, 0);
+
     wxBoxSizer *rightPane = new wxBoxSizer(wxVERTICAL);
     rightPane->Add(textView, 1, wxGROW | wxALL, 5);
     rightPane->Add(screenshot, 0, wxLEFT | wxTOP, 5);
+    rightPane->Add(buttonHolder, 0);
+    /*
+    rightPane->Add(supportButton, 0, wxALIGN_RIGHT);
     rightPane->Add(buttonBar, 0);
+    */
 
     wxBoxSizer *panes = new wxBoxSizer(wxHORIZONTAL);
     panes->Add(leftPane, 100, wxGROW);
@@ -428,6 +439,9 @@ struct ListTab : TabBase
     SetAcceleratorTable(accel);
 
     Connect(myID_GAMEPAGE, wxEVT_COMMAND_BUTTON_CLICKED,
+            wxCommandEventHandler(ListTab::onGamePage));
+
+    Connect(myID_SUPPORT, wxEVT_COMMAND_BUTTON_CLICKED,
             wxCommandEventHandler(ListTab::onGamePage));
 
     Connect(myID_BUTTON1, wxEVT_COMMAND_BUTTON_CLICKED,
@@ -514,16 +528,23 @@ struct ListTab : TabBase
       {
         b1->Disable();
         b2->Disable();
+        supportButton->Disable();
         b1->SetLabel(wxT("No action"));
         b2->SetLabel(wxT("No action"));
         return;
       }
 
-    int s = lister.get(select).status;
+    const DataList::Entry &e = lister.get(select);
+
+    if(e.tigInfo.hasPaypal)
+      supportButton->Enable();
+    else
+      supportButton->Disable();
 
     b1->Enable();
     b2->Enable();
 
+    int s = e.status;
     if(s == 0)
       {
         b1->SetLabel(wxT("Install"));
@@ -931,12 +952,21 @@ struct ListTab : TabBase
 
     wxString url;
 
-    if(e.tigInfo.homepage != "")
-      // Launch game homepage if it exists
-      url = wxString(e.tigInfo.homepage.c_str(), wxConvUTF8);
-    else
-      // Otherwise, just redirect to the tiggit page
-      url = wxT("http://tiggit.net/game/") + e.urlname;
+    if(event.GetId() == myID_GAMEPAGE)
+      {
+        if(e.tigInfo.homepage != "")
+          // Launch game homepage if it exists
+          url = wxString(e.tigInfo.homepage.c_str(), wxConvUTF8);
+        else
+          // Otherwise, just redirect to the tiggit page
+          url = wxT("http://tiggit.net/game/") + e.urlname;
+      }
+
+    else if(event.GetId() == myID_SUPPORT)
+      {
+        // Redirect to our special support page
+        url = wxT("http://tiggit.net/game/") + e.urlname + wxT("&donate");
+      }
 
     wxLaunchDefaultBrowser(url);
   }
