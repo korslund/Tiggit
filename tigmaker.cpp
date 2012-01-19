@@ -133,7 +133,8 @@ enum MyIDs
     myID_PAYPAL,
 
     myID_SAVE,
-    myID_CLEAR
+    myID_CLEAR,
+    myID_WEBSITE
   };
 
 struct TheFrame : public wxFrame
@@ -215,6 +216,7 @@ struct TheFrame : public wxFrame
     sizer->Add(buttons, 0, wxTOP, 10);
     buttons->Add(new wxButton(panel, myID_SAVE, wxT("Save!")));
     buttons->Add(new wxButton(panel, myID_CLEAR, wxT("Clear")));
+    buttons->Add(new wxButton(panel, myID_WEBSITE, wxT("Goto Website")));
 
     clear();
 
@@ -228,6 +230,8 @@ struct TheFrame : public wxFrame
             wxCommandEventHandler(TheFrame::onSave));
     Connect(myID_CLEAR, wxEVT_COMMAND_BUTTON_CLICKED,
             wxCommandEventHandler(TheFrame::onClear));
+    Connect(myID_WEBSITE, wxEVT_COMMAND_BUTTON_CLICKED,
+            wxCommandEventHandler(TheFrame::onWebsite));
   }
 
   void onTitleChange(wxCommandEvent &event)
@@ -339,13 +343,18 @@ struct TheFrame : public wxFrame
         CurlGet::get(cmd, "response.txt");
 
         // Visit finished site
-        wxLaunchDefaultBrowser(wxT("http://tiggit.net/game/" + urlname->GetValue()));
+        wxLaunchDefaultBrowser(wxT("http://tiggit.net/game/") + urlname->GetValue());
       }
 
     clear();
   }
 
   void onClear(wxCommandEvent &event) { clear(); }
+
+  void onWebsite(wxCommandEvent &event)
+  {
+    wxLaunchDefaultBrowser(homepage->GetValue());
+  }
 
   void clear()
   {

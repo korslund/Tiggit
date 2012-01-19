@@ -349,7 +349,7 @@ struct SortOptions
 // it later.
 struct StatusNotify
 {
-  virtual void onStatusChanged() = 0;
+  virtual void onDataChanged() = 0;
   virtual void switchToInstalled() = 0;
 };
 
@@ -796,7 +796,7 @@ struct ListTab : TabBase
   */
   void statusChanged(bool newInst=false)
   {
-    stat->onStatusChanged();
+    stat->onDataChanged();
     if(newInst) stat->switchToInstalled();
   }
 
@@ -1252,11 +1252,13 @@ public:
   // "Event" created internally when a list element moves from one
   // list to another. This is called as a virtual function from
   // StatusNotify.
-  void onStatusChanged()
+  void onDataChanged()
   {
-    // Notify all tabs that data has changed, but keep current position.
-    for(int i=0; i<book->GetPageCount(); i++)
-      getTab(i)->dataChanged();
+    // Notify all tabs that data has changed
+    newTab->dataChanged();
+    freewareTab->dataChanged();
+    demoTab->dataChanged();
+    installedTab->dataChanged();
 
     // Update tab status and titles
     setupTabs();
@@ -1273,12 +1275,7 @@ public:
   void onRefresh(wxCommandEvent &event)
   {
     updateData(true);
-
-    // Notify all tabs that data has changed
-    for(int i=0; i<book->GetPageCount(); i++)
-      getTab(i)->dataChanged();
-
-    setupTabs();
+    onDataChanged();
   }
 
   void onAbout(wxCommandEvent &event)
