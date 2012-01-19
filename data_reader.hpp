@@ -155,7 +155,9 @@ struct TigListReader
 
         // Figure out if this game is new
         bool isNew = false;
-        if(add_time > conf.lastTime)
+        if(add_time > conf.lastTime &&
+           conf.lastTime != 0)  // Don't mark any as 'new' for
+                                // first-time runs
           isNew = true;
 
         // Calculate the latest game time

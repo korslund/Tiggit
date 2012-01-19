@@ -4,7 +4,11 @@ CMakeCache.txt
 CMakeFiles
 cmake_install.cmake
 tiggit
+tigmaker
+tigmaker.json
+response.txt
 *.dll
 *.exe
+*~
 icon.res
 override

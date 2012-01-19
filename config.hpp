@@ -92,13 +92,12 @@ struct Config
 
   void write()
   {
-    std::ofstream of(filename.c_str());
-
     Json::Value root;
     root["repo_version"] = "3";
     // TODO: Subject to 2038-bug
     root["last_time"] = (int)lastTime;
-    of << root;
+
+    writeJson(filename, root);
   }
 };
 

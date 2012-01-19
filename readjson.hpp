@@ -24,6 +24,13 @@ Json::Value parseJsonString(const std::string &string)
 }
 */
 
+void writeJson(const std::string &file, const Json::Value &value)
+{
+  // Fix error handling later
+  std::ofstream of(file.c_str());
+  of << value;
+}
+
 Json::Value readJson(const std::string &file)
 {
   using namespace Json;

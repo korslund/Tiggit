@@ -11,10 +11,14 @@ set(JSON ${JS}/json_reader.cpp ${JS}/json_writer.cpp ${JS}/json_value.cpp)
 
 set(ZZip_LIBRARIES zzip)
 
-set(LIBS ${CURL_LIBRARIES} ${Boost_LIBRARIES} ${wxWidgets_LIBRARIES} ${ZZip_LIBRARIES})
+set(MLIBS ${CURL_LIBRARIES} ${wxWidgets_LIBRARIES})
+set(LIBS ${MLIBS} ${Boost_LIBRARIES} ${ZZip_LIBRARIES})
 
 # This automagically sets up everything for us
 include( ${wxWidgets_USE_FILE} )
 
 add_executable(tiggit tiggit.cpp ${JSON})
 target_link_libraries(tiggit ${LIBS})
+
+add_executable(tigmaker tigmaker.cpp ${JSON})
+target_link_libraries(tigmaker ${MLIBS})

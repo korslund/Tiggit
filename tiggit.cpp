@@ -9,7 +9,6 @@
 
 #include <iostream>
 #include <assert.h>
-#include <set>
 #include <time.h>
 
 #include "image_viewer.hpp"
@@ -1333,11 +1332,6 @@ struct MyTimer : wxTimer
 class MyApp : public wxApp
 {
   MyTimer *time;
-
-  void test(const std::string &inp)
-  {
-    cout << inp << "  =>  " << tig_reader.URL(inp) << endl;
-  }
 
 public:
   virtual bool OnInit()
