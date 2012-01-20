@@ -296,6 +296,10 @@ struct NewsTab : TabBase
 #define myID_SORT_REVERSE 43
 #define myID_SEARCH_BOX 45
 
+#define myID_TIGGIT_PAGE 20010
+#define myID_OPEN_LOCATION 20011
+#define myID_REFRESH_ITEM 20012
+
 struct TitleCol : ColumnHandler
 {
   wxString getText(const DataList::Entry &e)
@@ -965,6 +969,10 @@ struct ListTab : TabBase
           url = wxT("http://tiggit.net/game/") + e.urlname;
       }
 
+    // Only used from context menus
+    else if(event.GetId() == myID_TIGGIT_PAGE)
+      url = wxT("http://tiggit.net/game/") + e.urlname;
+
     else if(event.GetId() == myID_SUPPORT)
       {
         // Redirect to our special support page
@@ -995,7 +1003,73 @@ struct ListTab : TabBase
 
   void onListRightClick(wxListEvent &event)
   {
-    cout << "Context menu on " << event.GetIndex() << endl;
+    if(select < 0 || select >= lister.size())
+      return;
+
+    const DataList::Entry &e = lister.get(select);
+
+    // Set up context menu
+    wxMenu menu;
+
+    // Set up custom event handler for the menu
+    menu.Connect(wxEVT_COMMAND_MENU_SELECTED,
+                 (wxObjectEventFunction)&ListTab::onContextClick, NULL, this);
+
+    // State-dependent actions
+    int s = e.status;
+    if(s == 0)
+      menu.Append(myID_BUTTON1, wxT("Install"));
+    else if(s == 1 || s == 3)
+      menu.Append(myID_BUTTON2, wxT("Abort"));
+    else if(s == 2)
+      {
+        menu.Append(myID_BUTTON1, wxT("Play"));
+        menu.Append(myID_BUTTON2, wxT("Uninstall"));
+      }
+
+    // Common actions
+    menu.AppendSeparator();
+    menu.Append(myID_GAMEPAGE, wxT("Visit Website"));
+    menu.Append(myID_TIGGIT_PAGE, wxT("Visit Tiggit.net Page"));
+    if(e.tigInfo.hasPaypal)
+      menu.Append(myID_SUPPORT, wxT("Support Developer"));
+
+    // Currently only supported in Windows
+    if((wxGetOsVersion() & wxOS_WINDOWS) != 0)
+      menu.Append(myID_OPEN_LOCATION, wxT("Open Location"));
+
+    //menu.Append(myID_REFRESH_ITEM, wxT("Refresh Info"));
+
+    PopupMenu(&menu);
+  }
+
+  // Handle events from the context menu
+  void onContextClick(wxCommandEvent &evt)
+  {
+    if(select < 0 || select >= lister.size())
+      return;
+
+    const DataList::Entry &e = lister.get(select);
+
+    int id = evt.GetId();
+    if(id == myID_BUTTON1 || id == myID_BUTTON2)
+      onButton(evt);
+
+    else if(id == myID_GAMEPAGE || id == myID_SUPPORT || id == myID_TIGGIT_PAGE)
+      onGamePage(evt);
+
+    else if(id == myID_OPEN_LOCATION)
+      {
+        boost::filesystem::path dir = "data";
+        dir /= string(e.idname.mb_str());
+        dir = get.getPath(dir.string());
+
+        if((wxGetOsVersion() & wxOS_WINDOWS) != 0)
+          wxShell(wxT("start ") + wxString(dir.string().c_str(), wxConvUTF8));
+      }
+
+    else if(id == myID_REFRESH_ITEM)
+      cout << "Individual tig refresh isn't implemented yet!\n";
   }
 
   void onListActivate(wxListEvent &event)
@@ -1099,6 +1173,7 @@ struct InstalledListTab : ListTab
 };
 
 #define myID_MENU_REFRESH 30
+#define myID_MENU_REFRESH_TOTAL 20031
 #define myID_GOLEFT 31
 #define myID_GORIGHT 32
 #define myID_BOOK 33
@@ -1128,7 +1203,8 @@ public:
     menuFile->Append(wxID_EXIT, _("E&xit"));
 
     wxMenu *menuList = new wxMenu;
-    menuList->Append(myID_MENU_REFRESH, wxT("&Reload list"));
+    menuList->Append(myID_MENU_REFRESH, wxT("&Reload List"));
+    menuList->Append(myID_MENU_REFRESH_TOTAL, wxT("Reload E&verything"));
 
     wxMenuBar *menuBar = new wxMenuBar;
     menuBar->Append(menuFile, _("&App"));
@@ -1175,6 +1251,8 @@ public:
     Connect(wxID_EXIT, wxEVT_COMMAND_MENU_SELECTED,
             wxCommandEventHandler(MyFrame::onExit));
     Connect(myID_MENU_REFRESH, wxEVT_COMMAND_MENU_SELECTED,
+            wxCommandEventHandler(MyFrame::onRefresh));
+    Connect(myID_MENU_REFRESH_TOTAL, wxEVT_COMMAND_MENU_SELECTED,
             wxCommandEventHandler(MyFrame::onRefresh));
 
     Connect(myID_GOLEFT, wxEVT_COMMAND_BUTTON_CLICKED,
@@ -1274,6 +1352,17 @@ public:
 
   void onRefresh(wxCommandEvent &event)
   {
+    // Did the user request a total refresh?
+    if(event.GetId() == myID_MENU_REFRESH_TOTAL)
+      {
+        if(!ask(wxT("A full reload will takes some time to re-download all necessary data. Are you sure?")))
+          return;
+
+        // Configure the loading process to disregard all cached
+        // files.
+        conf.updateTigs = true;
+      }
+
     updateData(true);
     onDataChanged();
   }

@@ -205,6 +205,10 @@ struct TigListReader
     // Inform config if our latest time stamp has changed
     if(maxTime > conf.lastTime)
       conf.setLastTime(maxTime);
+
+    // Use cached files from now on
+    conf.updateTigs = false;
+    conf.updateList = false;
   }
 };
 #endif
