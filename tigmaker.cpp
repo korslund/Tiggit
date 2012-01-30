@@ -1,5 +1,7 @@
 #define wxUSE_UNICODE 1
 #include <wx/wx.h>
+#include <wx/cmdline.h>
+#include <wx/textfile.h>
 
 #include <iostream>
 #include <assert.h>
@@ -46,6 +48,47 @@ string urlencode(const string &c)
     }
   return escaped;
 }
+
+// Used to pre-load data from file before we start
+struct PreLoad
+{
+  bool hasLoaded;
+
+  PreLoad() : hasLoaded(false) {}
+
+  wxString version, desc, homepage, url;
+
+  void process(const wxString &line)
+  {
+    wxString key = line.BeforeFirst(':');
+    wxString data = line.AfterFirst(':');
+
+    if(data.IsEmpty()) return;
+
+    if(key == wxT("Version"))
+      version = data;
+    else if(key == wxT("About"))
+      desc = data;
+    else if(key == wxT("Website"))
+      homepage = data;
+    /*
+    else if(key == wxT("Download"))
+      url = data;
+    */
+  }
+
+  void load(const wxString &file)
+  {
+    hasLoaded = true;
+
+    wxTextFile inf;
+    inf.Open(file);
+
+    process(inf.GetFirstLine());
+    while(!inf.Eof())
+      process(inf.GetNextLine());
+  }
+};
 
 struct Config
 {
@@ -116,6 +159,10 @@ struct Config
 };
 
 Config conf;
+PreLoad preload;
+
+// When true, exit immediately after clicking Save
+bool exitAfterSave = false;
 
 enum MyIDs
   {
@@ -219,6 +266,15 @@ struct TheFrame : public wxFrame
     buttons->Add(new wxButton(panel, myID_WEBSITE, wxT("Goto Website")));
 
     clear();
+
+    // Load preload values, if any
+    if(preload.hasLoaded)
+      {
+        desc->ChangeValue(preload.desc);
+        url->ChangeValue(preload.url);
+        version->ChangeValue(preload.version);
+        homepage->ChangeValue(preload.homepage);
+      }
 
     Connect(myID_TITLE, wxEVT_COMMAND_TEXT_UPDATED,
             wxCommandEventHandler(TheFrame::onTitleChange));
@@ -347,6 +403,9 @@ struct TheFrame : public wxFrame
       }
 
     clear();
+
+    if(exitAfterSave)
+      Close();
   }
 
   void onClear(wxCommandEvent &event) { clear(); }
@@ -380,10 +439,17 @@ struct TheFrame : public wxFrame
   }
 };
 
+static const wxCmdLineEntryDesc cmdLineDesc[] =
+  {
+    { wxCMD_LINE_SWITCH, wxT("e"), wxT("exit"), wxT("Exit after Save") },
+    { wxCMD_LINE_OPTION, wxT("g"), wxT("gdfile"), wxT("Game.cfg file from Game Downloader"), wxCMD_LINE_VAL_STRING },
+    { wxCMD_LINE_NONE }
+  };
+
 class MyApp : public wxApp
 {
 public:
-  virtual bool OnInit()
+  bool OnInit()
   {
     if (!wxApp::OnInit())
       return false;
@@ -393,6 +459,24 @@ public:
 
     TheFrame *frame = new TheFrame();
     frame->Show(true);
+
+    return true;
+  }
+
+  void OnInitCmdLine(wxCmdLineParser& parser)
+  {
+    parser.SetDesc (cmdLineDesc);
+    parser.SetSwitchChars(wxT("-"));
+  }
+
+  bool OnCmdLineParsed(wxCmdLineParser& parser)
+  {
+    wxString file;
+    if(parser.Found(wxT("g"), &file))
+      preload.load(file);
+
+    if(parser.Found(wxT("e")))
+      exitAfterSave = true;
 
     return true;
   }
