@@ -54,6 +54,8 @@ struct PreLoad
 {
   bool hasLoaded;
 
+  bool isSf, isHost;
+
   PreLoad() : hasLoaded(false) {}
 
   wxString version, desc, homepage, url;
@@ -71,10 +73,12 @@ struct PreLoad
       desc = data;
     else if(key == wxT("Website"))
       homepage = data;
-    /*
     else if(key == wxT("Download"))
       url = data;
-    */
+
+    // For our own sourceforge-hosted zips
+    if(isSf)
+      url = wxT("http://sourceforge.net/projects/tiggit/files/open_source_game_zips/");
   }
 
   void load(const wxString &file)
@@ -325,6 +329,10 @@ struct TheFrame : public wxFrame
 
         // Set it
         urlname->ChangeValue(val);
+
+        // Sort of hackish, but ok
+        if(preload.isHost)
+          url->ChangeValue(wxT("http://tiggit.net/dl/") + val);
       }
   }
 
@@ -442,6 +450,8 @@ struct TheFrame : public wxFrame
 static const wxCmdLineEntryDesc cmdLineDesc[] =
   {
     { wxCMD_LINE_SWITCH, wxT("e"), wxT("exit"), wxT("Exit after Save") },
+    { wxCMD_LINE_SWITCH, wxT("s"), wxT("exit"), wxT("Use sourceforge link format") },
+    { wxCMD_LINE_SWITCH, wxT("h"), wxT("exit"), wxT("Use self-hosting link format") },
     { wxCMD_LINE_OPTION, wxT("g"), wxT("gdfile"), wxT("Game.cfg file from Game Downloader"), wxCMD_LINE_VAL_STRING },
     { wxCMD_LINE_NONE }
   };
@@ -472,6 +482,10 @@ public:
   bool OnCmdLineParsed(wxCmdLineParser& parser)
   {
     wxString file;
+
+    preload.isSf = parser.Found(wxT("s"));
+    preload.isHost = parser.Found(wxT("h"));
+
     if(parser.Found(wxT("g"), &file))
       preload.load(file);
 

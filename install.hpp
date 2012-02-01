@@ -80,7 +80,6 @@ class Installer
         {
           cout << "Error: " << e.what() << endl;
           error = true;
-
         }
 
       // We're done

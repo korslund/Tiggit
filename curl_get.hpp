@@ -63,7 +63,10 @@ struct CurlGet
 
     // Pass along referer information whenever we're following a
     // redirect.
-    curl_easy_setopt(curl, CURLOPT_AUTOREFERER, 1);
+
+    // DISABLED: around feb. 2012 sourceforge downloads started
+    // breaking - commmenting out this fixed it
+    //curl_easy_setopt(curl, CURLOPT_AUTOREFERER, 1);
 
     // Progress reports
     if(fn)
