@@ -236,9 +236,9 @@ struct Updater
     setMsg(wxString((vermsg + "\n" + url).c_str(), wxConvUTF8));
 
     // Start downloading the latest version
-    ThreadGet getter;
     std::string zip = get.getPath("update.zip");
-    getter.start(url, zip);
+    DownloadJob getter(url, zip);
+    getter.run();
 
     // Poll-loop until it's done
     while(true)
@@ -261,16 +261,16 @@ struct Updater
         // Did the user click 'Cancel'?
         if(!res)
           // Abort download thread
-          getter.status = 4;
+          getter.abort();
 
         // Did we finish, one way or another?
-        if(getter.status > 1)
+        if(getter.isFinished())
           break;
       }
 
     // If something went wrong, just forget about it and continue
     // running the old version instead.
-    if(getter.status > 2)
+    if(getter.isNonSuccess())
       return false;
 
     dlg->Update(0, wxString((vermsg + "\nUnpacking...").c_str(), wxConvUTF8));

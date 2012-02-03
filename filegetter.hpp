@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdexcept>
 #include "tmpdir.hpp"
+#include "curl_get.hpp"
 
 struct FileGetter
 {

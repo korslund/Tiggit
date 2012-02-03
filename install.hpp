@@ -5,6 +5,7 @@
 #include <boost/filesystem.hpp>
 
 #include "unzip.hpp"
+#include "jobify.hpp"
 
 /*
   Multi-threaded zip installer.
@@ -26,47 +27,20 @@
  */
 class Installer
 {
-  struct Job
+  struct ZipJob : StatusJob
   {
-    /*
-      0 - not started
-      1 - working
-      2 - done
-      3 - error
-      4 - user abort
-     */
     int status;
     std::string zip, dir;
 
-    Job(const std::string &_zip,
-        const std::string &_dir)
-      : status(0), zip(_zip), dir(_dir)
+    ZipJob(const std::string &_zip, const std::string &_dir)
+      : zip(_zip), dir(_dir)
     {}
-  };
 
-  Job *current;
-
-  std::queue<Job*> list;
-
-  struct Worker : wxThread
-  {
-    Job *job;
-
-    Worker(Job *j) : job(j)
-    {
-      assert(j);
-      Create();
-      Run();
-    }
-
-    ExitCode Entry()
+    void executeJob()
     {
       using namespace boost::filesystem;
       using namespace std;
-      job->status = 1;
-
-      string zip = job->zip;
-      string dir = job->dir;
+      setBusy();
 
       // Make sure the directory exists
       create_directories(dir);
@@ -74,31 +48,30 @@ class Installer
       // Unzip the file
       UnZip unzip;
 
-      bool error = false;
       try { unzip.unpack(zip,dir); }
       catch(std::exception &e)
         {
-          cout << "Error: " << e.what() << endl;
-          error = true;
-        }
-
-      // We're done
-      if(error)
-        {
-          job->status = 3;
+          setError(e.what());
 
           // Remove install directory
           remove_all(dir);
+
+          // TODO: Kill this
+          cout << "Error: " << e.what() << endl;
         }
-      else
-        job->status = 2;
 
       // Delete the zip file
       remove(zip);
 
-      return 0;
+      // Mark as done, unless there was an error
+      if(!isNonSuccess())
+        setDone();
     }
   };
+
+  ZipJob *current;
+
+  std::queue<ZipJob*> list;
 
 public:
 
@@ -112,7 +85,7 @@ public:
   void *queue(const std::string &zip,
               const std::string &where)
   {
-    Job *e = new Job(zip, where);
+    ZipJob *e = new ZipJob(zip, where);
     list.push(e);
     return e;
   }
@@ -140,7 +113,7 @@ public:
     if(current)
       {
         // Yup, check it.
-        if(current->status >= 2)
+        if(current->isFinished())
           // It's done, reset the current pointer. The object will be
           // deleted later, in this or a subsequent call to check().
           current = NULL;
@@ -152,15 +125,15 @@ public:
        !list.empty())
       {
         // Yup, so get going!
-        Job *ne = list.front();
+        ZipJob *ne = list.front();
         list.pop();
 
         // Check if the user has already aborted this action
-        if(ne->status != 4)
+        if(!ne->abortRequested())
           {
             // If not, go ahead with it.
             current = ne;
-            new Worker(ne);
+            ne->run();
           }
 
         // If the action was aborted, don't bother looping around to
@@ -170,12 +143,10 @@ public:
 
     // Next, handle the parameter element
     assert(p);
-    Job *e = (Job*)p;
-
-    int stat = e->status;
+    ZipJob *e = (ZipJob*)p;
 
     // Delete the object if it's done.
-    if(stat >= 2)
+    if(e->isFinished())
       {
         // It's possible (due to threaded execution order) that e ==
         // current. If so, remember to reset current as well, to make
@@ -183,23 +154,32 @@ public:
         if(current == e)
           current = NULL;
 
+        // This is a kludge. Fix it soon!
+        int stat;
+        if(e->isSuccess()) stat = 2;
+        else if(e->isError()) stat = 3;
+        else stat = 4;
+
         delete e;
+
+        return stat;
       }
 
-    return stat;
+    if(!e->hasStarted()) return 0;
+    return 1;
   }
 
   // Abort a given unpack operation
   void abort(void* p)
   {
     assert(p);
-    Job *e = (Job*)p;
+    ZipJob *e = (ZipJob*)p;
 
     // Unless we're running, we can safely delete the zip file at this
     // point.
     if(e != current)
       {
-        e->status = 4;
+        e->abort();
         boost::filesystem::remove(e->zip);
       }
 

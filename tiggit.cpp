@@ -12,11 +12,10 @@
 #include <time.h>
 
 #include "image_viewer.hpp"
-#include "curl_get.hpp"
 #include "decodeurl.hpp"
 #include "filegetter.hpp"
 #include "data_reader.hpp"
-#include "thread_get.hpp"
+#include "downloadjob.hpp"
 #include "install.hpp"
 #include "json_installed.hpp"
 #include "auto_update.hpp"
@@ -666,14 +665,14 @@ struct ListTab : TabBase
         // If we get here, we are currently downloading something.
         assert(e.status == 1);
         assert(e.extra);
-        const ThreadGet *g = (ThreadGet*)e.extra;
+        const DownloadJob *g = (DownloadJob*)e.extra;
 
         // Has the download finished?
-        if(g->status >= 2)
+        if(g->isFinished())
           {
-            if(g->status == 2)
+            if(g->isSuccess())
               {
-                // Success. Move to unpacking stage.
+                // Success! Move to unpacking stage.
                 e.status = 3;
 
                 // Construct the install path
@@ -689,9 +688,9 @@ struct ListTab : TabBase
                 e.status = 0;
                 e.extra = NULL;
 
-                if(g->status == 3)
+                if(g->isError())
                   wxMessageBox(wxT("Download failed for ") + e.name +
-                               wxT(":\n") + wxString(g->errMsg.c_str(), wxConvUTF8),
+                               wxT(":\n") + wxString(g->getError().c_str(), wxConvUTF8),
                                wxT("Error"), wxOK | wxICON_ERROR);
                 statusChanged();
               }
@@ -699,7 +698,7 @@ struct ListTab : TabBase
             // We don't need the downloader anymore
             delete g;
           }
-        else if(g->status == 1)
+        else if(g->isBusy())
           {
             // Download is still in progress
 
@@ -763,9 +762,7 @@ struct ListTab : TabBase
         }
     }
 
-    // Start theaded downloading
-    ThreadGet *tg = new ThreadGet;
-
+    // Url to download from
     string url = e.tigInfo.url;
 
     // Construct the file name
@@ -773,12 +770,17 @@ struct ListTab : TabBase
     dir /= string(e.idname.mb_str()) + ".zip";
     string out = get.getPath(dir.string());
 
-    //cout << url << " => " << out << endl;
-    tg->start(url, out);
+    // Start theaded download
+    {
+      DownloadJob *tg = new DownloadJob(url, out);
+      tg->run();
+
+      // Store the job pointer for later reference
+      e.extra = tg;
+    }
 
     // Update list status
     e.status = 1;
-    e.extra = tg;
 
     // Finally update this entry now.
     handleDownload(index);
@@ -831,9 +833,11 @@ struct ListTab : TabBase
       {
         if(e.status == 1) // Downloading
           {
-            ThreadGet *g = (ThreadGet*)e.extra;
             if(b == 2) // Abort
-              g->status = 4;
+              {
+                DownloadJob *g = (DownloadJob*)e.extra;
+                g->abort();
+              }
           }
         else if(e.status == 3) // Installing
           {

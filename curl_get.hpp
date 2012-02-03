@@ -64,9 +64,13 @@ struct CurlGet
     // Pass along referer information whenever we're following a
     // redirect.
 
-    // DISABLED: around feb. 2012 sourceforge downloads started
-    // breaking - commmenting out this fixed it
-    //curl_easy_setopt(curl, CURLOPT_AUTOREFERER, 1);
+    /* NOTE: around feb. 2012 sourceforge downloads started breaking -
+       commmenting out this fixed it. However it might be required for
+       other downloads, so let's only selectively disable it for
+       sourceforge for now.
+    */
+    if(url.find("sourceforge") == std::string::npos)
+      curl_easy_setopt(curl, CURLOPT_AUTOREFERER, 1);
 
     // Progress reports
     if(fn)
