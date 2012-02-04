@@ -276,7 +276,8 @@ struct Updater
     dlg->Update(0, wxString((vermsg + "\nUnpacking...").c_str(), wxConvUTF8));
 
     // Download complete! Start unpacking
-    void *handle = inst.queue(zip, up_dest);
+    ZipJob install(zip, up_dest);
+    install.run();
 
     // Do another semi-busy loop
     int status;
@@ -285,22 +286,17 @@ struct Updater
         app->Yield();
         wxMilliSleep(40);
 
-        // Ignore 'cancel' commands while unpacking.
-
-        // Disabled this because it looks crap on windows. On
-        // linux/gtk it worked exactly like it should though.
-
+        // Disabled this because it looks like crap on windows. On
+        // linux/gtk it works exactly like it should though.
         //dlg->Pulse();
 
-        status = inst.check(handle);
-
-        // Are we done?
-        if(status >= 2)
+        // Exit when done
+        if(install.isFinished())
           break;
       }
 
     // Give up if there were errors
-    if(status >= 3)
+    if(install.isNonSuccess())
       return false;
 
     return true;

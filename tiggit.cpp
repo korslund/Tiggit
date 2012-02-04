@@ -16,7 +16,8 @@
 #include "filegetter.hpp"
 #include "data_reader.hpp"
 #include "downloadjob.hpp"
-#include "install.hpp"
+#include "zipjob.hpp"
+#include "jobqueue.hpp"
 #include "json_installed.hpp"
 #include "auto_update.hpp"
 #include "listkeeper.hpp"
@@ -27,6 +28,7 @@ using namespace std;
 DataList data;
 JsonInstalled jinst;
 TigListReader tig_reader;
+JobQueue jobQueue;
 
 void writeConfig()
 {
@@ -631,41 +633,41 @@ struct ListTab : TabBase
     // Are we currently unpacking?
     if(e.status == 3)
       {
-        // Check the installer status
-        int res = inst.check(e.extra);
-
-        if(res == 2)
+        assert(e.job);
+        if(e.job->isFinished())
           {
-            // Success. Move to "playable" status.
-            e.status = 2;
-            e.extra = NULL;
-          }
-        else if(res > 2)
-          {
-            // Install was aborted. Revert to "not installed" status.
-            e.status = 0;
-            e.extra = NULL;
+            if(e.job->isSuccess())
+              {
+                // Success. Move to "playable" status.
+                e.status = 2;
+                e.job = NULL;
+              }
+            else if(e.job->isNonSuccess())
+              {
+                // Install was aborted. Revert to "not installed" status.
+                e.status = 0;
+                e.job = NULL;
 
-            // If there was an error, report it to the user
-            if(res == 3)
-              wxMessageBox(wxT("Unpacking failed for ") + e.name, wxT("Error"), wxOK | wxICON_ERROR);
-            statusChanged();
+                // If there was an error, report it to the user
+                if(e.job->isError())
+                  wxMessageBox(wxT("Unpacking failed for ") + e.name +
+                               wxT(":\n") + wxString(e.job->getError().c_str(), wxConvUTF8),
+                               wxT("Error"), wxOK | wxICON_ERROR);
+                statusChanged();
+              }
+            // Delete the installer job
+            jobQueue.finish(e.job);
+            delete e.job;
           }
-        /*
-        else if(res == 0)
-          e.msg = wxT("Queued for installation");
-        */
-        else if(res == 1 || res == 0)
+        else
           e.msg = wxT("Unpacking...");
-
-        else assert(0);
       }
     else
       {
         // If we get here, we are currently downloading something.
         assert(e.status == 1);
-        assert(e.extra);
-        const DownloadJob *g = (DownloadJob*)e.extra;
+        assert(e.job);
+        const DownloadJob *g = (DownloadJob*)e.job;
 
         // Has the download finished?
         if(g->isFinished())
@@ -679,14 +681,16 @@ struct ListTab : TabBase
                 boost::filesystem::path dir = "data";
                 dir /= string(e.idname.mb_str());
 
-                // Set up installer, store the reference struct.
-                e.extra = inst.queue(g->file, get.getPath(dir.string()));
+                // Set up installer
+                ZipJob *zb = new ZipJob(g->file, get.getPath(dir.string()));
+                jobQueue.queue(zb);
+                e.job = zb;
               }
             else
               {
                 // Abort.
                 e.status = 0;
-                e.extra = NULL;
+                e.job = NULL;
 
                 if(g->isError())
                   wxMessageBox(wxT("Download failed for ") + e.name +
@@ -725,9 +729,9 @@ struct ListTab : TabBase
   {
     DataList::Entry &e = lister.get(index);
 
-    if(e.extra)
+    if(e.job)
       {
-        cout << "FAIL: e.extra not NULL (internal error)\n";
+        cout << "FAIL: e.job not NULL (internal error)\n";
         return;
       }
     if(e.status != 0)
@@ -776,7 +780,7 @@ struct ListTab : TabBase
       tg->run();
 
       // Store the job pointer for later reference
-      e.extra = tg;
+      e.job = tg;
     }
 
     // Update list status
@@ -831,27 +835,11 @@ struct ListTab : TabBase
       }
     else if(e.status == 1 || e.status == 3)
       {
-        if(e.status == 1) // Downloading
+        if(b == 2) // Abort
           {
-            if(b == 2) // Abort
-              {
-                DownloadJob *g = (DownloadJob*)e.extra;
-                g->abort();
-              }
+            assert(e.job);
+            e.job->abort();
           }
-        else if(e.status == 3) // Installing
-          {
-            if(b == 2) // Abort
-              inst.abort(e.extra);
-          }
-        /*
-        if(activate) // Disable enter/double-click?
-          cout << "No action";
-        else if(b == 1)
-          cout << "Pausing";
-        else if(b == 2)
-          cout << "Aborting";
-        */
       }
     else if(e.status == 2)
       {
@@ -1400,6 +1388,8 @@ public:
     */
     for(int i=0; i<book->GetPageCount(); i++)
       getTab(i)->tick();
+
+    jobQueue.update();
   }
 };
 

@@ -6,7 +6,7 @@
 
 /* Download a file in a separate thread.
  */
-struct DownloadJob : StatusJob
+struct DownloadJob : ThreadJob
 {
   std::string url, file;
 
@@ -33,13 +33,23 @@ private:
   {
     setBusy();
 
+    // We need local variables since in principle, the object may be
+    // deleted after the finish status functions (setDone() etc) are
+    // called.
+    std::string fname = file;
+    bool success = false;
+
     CurlGet get;
     try
       {
         get.get(url, file, &curl_progress, this);
 
         if(abortRequested()) setAbort();
-        else if(completed) setDone();
+        else if(completed)
+          {
+            setDone();
+            success = true;
+          }
         else setError("Unknown error");
       }
     catch(std::exception &e)
@@ -47,8 +57,8 @@ private:
         setError(e.what());
       }
 
-    if(isNonSuccess())
-      boost::filesystem::remove(file);
+    if(!success)
+      boost::filesystem::remove(fname);
   }
 
   // Static progress function passed to CURL

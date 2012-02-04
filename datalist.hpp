@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include <time.h>
 
+#include "jobify.hpp"
+
 struct DataList
 {
   struct TigInfo
@@ -41,9 +43,8 @@ struct DataList
 
     TigInfo tigInfo;
 
-    // Extra data, used for file downloads and other status
-    // information
-    void *extra;
+    // Current job associated with this entry, if any
+    StatusJob *job;
 
     // Status message used in some cases
     wxString msg;
@@ -64,7 +65,7 @@ struct DataList
     e.add_time = add_time;
     e.isNew = isNew;
     e.tigInfo = tigInfo;
-    e.extra = NULL;
+    e.job = NULL;
 
     time_t t = add_time;
     char buf[50];

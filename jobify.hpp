@@ -10,40 +10,7 @@
 #include <wx/thread.h>
 #include <string>
 
-struct Jobify
-{
-  // Entry point for this job. This function will usually run in an
-  // independent thread.
-  virtual void executeJob() = 0;
-
-  // Run this job. Will create a new thread that runs executeJob.
-  void run()
-  {
-    new wxJobRunner(this);
-  }
-
-private:
-  // This is where the magic happens
-  struct wxJobRunner : wxThread
-  {
-    Jobify *job;
-
-    wxJobRunner(Jobify *j) : job(j)
-    {
-      assert(job);
-      Create();
-      Run();
-    }
-
-    ExitCode Entry()
-    {
-      job->executeJob();
-      return 0;
-    }
-  };
-};
-
-struct StatusJob : Jobify
+struct StatusJob
 {
   StatusJob() : status(ST_NONE), doAbort(false) {}
 
@@ -61,6 +28,13 @@ struct StatusJob : Jobify
   bool abortRequested() const { return doAbort; }
 
   std::string getError() const { return errMsg; }
+
+  // Entry point for this job.
+  virtual void executeJob() = 0;
+  virtual ~StatusJob() {}
+
+  // For non-thread jobs, just run the job directly
+  virtual void run() { executeJob(); }
 
 protected:
   void setError(const std::string &msg)
@@ -87,6 +61,35 @@ private:
   bool doAbort;
 
   std::string errMsg;
+};
+
+struct ThreadJob : StatusJob
+{
+  // Run this job. Will create a new thread that runs executeJob.
+  void run()
+  {
+    new wxJobRunner(this);
+  }
+
+private:
+  // This is where the magic happens
+  struct wxJobRunner : wxThread
+  {
+    StatusJob *job;
+
+    wxJobRunner(StatusJob *j) : job(j)
+    {
+      assert(job);
+      Create();
+      Run();
+    }
+
+    ExitCode Entry()
+    {
+      job->executeJob();
+      return 0;
+    }
+  };
 };
 
 #endif
