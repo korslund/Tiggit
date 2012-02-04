@@ -1,13 +1,9 @@
 #ifndef _DATALIST_HPP_
 #define _DATALIST_HPP_
 
-#include <wx/wx.h>
 #include <string>
 #include <vector>
 #include <stdint.h>
-#include <time.h>
-
-#include "jobify.hpp"
 
 struct DataList
 {
@@ -21,43 +17,29 @@ struct DataList
 
   struct Entry
   {
-    /*
-      0 - not installed
-      1 - downloading
-      2 - ready to play
-      3 - unpacking
-     */
-    int status;
-
-    // idname = channel/urlname
-    wxString urlname, idname, name, tigurl;
-
     // Time added to the channel database
     int64_t add_time;
-
-    // Used for caching add_time as a string
-    wxString timeString;
 
     // This game is new (add_time newer than last list refresh.)
     bool isNew;
 
+    // Idname = channel/urlname
+    std::string urlname, idname, name, tigurl;
+
     TigInfo tigInfo;
 
-    // Current job associated with this entry, if any
-    StatusJob *job;
-
-    // Status message used in some cases
-    wxString msg;
+    // Links to any custom external structure connected to this
+    // data. In Tiggit this is used for the GameInfo class.
+    void *info;
   };
 
   std::vector<Entry> arr;
 
-  void add(int status, const wxString &urlname, const wxString &idname,
-           const wxString &name, const wxString &tigurl, int64_t add_time,
-           bool isNew, const TigInfo &tigInfo)
+  void add(const std::string &urlname, const std::string &idname,
+           const std::string &name, const std::string &tigurl,
+           int64_t add_time, bool isNew, const TigInfo &tigInfo)
   {
     Entry e;
-    e.status = status;
     e.urlname = urlname;
     e.idname = idname;
     e.name = name;
@@ -65,31 +47,9 @@ struct DataList
     e.add_time = add_time;
     e.isNew = isNew;
     e.tigInfo = tigInfo;
-    e.job = NULL;
-
-    time_t t = add_time;
-    char buf[50];
-    strftime(buf,50, "%Y-%m-%d", gmtime(&t));
-    e.timeString = wxString(buf, wxConvUTF8);
+    e.info = NULL;
 
     arr.push_back(e);
-  }
-
-  void add(int status,
-           const std::string &urlname,
-           const std::string &idname,
-           const std::string &name,
-           const std::string &tigurl,
-           int64_t add_time,
-           bool isNew,
-           const TigInfo &tiginfo)
-  {
-    add(status,
-        wxString(urlname.c_str(), wxConvUTF8),
-        wxString(idname.c_str(), wxConvUTF8),
-        wxString(name.c_str(), wxConvUTF8),
-        wxString(tigurl.c_str(), wxConvUTF8),
-        add_time, isNew, tiginfo);
   }
 };
 

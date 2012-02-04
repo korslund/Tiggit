@@ -14,8 +14,8 @@ struct JobQueue
     list.push(job);
   }
 
-  // Remove references to a running job.
-  void finish(StatusJob *job)
+  // Remove reference to a running job.
+  void unlink(StatusJob *job)
   {
     wxMutexLocker lock(mutex);
     if(job == current)
@@ -64,5 +64,8 @@ private:
 
   wxMutex mutex;
 };
+
+// More dodgy global variables, yay!
+JobQueue jobQueue;
 
 #endif

@@ -10,6 +10,7 @@
 
 #include "datalist.hpp"
 #include "filegetter.hpp"
+#include "gameinfo.hpp"
 
 /*
   This class is responsible for reading and writing the
@@ -20,7 +21,7 @@
 struct JsonInstalled
 {
   // Write the config file based on the given data list
-  void write(const DataList &data)
+  void write(DataList &data)
   {
     std::string filename = get.getPath("installed.json");
 
@@ -36,14 +37,14 @@ struct JsonInstalled
     // Search the data list for installed games
     for(int i=0; i<data.arr.size(); i++)
       {
-        const DataList::Entry &e = data.arr[i];
+        GameInfo &g = GameInfo::conv(data.arr[i]);
 
-        if(e.status == 2)
-          root[e.idname.mb_str()] =
-            // TODO: This isn't correct (this is the latest version,
-            // not necessarily the installed version) but will fix all
-            // this later.
-            e.tigInfo.version;
+        if(g.isInstalled())
+          root[g.entry.idname] =
+            // TODO: This isn't correct - this is the latest version,
+            // not necessarily the installed version. But we'll fix
+            // all this later.
+            g.entry.tigInfo.version;
       }
 
     of << root;
@@ -83,11 +84,11 @@ struct JsonInstalled
           {
             DataList::Entry &e = data.arr[i];
 
-            if(game != std::string(e.idname.mb_str()))
+            if(game != e.idname)
               continue;
 
             // Match. Set status to installed.
-            e.status = 2;
+            GameInfo::conv(e).setInstalled();
 
             // TODO: We ignore the version for now.
             break;

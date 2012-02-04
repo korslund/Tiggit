@@ -5,6 +5,7 @@
 #include <boost/algorithm/string.hpp>
 #include <algorithm>
 #include "datalist.hpp"
+#include "gameinfo.hpp"
 
 class ListKeeper
 {
@@ -205,7 +206,8 @@ public:
         // Loop through the database and insert matching items
         for(int i=0; i<data.arr.size(); i++)
           {
-            const DataList::Entry &e = data.arr[i];
+            DataList::Entry &e = data.arr[i];
+            GameInfo &g = GameInfo::conv(e);
 
             bool keep = false;
 
@@ -214,12 +216,13 @@ public:
               {
                 // We list everything that's got a non-zero install
                 // status
-                if(e.status > 0) keep = true;
+                if(g.isInstalled() || g.isWorking())
+                  keep = true;
               }
 
             // Installed games may not be listed anywhere else, so
             // skip this game.
-            else if(e.status > 0) continue;
+            else if(g.isInstalled() || g.isWorking()) continue;
 
             // Insert into each tab according to their own criteria
             if(selection == SL_NEW && e.isNew ||

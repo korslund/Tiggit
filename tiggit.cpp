@@ -22,13 +22,13 @@
 #include "auto_update.hpp"
 #include "listkeeper.hpp"
 #include "auth.hpp"
+#include "gameinfo.hpp"
 
 using namespace std;
 
 DataList data;
 JsonInstalled jinst;
 TigListReader tig_reader;
-JobQueue jobQueue;
 
 void writeConfig()
 {
@@ -91,7 +91,7 @@ void updateData(bool download)
 
 struct ColumnHandler
 {
-  virtual wxString getText(const DataList::Entry &e) = 0;
+  virtual wxString getText(DataList::Entry &e) = 0;
 };
 
 class MyList : public wxListCtrl
@@ -172,10 +172,9 @@ public:
     if(item < 0 || item >= lister.size())
       return NULL;
 
-    int s = lister.get(item).status;
-    if(s == 0) return NULL;
-    //if(s == 2) return (wxListItemAttr*)&green;
-    if(s == 2) return NULL; // Disable green
+    GameInfo &g = GameInfo::conv(lister.get(item));
+    if(g.isNone()) return NULL;
+    if(g.isInstalled()) return NULL;
     return (wxListItemAttr*)&orange;
   }
 
@@ -303,17 +302,17 @@ struct NewsTab : TabBase
 
 struct TitleCol : ColumnHandler
 {
-  wxString getText(const DataList::Entry &e)
+  wxString getText(DataList::Entry &e)
   {
-    return e.name;
+    return GameInfo::conv(e).name;
   }
 };
 
 struct AddDateCol : ColumnHandler
 {
-  wxString getText(const DataList::Entry &e)
+  wxString getText(DataList::Entry &e)
   {
-    return e.timeString;
+    return GameInfo::conv(e).timeString;
   }
 };
 
@@ -327,18 +326,18 @@ struct StatusCol : ColumnHandler
     textReady = wxT("Ready to play");
   }
 
-  wxString getText(const DataList::Entry &e)
+  wxString getText(DataList::Entry &e)
   {
-    int s = e.status;
+    const GameInfo &g = GameInfo::conv(e);
 
-    if(s == 0)
+    if(g.isNone())
       return textNotInst;
 
-    if(s == 2)
+    if(g.isInstalled())
       return textReady;
 
-    if(s == 1 || s == 3)
-      return e.msg;
+    if(g.isWorking())
+      return g.getStatus();
 
     assert(0);
   }
@@ -542,7 +541,7 @@ struct ListTab : TabBase
         return;
       }
 
-    const DataList::Entry &e = lister.get(select);
+    DataList::Entry &e = lister.get(select);
 
     if(e.tigInfo.hasPaypal)
       supportButton->Enable();
@@ -552,14 +551,14 @@ struct ListTab : TabBase
     b1->Enable();
     b2->Enable();
 
-    int s = e.status;
-    if(s == 0)
+    GameInfo &g = GameInfo::conv(e);
+    if(g.isNone())
       {
         b1->SetLabel(wxT("Install"));
         b2->SetLabel(wxT("No action"));
         b2->Disable();
       }
-    else if(s == 1 || s == 3)
+    else if(g.isWorking())
       {
         b1->SetLabel(wxT("Pause"));
         b2->SetLabel(wxT("Abort"));
@@ -567,7 +566,7 @@ struct ListTab : TabBase
         // Pausing is not implemented yet
         b1->Disable();
       }
-    else if(s == 2)
+    else if(g.isInstalled())
       {
         b1->SetLabel(wxT("Play Now"));
         b2->SetLabel(wxT("Uninstall"));
@@ -600,165 +599,46 @@ struct ListTab : TabBase
     listHasChanged();
   }
 
-  // Create a nice size string
-  static wxString sizify(int size)
+  void updateStatus(int index)
   {
-    wxString tmp;
-    if(size > 1024*1024)
-      tmp << wxString::Format(wxT("%.1f"), size/(1024.0*1024)) << wxT("Mb");
-    else if(size > 1024)
-      tmp << wxString::Format(wxT("%.1f"), size/1024.0) << wxT("Kb");
-    else
-      tmp << size;
-
-    return tmp;
-  }
-
-  void handleDownload(int index)
-  {
-    DataList::Entry &e = lister.get(index);
+    GameInfo &e = GameInfo::conv(lister.get(index));
 
     // If this is the current item, make sure the buttons are set
     // correctly.
     if(index == select) fixButtons();
 
-    // Neither downloading or unpacking
-    if(e.status != 1 && e.status != 3)
+    try
       {
-        // Make sure config is updated
-        writeConfig();
-        return;
+        if(e.updateStatus())
+          statusChanged();
+      }
+    catch(std::exception &e)
+      {
+        wxMessageBox(wxString(e.what(), wxConvUTF8),
+                     wxT("Error"), wxOK | wxICON_ERROR);
+        statusChanged();
       }
 
-    // Are we currently unpacking?
-    if(e.status == 3)
-      {
-        assert(e.job);
-        if(e.job->isFinished())
-          {
-            if(e.job->isSuccess())
-              {
-                // Success. Move to "playable" status.
-                e.status = 2;
-                e.job = NULL;
-              }
-            else if(e.job->isNonSuccess())
-              {
-                // Install was aborted. Revert to "not installed" status.
-                e.status = 0;
-                e.job = NULL;
-
-                // If there was an error, report it to the user
-                if(e.job->isError())
-                  wxMessageBox(wxT("Unpacking failed for ") + e.name +
-                               wxT(":\n") + wxString(e.job->getError().c_str(), wxConvUTF8),
-                               wxT("Error"), wxOK | wxICON_ERROR);
-                statusChanged();
-              }
-            // Delete the installer job
-            jobQueue.finish(e.job);
-            delete e.job;
-          }
-        else
-          e.msg = wxT("Unpacking...");
-      }
-    else
-      {
-        // If we get here, we are currently downloading something.
-        assert(e.status == 1);
-        assert(e.job);
-        const DownloadJob *g = (DownloadJob*)e.job;
-
-        // Has the download finished?
-        if(g->isFinished())
-          {
-            if(g->isSuccess())
-              {
-                // Success! Move to unpacking stage.
-                e.status = 3;
-
-                // Construct the install path
-                boost::filesystem::path dir = "data";
-                dir /= string(e.idname.mb_str());
-
-                // Set up installer
-                ZipJob *zb = new ZipJob(g->file, get.getPath(dir.string()));
-                jobQueue.queue(zb);
-                e.job = zb;
-              }
-            else
-              {
-                // Abort.
-                e.status = 0;
-                e.job = NULL;
-
-                if(g->isError())
-                  wxMessageBox(wxT("Download failed for ") + e.name +
-                               wxT(":\n") + wxString(g->getError().c_str(), wxConvUTF8),
-                               wxT("Error"), wxOK | wxICON_ERROR);
-                statusChanged();
-              }
-
-            // We don't need the downloader anymore
-            delete g;
-          }
-        else if(g->isBusy())
-          {
-            // Download is still in progress
-
-            // Aw, fixed a div-by-zero bug, how cute :)
-            int percent = 0;
-            if(g->total > 0)
-              percent = (int)((100.0*g->current)/g->total);
-
-            // Update the visible progress message.
-            wxString status;
-            status << percent << wxT("% (");
-            status << sizify(g->current) << wxT(" / ");
-            status << sizify(g->total) << wxT(")");
-
-            e.msg = status;
-          }
-      }
-
-    // In any case, update the display
+    // Update the display
     list->RefreshItem(index);
   }
 
   void startDownload(int index)
   {
     DataList::Entry &e = lister.get(index);
-
-    if(e.job)
-      {
-        cout << "FAIL: e.job not NULL (internal error)\n";
-        return;
-      }
-    if(e.status != 0)
-      {
-        cout << "FAIL: wrong status " << e.status << "(internal error)\n";
-        return;
-      }
-
-    // Are we allowed to download games?
-    if(auth.isAdmin())
-      {
-        wxMessageBox(wxT("Administrators may not install games"),
-                     wxT("Error"), wxOK | wxICON_ERROR);
-        return;
-      }
+    GameInfo &gi = GameInfo::conv(e);
 
     {
-      // Update the .tig info
+      // Update the .tig info first
       DataList::TigInfo ti;
 
       // TODO: In future versions, this will be outsourced to a worker
       // thread to keep from blocking the app.
       if(tig_reader.decodeTigUrl
-         (string(e.urlname.mb_str()), // url-name
-          string(e.tigurl.mb_str()),  // url to tigfile
-          ti,                         // where to store result
-          false))                     // ONLY use cache if fetch fails
+         (e.urlname,    // url-name
+          e.tigurl,     // url to tigfile
+          ti,           // where to store result
+          false))       // ONLY use cache if fetch fails
         {
           // Copy new data if the fetch was successful
           if(ti.launch != "")
@@ -766,28 +646,10 @@ struct ListTab : TabBase
         }
     }
 
-    // Url to download from
-    string url = e.tigInfo.url;
+    gi.startDownload();
 
-    // Construct the file name
-    boost::filesystem::path dir = "incoming";
-    dir /= string(e.idname.mb_str()) + ".zip";
-    string out = get.getPath(dir.string());
-
-    // Start theaded download
-    {
-      DownloadJob *tg = new DownloadJob(url, out);
-      tg->run();
-
-      // Store the job pointer for later reference
-      e.job = tg;
-    }
-
-    // Update list status
-    e.status = 1;
-
-    // Finally update this entry now.
-    handleDownload(index);
+    // Update this entry now.
+    updateStatus(index);
 
     /* Update lists and moved to the Installed tab.
 
@@ -807,6 +669,7 @@ struct ListTab : TabBase
   void statusChanged(bool newInst=false)
   {
     stat->onDataChanged();
+    writeConfig();
     if(newInst) stat->switchToInstalled();
   }
 
@@ -815,7 +678,7 @@ struct ListTab : TabBase
     if(index < 0 || index >= lister.size())
       return;
 
-    const DataList::Entry &e = lister.get(index);
+    GameInfo &e = GameInfo::conv(lister.get(index));
 
     // True called as an 'activate' command, meaning that the list
     // told us the item was activated (it was double clicked or we
@@ -828,20 +691,17 @@ struct ListTab : TabBase
         b = 1;
       }
 
-    if(e.status == 0 && b == 1)
+    if(e.isNone() && b == 1)
       {
         startDownload(index);
         return;
       }
-    else if(e.status == 1 || e.status == 3)
+    else if(e.isWorking())
       {
         if(b == 2) // Abort
-          {
-            assert(e.job);
-            e.job->abort();
-          }
+          e.abortJob();
       }
-    else if(e.status == 2)
+    else if(e.isInstalled())
       {
         // TODO: All these path and file operations could be out-
         // sourced to an external module. One "repository" module that
@@ -849,7 +709,7 @@ struct ListTab : TabBase
 
         // Construct the install path
         boost::filesystem::path dir = "data";
-        dir /= string(e.idname.mb_str());
+        dir /= e.entry.idname;
         dir = get.getPath(dir.string());
 
         if(b == 1)
@@ -867,7 +727,7 @@ struct ListTab : TabBase
               }
 
             // Program to launch
-            boost::filesystem::path program = dir / e.tigInfo.launch;
+            boost::filesystem::path program = dir / e.entry.tigInfo.launch;
 
             if((wxGetOsVersion() & wxOS_WINDOWS) == 0)
               cout << "WARNING: Launching will probably not work on your platform.\n";
@@ -878,9 +738,9 @@ struct ListTab : TabBase
             boost::filesystem::path workDir;
 
             // Calculate full working directory path
-            if(e.tigInfo.subdir != "")
+            if(e.entry.tigInfo.subdir != "")
               // Use user-requested sub-directory
-              workDir = dir / e.tigInfo.subdir;
+              workDir = dir / e.entry.tigInfo.subdir;
             else
               // Use base path of the executable
               workDir = program.branch_path();
@@ -922,7 +782,7 @@ struct ListTab : TabBase
 		boost::filesystem::remove_all(dir);
 
 		// Revert status
-		lister.get(index).status = 0;
+                GameInfo::conv(lister.get(index)).setUninstalled();
 		if(index == select) fixButtons();
 		list->RefreshItem(index);
 
@@ -947,15 +807,15 @@ struct ListTab : TabBase
     if(select < 0 || select >= lister.size())
       return;
 
-    const DataList::Entry &e = lister.get(select);
+    const GameInfo &e = GameInfo::conv(lister.get(select));
 
     wxString url;
 
     if(event.GetId() == myID_GAMEPAGE)
       {
-        if(e.tigInfo.homepage != "")
+        if(e.entry.tigInfo.homepage != "")
           // Launch game homepage if it exists
-          url = wxString(e.tigInfo.homepage.c_str(), wxConvUTF8);
+          url = wxString(e.entry.tigInfo.homepage.c_str(), wxConvUTF8);
         else
           // Otherwise, just redirect to the tiggit page
           url = wxT("http://tiggit.net/game/") + e.urlname;
@@ -998,7 +858,7 @@ struct ListTab : TabBase
     if(select < 0 || select >= lister.size())
       return;
 
-    const DataList::Entry &e = lister.get(select);
+    const GameInfo &e = GameInfo::conv(lister.get(select));
 
     // Set up context menu
     wxMenu menu;
@@ -1008,12 +868,11 @@ struct ListTab : TabBase
                  (wxObjectEventFunction)&ListTab::onContextClick, NULL, this);
 
     // State-dependent actions
-    int s = e.status;
-    if(s == 0)
+    if(e.isNone())
       menu.Append(myID_BUTTON1, wxT("Install"));
-    else if(s == 1 || s == 3)
+    else if(e.isWorking())
       menu.Append(myID_BUTTON2, wxT("Abort"));
-    else if(s == 2)
+    else if(e.isInstalled())
       {
         menu.Append(myID_BUTTON1, wxT("Play"));
         menu.Append(myID_BUTTON2, wxT("Uninstall"));
@@ -1023,7 +882,7 @@ struct ListTab : TabBase
     menu.AppendSeparator();
     menu.Append(myID_GAMEPAGE, wxT("Visit Website"));
     menu.Append(myID_TIGGIT_PAGE, wxT("Visit Tiggit.net Page"));
-    if(e.tigInfo.hasPaypal)
+    if(e.entry.tigInfo.hasPaypal)
       menu.Append(myID_SUPPORT, wxT("Support Developer"));
 
     // Currently only supported in Windows
@@ -1053,7 +912,7 @@ struct ListTab : TabBase
     else if(id == myID_OPEN_LOCATION)
       {
         boost::filesystem::path dir = "data";
-        dir /= string(e.idname.mb_str());
+        dir /= e.idname;
         dir = get.getPath(dir.string());
 
         if((wxGetOsVersion() & wxOS_WINDOWS) != 0)
@@ -1160,7 +1019,7 @@ struct InstalledListTab : ListTab
   void tick()
   {
     for(int i=0; i<lister.size(); i++)
-      handleDownload(i);
+      updateStatus(i);
   }
 };
 

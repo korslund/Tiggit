@@ -280,7 +280,6 @@ struct Updater
     install.run();
 
     // Do another semi-busy loop
-    int status;
     while(true)
       {
         app->Yield();

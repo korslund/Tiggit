@@ -197,9 +197,8 @@ struct TigListReader
         */
 
         // Push the game into the list
-        data.add(0, key, (chan/key).string(),
-                 ti.title, tigurl, add_time, isNew,
-                 ti);
+        data.add(key, (chan/key).string(), ti.title,
+                 tigurl, add_time, isNew, ti);
       }
 
     // Inform config if our latest time stamp has changed
