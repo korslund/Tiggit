@@ -10,7 +10,7 @@ struct DataList
   struct TigInfo
   {
     std::string url, launch, subdir, version, title, desc,
-      shot, shot80x50, location, devname, homepage;
+      shot, shot80x50, shot300x260, location, devname, homepage;
 
     bool isDemo, hasPaypal;
   };

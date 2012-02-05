@@ -8,6 +8,7 @@
 #include "downloadjob.hpp"
 #include "zipjob.hpp"
 #include "jobqueue.hpp"
+#include "screenshot_loader.hpp"
 
 #include <time.h>
 #include <assert.h>
@@ -100,6 +101,7 @@ struct GameInfo
                 // for use.
                 assert(isUnpacking());
                 setInstalled();
+                statusChange = true;
               }
           }
         else
@@ -153,6 +155,39 @@ struct GameInfo
       throw std::runtime_error(errMsg);
 
     return statusChange;
+  }
+
+  /* Request the screenshot of this game. The parameter callback will
+     be invoked once the screenshot is ready.
+
+     The callback might be invoked immediately (during this call), or
+     it might be invoked later (eg. if it needs to be downloaded.) And
+     if the screenshot is missing, the callback will not be invoked at
+     all.
+
+     However, if it IS invoked, it is always invoked in the main
+     thread, possibly through jobQueue.update().
+
+     It's OK for cb to be NULL. In that case this function simply
+     preloads the image for later use.
+   */
+  void requestShot(ScreenshotCallback *cb = NULL)
+  {
+    // Use exact sized image if it exists
+    std::string url = entry.tigInfo.shot300x260;
+
+    // If not, try the general screenshot
+    if(url == "") url = entry.tigInfo.shot;
+
+    // Exit if there's no valid screenshot to use
+    if(url == "")
+      return;
+
+    // Figure out the cache filename
+    std::string filename = get.getPath("cache/shot300x260/" + entry.idname);
+
+    // Let the screenshot loader handle all the details internally
+    screen.handleRequest(entry.idname, filename, url, cb);
   }
 
   // Abort current job
@@ -216,6 +251,9 @@ private:
 
   // Status message displayed when isWorking() == true
   wxString msg;
+
+  // Screenshot fetcher and holder
+  ScreenshotLoader screen;
 
   // Create a nice size string
   static wxString sizify(int size)

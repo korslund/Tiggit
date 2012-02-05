@@ -80,6 +80,7 @@ struct TigListReader
     t.desc = root["desc"].asString();
     t.shot = root["shot"].asString();
     t.shot80x50 = root["shot80x50"].asString();
+    t.shot300x260 = root["shot300x260"].asString();
     t.location = root["location"].asString();
     t.devname = root["devname"].asString();
     t.homepage = root["homepage"].asString();

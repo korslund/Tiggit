@@ -20,7 +20,6 @@ struct ZipJob : ThreadJob
   {
     using namespace boost::filesystem;
     using namespace std;
-    setBusy();
 
     // Make sure the directory exists
     create_directories(dir);

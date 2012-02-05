@@ -30,15 +30,13 @@ DataList data;
 JsonInstalled jinst;
 TigListReader tig_reader;
 
-void writeConfig()
-{
-  jinst.write(data);
-}
-
 // Update data from all_games.json. If the parameter is true, force
 // download. If not, download only if the existing file is too old.
 void updateData(bool download)
 {
+  // This is bad and kinda leaks memory like hell (because of all the
+  // GameInfo instances.) But refreshes are kinda not an integral part
+  // of the application at the moment, so just ignore it for now.
   data.arr.resize(0);
 
   string lstfile = get.getPath("all_games.json");
@@ -357,7 +355,7 @@ struct StatusNotify
   virtual void switchToInstalled() = 0;
 };
 
-struct ListTab : TabBase
+struct ListTab : TabBase, ScreenshotCallback
 {
   wxButton *b1, *b2, *supportButton;
   MyList *list;
@@ -407,7 +405,7 @@ struct ListTab : TabBase
        wxBORDER_NONE | wxTE_MULTILINE | wxTE_READONLY | wxTE_AUTO_URL | wxTE_RICH);
 
     screenshot = new ImageViewer(this, myID_SCREENSHOT, wxDefaultPosition,
-                                  wxSize(300,200));
+                                 wxSize(300,260));
 
     b1 = new wxButton(this, myID_BUTTON1, wxT("No action"));
     b2 = new wxButton(this, myID_BUTTON2, wxT("No action"));
@@ -425,8 +423,8 @@ struct ListTab : TabBase
     buttonHolder->Add(buttonBar, 0);
 
     wxBoxSizer *rightPane = new wxBoxSizer(wxVERTICAL);
-    rightPane->Add(textView, 1, wxGROW | wxALL, 5);
-    rightPane->Add(screenshot, 0, wxLEFT | wxTOP, 5);
+    rightPane->Add(screenshot, 0, wxTOP, 5);
+    rightPane->Add(textView, 1, wxGROW | wxTOP | wxRIGHT | wxBOTTOM, 7);
     rightPane->Add(buttonHolder, 0);
     /*
     rightPane->Add(supportButton, 0, wxALIGN_RIGHT);
@@ -506,17 +504,30 @@ struct ListTab : TabBase
     if(select < 0 || select >= lister.size())
       {
         textView->Clear();
-        //screenshot->clear();
+        screenshot->clear();
         return;
       }
 
-    const DataList::Entry &e = lister.get(select);
+    DataList::Entry &e = lister.get(select);
 
     // Update the text view
     textView->ChangeValue(wxString(e.tigInfo.desc.c_str(), wxConvUTF8));
 
-    // And the screenshot
-    //screenshot->loadImage("filename.jpg");
+    // Request a screenshot update
+    GameInfo::conv(e).requestShot(this);
+  }
+
+  // Called whenever a screenshot is ready
+  void shotIsReady(const std::string &idname, const wxImage &shot)
+  {
+    // Check if the shot belongs to the selected game
+    if(select < 0 || select >= lister.size())
+      return;
+    if(GameInfo::conv(lister.get(select)).entry.idname != idname)
+      return;
+
+    // We have a match. Set the screenshot.
+    screenshot->loadImage(shot);
   }
 
   // Called whenever there is a chance that a new game has been
@@ -660,16 +671,18 @@ struct ListTab : TabBase
     statusChanged(true);
   }
 
-  /* Called whenever an item switches lists. This is a cludge and it
-     should die. But we will clean up all this mess later (or so I
-     keep telling myself), and then everything will be much dandier.
-
-     Set newInst to true if we should switch to the "Installed" tab.
+  /* Called whenever an item switches lists. Set newInst to true if we
+     should switch to the "Installed" tab.
   */
   void statusChanged(bool newInst=false)
   {
+    // Notify our parent that lists have changed
     stat->onDataChanged();
-    writeConfig();
+
+    // Write install status to config file
+    jinst.write(data);
+
+    // Notify parent if newInst was set
     if(newInst) stat->switchToInstalled();
   }
 
@@ -786,9 +799,7 @@ struct ListTab : TabBase
 		if(index == select) fixButtons();
 		list->RefreshItem(index);
 
-		// Make sure we update the config file
-		writeConfig();
-
+                // Notify the system that a game has changed status
                 statusChanged();
 	      }
 	    catch(exception &ex)
@@ -1303,6 +1314,13 @@ public:
         updateData(conf.updateList);
 
         wxInitAllImageHandlers();
+
+        // Do a full-scale image preload run. This will eat some
+        // bandwith and CPU the first time we run, but won't affect
+        // performance much on later runs. And in any case it's much
+        // preferable to waiting for each image to load.
+        for(int i=0; i<data.arr.size(); i++)
+          GameInfo::conv(data.arr[i]).requestShot();
 
         MyFrame *frame = new MyFrame(wxT("Tiggit - The Indie Game Installer"),
                                      version);

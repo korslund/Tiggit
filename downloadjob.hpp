@@ -31,18 +31,15 @@ struct DownloadJob : ThreadJob
 private:
   void executeJob()
   {
-    setBusy();
-
     // We need local variables since in principle, the object may be
     // deleted after the finish status functions (setDone() etc) are
     // called.
     std::string fname = file;
     bool success = false;
 
-    CurlGet get;
     try
       {
-        get.get(url, file, &curl_progress, this);
+        CurlGet::get(url, file, &curl_progress, this);
 
         if(abortRequested()) setAbort();
         else if(completed)

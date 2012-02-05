@@ -9,6 +9,7 @@
 #endif
 #include <wx/thread.h>
 #include <string>
+#include <assert.h>
 
 struct StatusJob
 {
@@ -33,8 +34,15 @@ struct StatusJob
   virtual void executeJob() = 0;
   virtual ~StatusJob() {}
 
-  // For non-thread jobs, just run the job directly
-  virtual void run() { executeJob(); }
+  // For non-thread jobs, just run is the same as runNoThread()
+  virtual void run() { runNoThread(); }
+
+  void runNoThread()
+  {
+    setBusy();
+    executeJob();
+    assert(!isBusy());
+  }
 
 protected:
   void setError(const std::string &msg)
@@ -43,6 +51,7 @@ protected:
     status = ST_ERROR;
   }
 
+  void setNone() { status = ST_NONE; }
   void setBusy() { status = ST_BUSY; }
   void setDone() { status = ST_DONE; }
   void setAbort() { status = ST_ABORT; }
@@ -68,6 +77,7 @@ struct ThreadJob : StatusJob
   // Run this job. Will create a new thread that runs executeJob.
   void run()
   {
+    setBusy();
     new wxJobRunner(this);
   }
 
@@ -86,7 +96,9 @@ private:
 
     ExitCode Entry()
     {
+      assert(job->isBusy());
       job->executeJob();
+      assert(!job->isBusy());
       return 0;
     }
   };
