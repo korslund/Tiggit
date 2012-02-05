@@ -501,10 +501,10 @@ struct ListTab : TabBase, ScreenshotCallback
 
   void updateGameInfo()
   {
+    screenshot->clear();
     if(select < 0 || select >= lister.size())
       {
         textView->Clear();
-        screenshot->clear();
         return;
       }
 
