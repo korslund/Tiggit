@@ -23,6 +23,7 @@
 #include "listkeeper.hpp"
 #include "auth.hpp"
 #include "gameinfo.hpp"
+#include "cache_fetcher.hpp"
 
 using namespace std;
 
@@ -1311,6 +1312,16 @@ public:
         conf.load(get.base);
         auth.load();
 
+        // Download cached data if this is the first time we run. This
+        // is much faster and more server-friendly than spawning a
+        // gazillion connections to get all the tigfiles and images
+        // individually.
+        if(conf.first_time)
+          {
+            CacheFetcher cf(this);
+            cf.goDoItAlready();
+          }
+
         updateData(conf.updateList);
 
         wxInitAllImageHandlers();
@@ -1319,8 +1330,13 @@ public:
         // bandwith and CPU the first time we run, but won't affect
         // performance much on later runs. And in any case it's much
         // preferable to waiting for each image to load.
+
+        /* UPDATE: With our cache mechanism above, this is less
+           necessary now.
+
         for(int i=0; i<data.arr.size(); i++)
           GameInfo::conv(data.arr[i]).requestShot();
+        */
 
         MyFrame *frame = new MyFrame(wxT("Tiggit - The Indie Game Installer"),
                                      version);

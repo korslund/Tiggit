@@ -11,11 +11,15 @@ struct Config
 {
   std::string filename;
 
+  // Set true when a forced update is necessary.
   bool updateList, updateTigs;
+
+  // Set to true the first time we run only
+  bool first_time;
 
   int64_t lastTime;
 
-  Config() : updateList(false), updateTigs(false), lastTime(0) {}
+  Config() : updateList(false), updateTigs(false), first_time(false), lastTime(0) {}
 
   void fail(const std::string &msg)
   {
@@ -42,7 +46,10 @@ struct Config
     bool error = false;
 
     if(!boost::filesystem::exists(filename))
-      error = true;
+      {
+        error = true;
+        first_time = true;
+      }
     else
       {
         string repo;

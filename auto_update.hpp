@@ -1,47 +1,18 @@
 #ifndef _AUTO_UPDATE_HPP
 #define _AUTO_UPDATE_HPP
 
-#include <wx/wx.h>
-#include <wx/progdlg.h>
 #include <boost/algorithm/string.hpp>
 #include "data_reader.hpp"
+#include "progress_holder.hpp"
 
-struct Updater
+struct Updater : ProgressHolder
 {
   // Current program version.
   std::string version;
-  wxApp *app;
-  wxProgressDialog *dlg;
 
   Updater(wxApp *_app)
-    : version("unknown"), app(_app), dlg(NULL)
+    : ProgressHolder(_app), version("unknown")
   {}
-
-  ~Updater()
-  {
-    // Shut down the window
-    if(dlg)
-      {
-        dlg->Update(100);
-        dlg->Destroy();
-        app->Yield();
-      }
-  }
-
-  void setMsg(const wxString &str, int value=0)
-  {
-    if(!dlg)
-      {
-        // Crank up the ol' progress bar. Give the text some space to grow.
-        dlg = new wxProgressDialog(wxT("Information"), wxT("Tiggit is checking for updates, please wait...        \n\n "),
-                                   100, NULL, wxPD_APP_MODAL|wxPD_CAN_ABORT|wxPD_AUTO_HIDE);
-        dlg->Show(1);
-      }
-
-    dlg->Show(true);
-    dlg->Update(value, str);
-    app->Yield();
-  }
 
   // Check if a given version is current. Returns true if no update is
   // needed.
@@ -108,7 +79,7 @@ struct Updater
             // now. In any case, since the bin/ version is not
             // running, we can overwrite it.
 
-            setMsg(wxT("Installing update..."));
+            setMsg("Installing update...");
 
             // Wait a little while in case bin/ launched us, to give
             // it time to exit. (Not a terribly robust solution, I
@@ -153,7 +124,7 @@ struct Updater
         // Kill update remains if there are any
         if(exists(up_dest) || exists(tmp_exe))
           {
-            setMsg(wxT("Cleaning up..."));
+            setMsg("Cleaning up...");
 
             // Wait a sec to give the program a shot to exit
             wxSleep(1);
@@ -233,7 +204,7 @@ struct Updater
                 const std::string &up_dest,
                 const std::string &vermsg)
   {
-    setMsg(wxString((vermsg + "\n" + url).c_str(), wxConvUTF8));
+    setMsg(vermsg + "\n" + url);
 
     // Start downloading the latest version
     std::string zip = get.getPath("update.zip");
@@ -243,7 +214,7 @@ struct Updater
     // Poll-loop until it's done
     while(true)
       {
-        app->Yield();
+        yield();
         wxMilliSleep(40);
 
         bool res;
@@ -253,10 +224,10 @@ struct Updater
             int prog = (int)(getter.current*100.0/getter.total);
             // Avoid auto-closing the window
             if(prog >= 100) prog=99;
-            res = dlg->Update(prog);
+            res = update(prog);
           }
         else
-          res = dlg->Pulse();
+          res = pulse();
 
         // Did the user click 'Cancel'?
         if(!res)
@@ -273,7 +244,7 @@ struct Updater
     if(getter.isNonSuccess())
       return false;
 
-    dlg->Update(0, wxString((vermsg + "\nUnpacking...").c_str(), wxConvUTF8));
+    setMsg(vermsg + "\nUnpacking...");
 
     // Download complete! Start unpacking
     ZipJob install(zip, up_dest);
@@ -282,12 +253,12 @@ struct Updater
     // Do another semi-busy loop
     while(true)
       {
-        app->Yield();
+        yield();
         wxMilliSleep(40);
 
         // Disabled this because it looks like crap on windows. On
         // linux/gtk it works exactly like it should though.
-        //dlg->Pulse();
+        //pulse();
 
         // Exit when done
         if(install.isFinished())
