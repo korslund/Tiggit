@@ -17,9 +17,13 @@ struct Config
   // Set to true the first time we run only
   bool first_time;
 
+  // True if the user has seen the 'demo' tab message
+  bool seen_demo_msg;
+
   int64_t lastTime;
 
-  Config() : updateList(false), updateTigs(false), first_time(false), lastTime(0) {}
+  Config() : updateList(false), updateTigs(false), first_time(false), seen_demo_msg(false),
+             lastTime(0) {}
 
   void fail(const std::string &msg)
   {
@@ -33,6 +37,15 @@ struct Config
     if(newTime > lastTime)
       {
         lastTime = newTime;
+        write();
+      }
+  }
+
+  void shown_demo_msg()
+  {
+    if(!seen_demo_msg)
+      {
+        seen_demo_msg = true;
         write();
       }
   }
@@ -79,6 +92,7 @@ struct Config
 
                 //lastTime = root["last_time"].asInt64();
                 lastTime = root["last_time"].asInt();
+                seen_demo_msg = root["seen_demo_msg"].asBool();
                 if(lastTime < 0) lastTime = 0;
               }
             catch(...)
@@ -103,6 +117,7 @@ struct Config
     root["repo_version"] = "3";
     // TODO: Subject to 2038-bug
     root["last_time"] = (int)lastTime;
+    root["seen_demo_msg"] = seen_demo_msg;
 
     writeJson(filename, root);
   }

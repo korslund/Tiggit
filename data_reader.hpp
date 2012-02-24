@@ -84,6 +84,7 @@ struct TigListReader
     t.location = root["location"].asString();
     t.devname = root["devname"].asString();
     t.homepage = root["homepage"].asString();
+    t.buypage = root["buypage"].asString();
 
     // Check whether the tigfile has a valid "paypal" entry. We don't
     // need the actual value.
@@ -113,6 +114,28 @@ struct TigListReader
 
     // Parse it
     return decodeTigFile(tigf, data);
+  }
+
+  // Add some test data to the list
+  void addTests(DataList &data)
+  {
+    // Get and parse tigfile
+    DataList::TigInfo ti;
+
+    ti.title = "Test Title";
+    ti.desc = "Test description.";
+    ti.homepage = "http://tiggit.net/";
+    ti.buypage = "http://tiggit.net/blog/";
+    ti.isDemo = false;
+    ti.hasPaypal = true;
+
+    data.add("test1", "test1", "Test 1", "", 0, false, ti);
+    data.add("test2", "test2", "Test 2", "", 0, true, ti);
+
+    ti.isDemo = true;
+
+    data.add("test3", "test3", "Test 3", "", 0, false, ti);
+    data.add("test4", "test4", "Test 4", "", 0, true, ti);
   }
 
   void loadData(const std::string &file, DataList &data)

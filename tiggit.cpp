@@ -298,6 +298,7 @@ struct NewsTab : TabBase
 #define myID_TIGGIT_PAGE 20010
 #define myID_OPEN_LOCATION 20011
 #define myID_REFRESH_ITEM 20012
+#define myID_TAGS 20020
 
 struct TitleCol : ColumnHandler
 {
@@ -312,6 +313,16 @@ struct AddDateCol : ColumnHandler
   wxString getText(DataList::Entry &e)
   {
     return GameInfo::conv(e).timeString;
+  }
+};
+
+struct TypeCol : ColumnHandler
+{
+  wxString getText(DataList::Entry &e)
+  {
+    if(GameInfo::conv(e).entry.tigInfo.isDemo)
+      return wxT("demo");
+    return wxT("freeware");
   }
 };
 
@@ -361,11 +372,11 @@ struct ListTab : TabBase, ScreenshotCallback
   wxButton *b1, *b2, *supportButton;
   MyList *list;
   wxTextCtrl *textView;
-  ImageViewer *screenshot;
+  ImageViewer *screenshot, *ad_img;
   int select;
   time_t last_launch;
   ListKeeper lister;
-
+  wxListBox *tags;
   wxString tabName;
   StatusNotify *stat;
 
@@ -387,15 +398,15 @@ struct ListTab : TabBase, ScreenshotCallback
       sop->addSortOptions(this, sortBox);
     */
 
-    wxBoxSizer *leftPane = new wxBoxSizer(wxVERTICAL);
-    leftPane->Add(list, 1, wxGROW | wxRIGHT | wxBOTTOM, 10);
-    leftPane->Add(searchBox, 0, wxBOTTOM, 2);
+    wxBoxSizer *centerPane = new wxBoxSizer(wxVERTICAL);
+    centerPane->Add(list, 1, wxGROW | wxRIGHT | wxBOTTOM, 10);
+    centerPane->Add(searchBox, 0, wxBOTTOM, 2);
     /*
-    leftPane->Add(sortBox, 0);
-    leftPane->Add(new wxCheckBox(this, myID_SORT_REVERSE, wxT("Reverse order")),
+    centerPane->Add(sortBox, 0);
+    centerPane->Add(new wxCheckBox(this, myID_SORT_REVERSE, wxT("Reverse order")),
                   0);
     */
-    leftPane->Add(new wxStaticText(this, wxID_ANY, wxString(wxT("Mouse: double-click to ")) +
+    centerPane->Add(new wxStaticText(this, wxID_ANY, wxString(wxT("Mouse: double-click to ")) +
                                    ((listType == ListKeeper::SL_INSTALL)?
                                     wxT("play"):wxT("install")) +
                                    wxT("\nKeyboard: arrow keys + enter, delete")),
@@ -411,7 +422,7 @@ struct ListTab : TabBase, ScreenshotCallback
     b1 = new wxButton(this, myID_BUTTON1, wxT("No action"));
     b2 = new wxButton(this, myID_BUTTON2, wxT("No action"));
 
-    supportButton = new wxButton(this, myID_SUPPORT, wxT("Support Game (Donate)"));
+    supportButton = new wxButton(this, myID_SUPPORT, wxT("Support Game (donate)"));
 
     wxBoxSizer *buttonBar = new wxBoxSizer(wxHORIZONTAL);
     buttonBar->Add(b1, 0, wxTOP | wxBOTTOM | wxRIGHT, 3);
@@ -432,8 +443,33 @@ struct ListTab : TabBase, ScreenshotCallback
     rightPane->Add(buttonBar, 0);
     */
 
+    /*
+    tags = new wxListBox(this, myID_TAGS);
+
+    wxString ss;
+    ss = wxT("strategy (16)");
+    tags->InsertItems(1, &ss, 0);
+    ss = wxT("action (37)");
+    tags->InsertItems(1, &ss, 0);
+    ss = wxT("All (244)");
+    tags->InsertItems(1, &ss, 0);
+    */
+
+    /*
+    ad_img = new ImageViewer(this, myID_SCREENSHOT, wxDefaultPosition,
+                             wxSize(100,160));
+    */
+
+    /*
+    wxBoxSizer *leftPane = new wxBoxSizer(wxVERTICAL);
+    leftPane->Add(tags, 1, wxGROW);
+    leftPane->Add(new wxStaticText(this, wxID_ANY, wxT("Sponsor:")), 0);
+    leftPane->Add(ad_img, 0);
+    */
+
     wxBoxSizer *panes = new wxBoxSizer(wxHORIZONTAL);
-    panes->Add(leftPane, 100, wxGROW);
+    //panes->Add(leftPane, 30, wxGROW);
+    panes->Add(centerPane, 100, wxGROW);
     panes->Add(rightPane, 60, wxGROW);
 
     SetSizer(panes);
@@ -443,6 +479,9 @@ struct ListTab : TabBase, ScreenshotCallback
     entries[0].Set(wxACCEL_NORMAL, WXK_DELETE, myID_BUTTON2);
     wxAcceleratorTable accel(1, entries);
     SetAcceleratorTable(accel);
+
+    Connect(myID_TAGS, wxEVT_COMMAND_LISTBOX_SELECTED,
+            wxCommandEventHandler(ListTab::onTagSelect));
 
     Connect(myID_GAMEPAGE, wxEVT_COMMAND_BUTTON_CLICKED,
             wxCommandEventHandler(ListTab::onGamePage));
@@ -477,6 +516,17 @@ struct ListTab : TabBase, ScreenshotCallback
 
     list->update();
     takeFocus();
+  }
+
+  void onTagSelect(wxCommandEvent &event)
+  {
+    int sel = event.GetSelection();
+
+    // Deselections are equivalent to selecting "All"
+    if(sel <= 0 || !event.IsSelection())
+      sel = 0;
+
+    cout << "TAG select: " << sel << endl;
   }
 
   void insertMe()
@@ -555,8 +605,16 @@ struct ListTab : TabBase, ScreenshotCallback
 
     DataList::Entry &e = lister.get(select);
 
-    if(e.tigInfo.hasPaypal)
-      supportButton->Enable();
+    if(e.tigInfo.isDemo)
+      {
+        supportButton->Enable();
+        supportButton->SetLabel(wxT("Buy Game (external link)"));
+      }
+    else if(e.tigInfo.hasPaypal)
+      {
+        supportButton->Enable();
+        supportButton->SetLabel(wxT("Support Game (donate)"));
+      }
     else
       supportButton->Disable();
 
@@ -823,24 +881,42 @@ struct ListTab : TabBase, ScreenshotCallback
 
     wxString url;
 
-    if(event.GetId() == myID_GAMEPAGE)
-      {
-        if(e.entry.tigInfo.homepage != "")
-          // Launch game homepage if it exists
-          url = wxString(e.entry.tigInfo.homepage.c_str(), wxConvUTF8);
-        else
-          // Otherwise, just redirect to the tiggit page
-          url = wxT("http://tiggit.net/game/") + e.urlname;
-      }
+    // Default url is the homepage
+    if(e.entry.tigInfo.homepage != "")
+      // Game homepage, if it exists
+      url = wxString(e.entry.tigInfo.homepage.c_str(), wxConvUTF8);
+    else
+      // If not, use the tiggit page
+      url = wxT("http://tiggit.net/game/") + e.urlname;
 
     // Only used from context menus
-    else if(event.GetId() == myID_TIGGIT_PAGE)
+    if(event.GetId() == myID_TIGGIT_PAGE)
       url = wxT("http://tiggit.net/game/") + e.urlname;
 
     else if(event.GetId() == myID_SUPPORT)
       {
-        // Redirect to our special support page
-        url = wxT("http://tiggit.net/game/") + e.urlname + wxT("&donate");
+        // Is it a demo?
+        if(e.entry.tigInfo.isDemo)
+          {
+            // Redirect to the buy page, if any
+            if(e.entry.tigInfo.buypage != "")
+              url = wxString(e.entry.tigInfo.buypage.c_str(), wxConvUTF8);
+
+            // Otherwise, the homepage already set up in 'url' is
+            // fine.
+
+            // Warn the user that you can't actually download finished
+            // games here yet
+            if(!conf.seen_demo_msg)
+              wxMessageBox(wxT("NOTE: Purchasing of games happens entirely outside of the tiggit system. We have not yet integrated any shopping functions into the client itself.\n\nWe still encourage you to buy games, but unfortunately you will NOT currently be able to find or play these newly purchased games inside the tiggit client. Instead you must download, install and run these games manually.\n\nWe know this is inconvenient, so this is something we are working on to improve in the near future."),
+                           wxT("Warning"), wxOK);
+
+            conf.shown_demo_msg();
+          }
+
+        else
+          // Not a demo. Redirect to the support page.
+          url = wxT("http://tiggit.net/game/") + e.urlname + wxT("&donate");
       }
 
     wxLaunchDefaultBrowser(url);
@@ -992,8 +1068,8 @@ struct NewGameListTab : ListTabNonEmpty
   NewGameListTab(wxNotebook *parent, StatusNotify *s)
     : ListTabNonEmpty(parent, wxT("New"), ListKeeper::SL_NEW, s, new GameSortOptions)
   {
-    list->addColumn(wxT("Name"), 380, new TitleCol);
-    //list->addColumn(wxT("Date added"), 160, new AddDateCol);
+    list->addColumn(wxT("Name"), 300, new TitleCol);
+    list->addColumn(wxT("Type"), 140, new TypeCol);
   }
 };
 
@@ -1001,7 +1077,7 @@ struct NewGameListTab : ListTabNonEmpty
 struct FreewareListTab : ListTab
 {
   FreewareListTab(wxNotebook *parent, StatusNotify *s)
-    : ListTab(parent, wxT("Browse"), ListKeeper::SL_FREEWARE, s, new GameSortOptions)
+    : ListTab(parent, wxT(/**/"Freeware"/*/"Browse"*/), ListKeeper::SL_FREEWARE, s, new GameSortOptions)
   {
     list->addColumn(wxT("Name"), 380, new TitleCol);
     //list->addColumn(wxT("Date added"), 160, new AddDateCol);
@@ -1054,15 +1130,17 @@ class MyFrame : public wxFrame, public StatusNotify
 
 public:
   MyFrame(const wxString& title, const std::string &ver)
-    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(850, 700)),
+    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(850/*1024*/, 700)),
       version(ver)
   {
     Centre();
 
     wxMenu *menuFile = new wxMenu;
 
+    /*
     menuFile->Append(wxID_ABOUT, _("&About..."));
     menuFile->AppendSeparator();
+    */
     menuFile->Append(wxID_EXIT, _("E&xit"));
 
     wxMenu *menuList = new wxMenu;
@@ -1175,10 +1253,17 @@ public:
       {
         // No previously selected tab available.
 
-        // Check if there are installed games, and if so, start by
-        // selecting the Installed tab.
-        if(installedTab->lister.baseSize() != 0)
+        // Start by selecting the 'new' tab, if applicable
+        if(newTab->lister.baseSize() != 0)
+          newTab->selectMe();
+
+        // If not, check if there are installed games, and use that as
+        // the starting tab instead.
+        else if(installedTab->lister.baseSize() != 0)
           installedTab->selectMe();
+
+        // If neither have any games, just start by browsing free
+        // games.
         else
           freewareTab->selectMe();
       }
@@ -1323,6 +1408,8 @@ public:
           }
 
         updateData(conf.updateList);
+
+        //tig_reader.addTests(data);
 
         wxInitAllImageHandlers();
 
