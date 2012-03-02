@@ -25,6 +25,7 @@ class ListKeeper
 
   /* 0 - title
      1 - date
+     2 - rating, then title
    */
   int sortBy;
   bool reverse;
@@ -39,6 +40,7 @@ class ListKeeper
     DataList &data;
     SortBase(DataList &d) : data(d) {}
 
+    // Return true if 'a' should come before 'b' on the list
     virtual bool isLess(DataList::Entry &a, DataList::Entry &b) = 0;
 
     bool operator()(int a, int b)
@@ -51,9 +53,61 @@ class ListKeeper
   {
     TitleSort(DataList &d) : SortBase(d) {}
     bool isLess(DataList::Entry &a, DataList::Entry &b)
+    { return isLessStatic(a, b); }
+
+    // Kludge city, but it works for now
+    static bool isLessStatic(DataList::Entry &a, DataList::Entry &b)
     {
       return boost::algorithm::ilexicographical_compare(a.tigInfo.title,
                                                         b.tigInfo.title);
+    }
+  };
+
+  // Sort based on rating, fall back on title sort if rating doesn't
+  // provide enough info to sort.
+  struct RateSort : SortBase
+  {
+    RateSort(DataList &d) : SortBase(d) {}
+    bool isLess(DataList::Entry &a, DataList::Entry &b)
+    {
+      // Does 'a' have a rating? If so, sort by rating. This also
+      // covers the case where 'b' has no rating (b.rating = -1).
+      if(a.rating >= 0)
+        {
+          // Sort equal ratings by name
+          if(a.rating == b.rating)
+            return TitleSort::isLessStatic(a, b);
+          else
+            return a.rating > b.rating;
+        }
+
+      // 'a' has no rating. What about b?
+      else if(b.rating >= 0)
+        // If yes, then always put 'b' first.
+        return false;
+
+      // Neither has a rating. Sort by title instead.
+      else return TitleSort::isLessStatic(a, b);
+    }
+  };
+
+  // Not in use yet!
+  struct DownloadSort : SortBase
+  {
+    DownloadSort(DataList &d) : SortBase(d) {}
+    bool isLess(DataList::Entry &a, DataList::Entry &b)
+    {
+      return a.dlCount > b.dlCount;
+    }
+  };
+
+  // Not in use yet!
+  struct PriceSort : SortBase
+  {
+    PriceSort(DataList &d) : SortBase(d) {}
+    bool isLess(DataList::Entry &a, DataList::Entry &b)
+    {
+      return a.tigInfo.price > b.tigInfo.price;
     }
   };
 
@@ -108,7 +162,7 @@ class ListKeeper
             else
               sort(searched.begin(), searched.end(), TitleSort(data));
           }
-        else
+        else if(sortBy == 1)
           {
             // Some repeated code, thanks to C++ actually being quite a
             // sucky language.
@@ -116,6 +170,13 @@ class ListKeeper
               sort(searched.rbegin(), searched.rend(), DateSort(data));
             else
               sort(searched.begin(), searched.end(), DateSort(data));
+          }
+        else if(sortBy == 2)
+          {
+            if(reverse)
+              sort(searched.rbegin(), searched.rend(), RateSort(data));
+            else
+              sort(searched.begin(), searched.end(), RateSort(data));
           }
 
         isSorted = true;
@@ -155,6 +216,7 @@ public:
 
   void sortTitle() { setSort(0); }
   void sortDate() { setSort(1); }
+  void sortRating() { setSort(2); }
 
   void setReverse(bool rev)
   {

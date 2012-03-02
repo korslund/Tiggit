@@ -85,6 +85,7 @@ struct TigListReader
     t.devname = root["devname"].asString();
     t.homepage = root["homepage"].asString();
     t.buypage = root["buypage"].asString();
+    t.price = root["price"].asDouble();
 
     // Check whether the tigfile has a valid "paypal" entry. We don't
     // need the actual value.
@@ -129,13 +130,15 @@ struct TigListReader
     ti.isDemo = false;
     ti.hasPaypal = true;
 
-    data.add("test1", "test1", "Test 1", "", 0, false, ti);
-    data.add("test2", "test2", "Test 2", "", 0, true, ti);
+    data.add("test1", "test1", "Test 1", "", 0, false, ti, 1.2, 11, 31);
+    data.add("test2", "test2", "Test 2", "", 0, true, ti, 3.9, 7, 19);
 
     ti.isDemo = true;
 
-    data.add("test3", "test3", "Test 3", "", 0, false, ti);
-    data.add("test4", "test4", "Test 4", "", 0, true, ti);
+    ti.price = 3.99;
+    data.add("test3", "test3", "Test 3", "", 0, false, ti, 4.1, 193, 3431);
+    ti.price = 29.99;
+    data.add("test4", "test4", "Test 4", "", 0, true, ti, 0.9, 93, 1931);
   }
 
   void loadData(const std::string &file, DataList &data)
@@ -187,6 +190,12 @@ struct TigListReader
         // Calculate the latest game time
         if(add_time > maxTime) maxTime = add_time;
 
+        // Get rating and download count info
+        float rating = game.get("rating", -1).asDouble();
+        int rateCount = game["rate_count"].asUInt();
+        int dlCount = game["dl_count"].asUInt();
+        if(rating > 4) rating = -1;
+
         // Get and parse tigfile
         DataList::TigInfo ti;
 
@@ -222,7 +231,8 @@ struct TigListReader
 
         // Push the game into the list
         data.add(key, (chan/key).string(), ti.title,
-                 tigurl, add_time, isNew, ti);
+                 tigurl, add_time, isNew, ti,
+                 rating, rateCount, dlCount);
       }
 
     // Inform config if our latest time stamp has changed

@@ -13,6 +13,7 @@ struct DataList
       shot, shot80x50, shot300x260, location, devname, homepage,
       buypage;
 
+    float price;
     bool isDemo, hasPaypal;
   };
 
@@ -23,6 +24,10 @@ struct DataList
 
     // This game is new (add_time newer than last list refresh.)
     bool isNew;
+
+    // Rating and download count info
+    float rating;
+    int rateCount, dlCount;
 
     // Idname = channel/urlname
     std::string urlname, idname, name, tigurl;
@@ -38,7 +43,8 @@ struct DataList
 
   void add(const std::string &urlname, const std::string &idname,
            const std::string &name, const std::string &tigurl,
-           int64_t add_time, bool isNew, const TigInfo &tigInfo)
+           int64_t add_time, bool isNew, const TigInfo &tigInfo,
+           float rating, int rateCount, int dlCount)
   {
     Entry e;
     e.urlname = urlname;
@@ -49,6 +55,9 @@ struct DataList
     e.isNew = isNew;
     e.tigInfo = tigInfo;
     e.info = NULL;
+    e.rating = rating;
+    e.rateCount = rateCount;
+    e.dlCount = dlCount;
 
     arr.push_back(e);
   }

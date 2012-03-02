@@ -28,7 +28,7 @@ struct GameInfo
   /* Cached wxString versions of often used strings. TimeString is a
      string representation of entry.add_time.
   */
-  wxString urlname, idname, name, tigurl, timeString;
+  wxString urlname, idname, name, tigurl, timeString, rating, dlCount, price;
 
   bool isInstalled() const { return status == 2; }
   bool isWorking() const { return status == 1 || status == 3; }
@@ -218,6 +218,11 @@ struct GameInfo
     idname = wxString(e.idname.c_str(), wxConvUTF8);
     name = wxString(e.name.c_str(), wxConvUTF8);
     tigurl = wxString(e.tigurl.c_str(), wxConvUTF8);
+
+    if(e.rateCount > 0 && e.rating > 0)
+      rating = wxString::Format(wxT("%3.2f"), e.rating);
+    dlCount << e.dlCount;
+    price = wxString::Format(wxT("$%3.2f"), e.tigInfo.price);
 
     time_t t = e.add_time;
     char buf[50];

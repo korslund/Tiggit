@@ -31,6 +31,9 @@ DataList data;
 JsonInstalled jinst;
 TigListReader tig_reader;
 
+// Temporary hack
+bool gHasDemos = false;
+
 // Update data from all_games.json. If the parameter is true, force
 // download. If not, download only if the existing file is too old.
 void updateData(bool download)
@@ -90,7 +93,7 @@ void updateData(bool download)
 
 struct ColumnHandler
 {
-  virtual wxString getText(DataList::Entry &e) = 0;
+  virtual wxString getText(GameInfo &e) = 0;
 };
 
 class MyList : public wxListCtrl
@@ -197,7 +200,7 @@ public:
     ColumnHandler *h = colHands[column];
     assert(h);
 
-    return h->getText(lister.get(item));
+    return h->getText(GameInfo::conv(lister.get(item)));
   }
 };
 
@@ -293,6 +296,7 @@ struct NewsTab : TabBase
 #define myID_SORT_TITLE 41
 #define myID_SORT_DATE 42
 #define myID_SORT_REVERSE 43
+#define myID_SORT_RATING 44
 #define myID_SEARCH_BOX 45
 
 #define myID_TIGGIT_PAGE 20010
@@ -302,27 +306,43 @@ struct NewsTab : TabBase
 
 struct TitleCol : ColumnHandler
 {
-  wxString getText(DataList::Entry &e)
+  wxString getText(GameInfo &e)
   {
-    return GameInfo::conv(e).name;
+    return e.name;
   }
 };
 
 struct AddDateCol : ColumnHandler
 {
-  wxString getText(DataList::Entry &e)
+  wxString getText(GameInfo &e)
   {
-    return GameInfo::conv(e).timeString;
+    return e.timeString;
   }
 };
 
 struct TypeCol : ColumnHandler
 {
-  wxString getText(DataList::Entry &e)
+  wxString getText(GameInfo &e)
   {
-    if(GameInfo::conv(e).entry.tigInfo.isDemo)
+    if(e.entry.tigInfo.isDemo)
       return wxT("demo");
     return wxT("freeware");
+  }
+};
+
+struct RatingCol : ColumnHandler
+{
+  wxString getText(GameInfo &e)
+  {
+    return e.rating;
+  }
+};
+
+struct PriceCol : ColumnHandler
+{
+  wxString getText(GameInfo &e)
+  {
+    return e.price;
   }
 };
 
@@ -336,10 +356,8 @@ struct StatusCol : ColumnHandler
     textReady = wxT("Ready to play");
   }
 
-  wxString getText(DataList::Entry &e)
+  wxString getText(GameInfo &g)
   {
-    const GameInfo &g = GameInfo::conv(e);
-
     if(g.isNone())
       return textNotInst;
 
@@ -663,6 +681,9 @@ struct ListTab : TabBase, ScreenshotCallback
 
     else if(id == myID_SORT_DATE)
       lister.sortDate();
+
+    else if(id == myID_SORT_RATING)
+      lister.sortRating();
 
     else assert(0);
 
@@ -1077,12 +1098,25 @@ struct NewGameListTab : ListTabNonEmpty
 struct FreewareListTab : ListTab
 {
   FreewareListTab(wxNotebook *parent, StatusNotify *s)
-    : ListTab(parent, wxT(/**/"Freeware"/*/"Browse"*/), ListKeeper::SL_FREEWARE, s, new GameSortOptions)
+    : ListTab(parent, wxT("Browse"), ListKeeper::SL_FREEWARE, s, new GameSortOptions)
   {
-    list->addColumn(wxT("Name"), 380, new TitleCol);
+    list->addColumn(wxT("Name"), 300, new TitleCol);
+    list->addColumn(wxT("Rating"), 70, new RatingCol);
     //list->addColumn(wxT("Date added"), 160, new AddDateCol);
+
+    lister.sortRating();
   }
 
+  // Temporary development hack
+  void insertMe()
+  {
+    if(gHasDemos)
+      tabName = wxT("Freeware");
+    else
+      tabName = wxT("Browse");
+
+    ListTab::insertMe();
+  }
 };
 
 struct DemoListTab : ListTabNonEmpty
@@ -1090,8 +1124,12 @@ struct DemoListTab : ListTabNonEmpty
   DemoListTab(wxNotebook *parent, StatusNotify *s)
     : ListTabNonEmpty(parent, wxT("Demos"), ListKeeper::SL_DEMOS, s, new GameSortOptions)
   {
-    list->addColumn(wxT("Name"), 380, new TitleCol);
+    list->addColumn(wxT("Name"), 300, new TitleCol);
+    list->addColumn(wxT("Rating"), 70, new RatingCol);
+    list->addColumn(wxT("Price"), 70, new PriceCol);
     //list->addColumn(wxT("Date added"), 160, new AddDateCol);
+
+    lister.sortRating();
   }
 };
 
@@ -1164,7 +1202,6 @@ public:
     book = new wxNotebook(panel, myID_BOOK);
 
     // Set up the tabs. They are inserted further down through
-    // setupTabs()
     newTab = new NewGameListTab(book, this);
     freewareTab = new FreewareListTab(book, this);
     demoTab = new DemoListTab(book, this);
@@ -1240,6 +1277,9 @@ public:
     // Remove all tabs
     for(int i=book->GetPageCount()-1; i >= 0; i--)
       book->RemovePage(i);
+
+    // Remember whether we have demos or not
+    gHasDemos = demoTab->lister.baseSize() != 0;
 
     // Re-add them, if they want to be re-added
     newTab->insertMe();
