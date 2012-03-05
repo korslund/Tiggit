@@ -22,6 +22,7 @@
 #include "auto_update.hpp"
 #include "listkeeper.hpp"
 #include "auth.hpp"
+#include "json_rated.hpp"
 #include "gameinfo.hpp"
 #include "cache_fetcher.hpp"
 
@@ -291,6 +292,7 @@ struct NewsTab : TabBase
 #define myID_SUPPORT 23
 #define myID_GAMEPAGE 24
 #define myID_LIST 25
+#define myID_RATE 26
 #define myID_TEXTVIEW 27
 #define myID_SCREENSHOT 28
 #define myID_SORT_TITLE 41
@@ -397,6 +399,9 @@ struct ListTab : TabBase, ScreenshotCallback
   wxListBox *tags;
   wxString tabName;
   StatusNotify *stat;
+  wxChoice *rateBox;
+  wxStaticText *rateText;
+  wxString rateString[6];
 
   ListTab(wxNotebook *parent, const wxString &name, int listType,
           StatusNotify *s, const SortOptions *sop = NULL)
@@ -452,10 +457,34 @@ struct ListTab : TabBase, ScreenshotCallback
     buttonHolder->Add(supportButton, 0, wxALIGN_RIGHT);
     buttonHolder->Add(buttonBar, 0);
 
+    wxString choices[6];
+    choices[0] = wxT("Rate this game");
+    choices[1] = wxT("4: Awesome!");
+    choices[2] = wxT("3: Very Good");
+    choices[3] = wxT("2: It's OK");
+    choices[4] = wxT("1: Meh");
+    choices[5] = wxT("0: Terrible!");
+
+    rateString[0] = wxT("Your rating: not rated");
+    rateString[1] = wxT("Your rating: 0 (terrible)");
+    rateString[2] = wxT("Your rating: 1 (meh)");
+    rateString[3] = wxT("Your rating: 2 (ok)");
+    rateString[4] = wxT("Your rating: 3 (very good)");
+    rateString[5] = wxT("Your rating: 4 (awesome)");
+
+    rateBox = new wxChoice(this, myID_RATE, wxDefaultPosition, wxDefaultSize,
+                           6, choices);
+    rateText = new wxStaticText(this, wxID_ANY, wxT(""));
+
+    wxBoxSizer *rateBar = new wxBoxSizer(wxHORIZONTAL);
+    rateBar->Add(rateBox, 0, wxRIGHT, 5);
+    rateBar->Add(rateText, 0, wxTOP | wxLEFT, 6);
+
     wxBoxSizer *rightPane = new wxBoxSizer(wxVERTICAL);
     rightPane->Add(screenshot, 0, wxTOP, 5);
+    rightPane->Add(rateBar);
     rightPane->Add(textView, 1, wxGROW | wxTOP | wxRIGHT | wxBOTTOM, 7);
-    rightPane->Add(buttonHolder, 0);
+    rightPane->Add(buttonHolder);
     /*
     rightPane->Add(supportButton, 0, wxALIGN_RIGHT);
     rightPane->Add(buttonBar, 0);
@@ -522,6 +551,9 @@ struct ListTab : TabBase, ScreenshotCallback
     Connect(myID_LIST, wxEVT_COMMAND_LIST_ITEM_ACTIVATED,
             wxListEventHandler(ListTab::onListActivate));
 
+    Connect(myID_RATE, wxEVT_COMMAND_CHOICE_SELECTED,
+            wxCommandEventHandler(ListTab::onRating));
+
     Connect(myID_SORT_TITLE, wxEVT_COMMAND_RADIOBUTTON_SELECTED,
             wxCommandEventHandler(ListTab::onSortChange));
     Connect(myID_SORT_DATE, wxEVT_COMMAND_RADIOBUTTON_SELECTED,
@@ -534,6 +566,23 @@ struct ListTab : TabBase, ScreenshotCallback
 
     list->update();
     takeFocus();
+  }
+
+  void onRating(wxCommandEvent &event)
+  {
+    int rate = event.GetInt();
+
+    // The first choice is just "Rate this game"
+    if(rate == 0) return;
+    rate = 5 - rate; // The rest are in reverse order
+    assert(rate >= 0 && rate <= 4);
+
+    if(select < 0 || select >= lister.size())
+      return;
+
+    GameInfo::conv(lister.get(select)).rateGame(rate);
+
+    updateGameInfo();
   }
 
   void onTagSelect(wxCommandEvent &event)
@@ -574,6 +623,8 @@ struct ListTab : TabBase, ScreenshotCallback
     if(select < 0 || select >= lister.size())
       {
         textView->Clear();
+        rateText->SetLabel(rateString[0]);
+        rateBox->Disable();
         return;
       }
 
@@ -582,8 +633,30 @@ struct ListTab : TabBase, ScreenshotCallback
     // Update the text view
     textView->ChangeValue(wxString(e.tigInfo.desc.c_str(), wxConvUTF8));
 
+    GameInfo &g = GameInfo::conv(e);
+
     // Request a screenshot update
-    GameInfo::conv(e).requestShot(this);
+    g.requestShot(this);
+
+    // Revert rating box
+    rateBox->SetSelection(0);
+
+    // Have we already rated this game?
+    int rating = g.myRating();
+
+    if(rating == -1)
+      {
+        // No, enable rating dropdown
+        rateBox->Enable();
+        rateText->SetLabel(rateString[0]);
+      }
+    else
+      {
+        // Yup. Update textbox to reflect our previous rating.
+        rateBox->Disable();
+        assert(rating >= 0 && rating <= 4);
+        rateText->SetLabel(rateString[rating+1]);
+      }
   }
 
   // Called whenever a screenshot is ready
@@ -1105,6 +1178,7 @@ struct FreewareListTab : ListTab
     //list->addColumn(wxT("Date added"), 160, new AddDateCol);
 
     lister.sortRating();
+    listHasChanged();
   }
 
   // Temporary development hack
@@ -1130,6 +1204,7 @@ struct DemoListTab : ListTabNonEmpty
     //list->addColumn(wxT("Date added"), 160, new AddDateCol);
 
     lister.sortRating();
+    listHasChanged();
   }
 };
 
@@ -1436,6 +1511,7 @@ public:
 
         conf.load(get.base);
         auth.load();
+        ratings.read();
 
         // Download cached data if this is the first time we run. This
         // is much faster and more server-friendly than spawning a

@@ -14,6 +14,7 @@
 struct StatusJob
 {
   StatusJob() : status(ST_NONE), doAbort(false) {}
+  virtual ~StatusJob() {}
 
   // Call this to abort the job
   void abort() { doAbort = true; }
@@ -32,9 +33,8 @@ struct StatusJob
 
   // Entry point for this job.
   virtual void executeJob() = 0;
-  virtual ~StatusJob() {}
 
-  // For non-thread jobs, just run is the same as runNoThread()
+  // For non-thread jobs, run is the same as runNoThread()
   virtual void run() { runNoThread(); }
 
   void runNoThread()
@@ -81,13 +81,23 @@ struct ThreadJob : StatusJob
     new wxJobRunner(this);
   }
 
+  // Run this job, then delete this object once it's done. This MUST
+  // be the last operation you perform on this object, and all
+  // references to it should be NULLed after calling this.
+  void runAndDelete()
+  {
+    setBusy();
+    new wxJobRunner(this, true);
+  }
+
 private:
   // This is where the magic happens
   struct wxJobRunner : wxThread
   {
     StatusJob *job;
+    bool killOwner;
 
-    wxJobRunner(StatusJob *j) : job(j)
+    wxJobRunner(StatusJob *j, bool del=false) : job(j), killOwner(del)
     {
       assert(job);
       Create();
@@ -99,6 +109,10 @@ private:
       assert(job->isBusy());
       job->executeJob();
       assert(!job->isBusy());
+
+      if(killOwner)
+        delete job;
+
       return 0;
     }
   };

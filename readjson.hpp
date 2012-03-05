@@ -26,9 +26,11 @@ Json::Value parseJsonString(const std::string &string)
 
 void writeJson(const std::string &file, const Json::Value &value)
 {
-  // Fix error handling later
   std::ofstream of(file.c_str());
-  of << value;
+  if(of)
+    of << value;
+  else
+    std::cout << "WARNING: Unable to open " << file << " for writing\n";
 }
 
 Json::Value readJson(const std::string &file)

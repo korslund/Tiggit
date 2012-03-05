@@ -70,6 +70,9 @@ class ListKeeper
     RateSort(DataList &d) : SortBase(d) {}
     bool isLess(DataList::Entry &a, DataList::Entry &b)
     {
+      if(a.rateCount == 0) a.rating = -1;
+      if(b.rateCount == 0) b.rating = -1;
+
       // Does 'a' have a rating? If so, sort by rating. This also
       // covers the case where 'b' has no rating (b.rating = -1).
       if(a.rating >= 0)

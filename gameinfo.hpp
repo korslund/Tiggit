@@ -9,6 +9,7 @@
 #include "zipjob.hpp"
 #include "jobqueue.hpp"
 #include "screenshot_loader.hpp"
+#include "json_rated.hpp"
 
 #include <time.h>
 #include <assert.h>
@@ -36,6 +37,34 @@ struct GameInfo
   bool isDownloading() const { return status == 1; }
   bool isNone() const { return status == 0; }
 
+  // Rate the game and send the rating off to the server
+  void rateGame(int rating)
+  {
+    assert(rating >= 0 && rating <= 4);
+
+    // No point in voting more than once, the server will filter it
+    // out.
+    if(myRating() != -1) return;
+
+    // Send vote to server
+    char str[2];
+    str[0] = '0' + rating;
+    str[1] = 0;
+
+    DownloadJob *notify = new DownloadJob("http://tiggit.net/api/count/" + entry.urlname + "&rate=" + str, get.tmp->get("rate-" + entry.urlname));
+    notify->runAndDelete();
+
+    // Update and save local voting database
+    ratings.setRating(entry.idname, rating);
+  }
+
+  // Return the rating we given this game, or -1 if we haven't yet
+  // rated it.
+  int myRating()
+  {
+    return ratings.getRating(entry.idname);
+  }
+
   // Start downloading this game
   void startDownload()
   {
@@ -50,6 +79,10 @@ struct GameInfo
     // Start the download job
     job = new DownloadJob(entry.tigInfo.url, out);
     job->run();
+
+    // Also give the server an anonymous update to statistics
+    DownloadJob *notify = new DownloadJob("http://tiggit.net/api/count/" + entry.urlname + "&download", get.tmp->get("count-" + entry.urlname));
+    notify->runAndDelete();
 
     // Set status
     setDownloading();
@@ -274,5 +307,4 @@ private:
     return tmp;
   }
 };
-
 #endif
