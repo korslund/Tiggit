@@ -13,6 +13,10 @@ class ListKeeper
   // been set up.
   std::vector<int> base;
 
+  // Sub-selection, used for tag searches. Is applied before
+  // searching.
+  std::vector<int> subSelect;
+
   // Selection criterium used to set up the base. Set through the
   // constructor, and cannot be changed later.
   int selection;
@@ -131,22 +135,26 @@ class ListKeeper
         if(search == "")
           {
             // Nope. Select all elements.
-            searched.resize(base.size());
+            searched.resize(subSelect.size());
             for(int i=0; i<searched.size(); i++)
-              searched[i] = base[i];
+              searched[i] = subSelect[i];
           }
         else
           {
-            // Yes. Start from scratch and add elements.
+            // Yes, we are searching. Start from scratch and add
+            // elements.
             searched.resize(0);
-            searched.reserve(base.size());
+            searched.reserve(subSelect.size());
 
             // Add all games that match the search. This is a dumb,
             // slow and useless algorithm, but at current list sizes
             // it's ok. Never optimize until you get hate mail.
-            for(int i=0; i<base.size(); i++)
-              if(boost::algorithm::icontains(data.arr[base[i]].tigInfo.title, search))
-                searched.push_back(base[i]);
+            for(int i=0; i<subSelect.size(); i++)
+              {
+                int ind = subSelect[i];
+                if(boost::algorithm::icontains(data.arr[ind].tigInfo.title, search))
+                  searched.push_back(ind);
+              }
           }
 
         isSearched = true;
@@ -221,6 +229,30 @@ public:
   void sortDate() { setSort(1); }
   void sortRating() { setSort(2); }
 
+  void setSubSelection(const std::vector<int> &sel)
+  {
+    isSorted = false;
+    isSearched = false;
+
+    subSelect.resize(sel.size());
+    for(int i=0; i<sel.size(); i++)
+      {
+        int ind = sel[i];
+        assert(ind >= 0 && ind < base.size());
+        subSelect[i] = base[ind];
+      }
+  }
+
+  void clearSubSelection()
+  {
+    isSorted = false;
+    isSearched = false;
+
+    subSelect.resize(base.size());
+    for(int i=0; i<subSelect.size(); i++)
+      subSelect[i] = base[i];
+  }
+
   void setReverse(bool rev)
   {
     reverse = rev;
@@ -252,9 +284,6 @@ public:
   */
   void reset()
   {
-    isSearched = false;
-    isSorted = false;
-
     base.resize(0);
     base.reserve(data.arr.size());
 
@@ -299,6 +328,9 @@ public:
               base.push_back(i);
           }
       }
+
+    // Set up the subselection to be the entire base list
+    clearSubSelection();
   }
 
   int baseSize() { return base.size(); }
@@ -307,6 +339,8 @@ public:
     makeReady();
     return searched.size();
   }
+
+  const std::vector<int> &getBaseList() { return base; }
 };
 
 #endif

@@ -25,12 +25,14 @@
 #include "json_rated.hpp"
 #include "gameinfo.hpp"
 #include "cache_fetcher.hpp"
+#include "tag_sorter.hpp"
 
 using namespace std;
 
 DataList data;
 JsonInstalled jinst;
 TigListReader tig_reader;
+TagSorter tagSorter;
 
 // Temporary hack
 bool gHasDemos = false;
@@ -76,6 +78,7 @@ void updateData(bool download)
     {
       tig_reader.loadData(lstfile, data);
       jinst.read(data);
+      tagSorter.process(data);
     }
   catch(std::exception &e)
     {
@@ -403,6 +406,8 @@ struct ListTab : TabBase, ScreenshotCallback
   wxStaticText *rateText;
   wxString rateString[6];
 
+  std::vector<TagSorter::Entry> taglist;
+
   ListTab(wxNotebook *parent, const wxString &name, int listType,
           StatusNotify *s, const SortOptions *sop = NULL)
     : TabBase(parent), select(-1), last_launch(0),
@@ -490,32 +495,22 @@ struct ListTab : TabBase, ScreenshotCallback
     rightPane->Add(buttonBar, 0);
     */
 
-    /*
     tags = new wxListBox(this, myID_TAGS);
 
-    wxString ss;
-    ss = wxT("strategy (16)");
-    tags->InsertItems(1, &ss, 0);
-    ss = wxT("action (37)");
-    tags->InsertItems(1, &ss, 0);
-    ss = wxT("All (244)");
-    tags->InsertItems(1, &ss, 0);
-    */
+    wxBoxSizer *leftPane = new wxBoxSizer(wxVERTICAL);
+    leftPane->Add(tags, 1, wxGROW);
 
     /*
     ad_img = new ImageViewer(this, myID_SCREENSHOT, wxDefaultPosition,
                              wxSize(100,160));
-    */
-
-    /*
-    wxBoxSizer *leftPane = new wxBoxSizer(wxVERTICAL);
-    leftPane->Add(tags, 1, wxGROW);
     leftPane->Add(new wxStaticText(this, wxID_ANY, wxT("Sponsor:")), 0);
     leftPane->Add(ad_img, 0);
     */
 
+    createTagList();
+
     wxBoxSizer *panes = new wxBoxSizer(wxHORIZONTAL);
-    //panes->Add(leftPane, 30, wxGROW);
+    panes->Add(leftPane, 30, wxGROW);
     panes->Add(centerPane, 100, wxGROW);
     panes->Add(rightPane, 60, wxGROW);
 
@@ -568,6 +563,32 @@ struct ListTab : TabBase, ScreenshotCallback
     takeFocus();
   }
 
+  void createTagList()
+  {
+    // Set up the tag list
+    const vector<int> &base = lister.getBaseList();
+    tagSorter.makeTagList(base, taglist);
+
+    // Create and set up the wxString version of the tag list
+    std::vector<wxString> labels;
+    labels.resize(taglist.size()+1);
+    labels[0] = wxString::Format(wxT("All (%d)"), base.size());
+    for(int i=0; i<taglist.size(); i++)
+      {
+        TagSorter::Entry &e = taglist[i];
+        wxString &str = labels[i+1];
+
+        str = wxString(e.tag.c_str(), wxConvUTF8);
+        str += wxString::Format(wxT(" (%d)"), e.games.size());
+      }
+
+    // Clear tag control
+    tags->Clear();
+
+    // Add new strings to it
+    tags->InsertItems(labels.size(), &labels[0], 0);
+  }
+
   void onRating(wxCommandEvent &event)
   {
     int rate = event.GetInt();
@@ -590,10 +611,18 @@ struct ListTab : TabBase, ScreenshotCallback
     int sel = event.GetSelection();
 
     // Deselections are equivalent to selecting "All"
-    if(sel <= 0 || !event.IsSelection())
-      sel = 0;
+    if(sel <= 0 || !event.IsSelection() || sel > taglist.size())
+      lister.clearSubSelection();
+    else
+      {
+        sel--;
 
-    cout << "TAG select: " << sel << endl;
+        assert(sel >= 0 && sel < taglist.size());
+        TagSorter::Entry &e = taglist[sel];
+        lister.setSubSelection(e.games);
+      }
+
+    listHasChanged();
   }
 
   void insertMe()
@@ -1113,6 +1142,7 @@ struct ListTab : TabBase, ScreenshotCallback
   void dataChanged()
   {
     lister.reset();
+    createTagList();
     listHasChanged(true);
   }
 };
@@ -1243,7 +1273,7 @@ class MyFrame : public wxFrame, public StatusNotify
 
 public:
   MyFrame(const wxString& title, const std::string &ver)
-    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(850/*1024*/, 700)),
+    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(1024, 700)),
       version(ver)
   {
     Centre();

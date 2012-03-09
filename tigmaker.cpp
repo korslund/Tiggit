@@ -461,6 +461,9 @@ class MyApp : public wxApp
 public:
   bool OnInit()
   {
+    cout << "TO USE THIS, ADD TAGS TO IT FIRST\n";
+    return false;
+
     if (!wxApp::OnInit())
       return false;
 

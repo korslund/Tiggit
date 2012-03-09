@@ -86,6 +86,7 @@ struct TigListReader
     t.homepage = root["homepage"].asString();
     t.buypage = root["buypage"].asString();
     t.price = root["price"].asDouble();
+    t.tags = root["tags"].asString();
 
     // Check whether the tigfile has a valid "paypal" entry. We don't
     // need the actual value.
