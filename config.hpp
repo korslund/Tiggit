@@ -12,7 +12,7 @@ struct Config
   std::string filename;
 
   // Set true when a forced update is necessary.
-  bool updateList, updateTigs;
+  bool updateList, updateTigs, updateCache;
 
   // Set to true the first time we run only
   bool first_time;
@@ -22,7 +22,8 @@ struct Config
 
   int64_t lastTime;
 
-  Config() : updateList(false), updateTigs(false), first_time(false), seen_demo_msg(false),
+  Config() : updateList(false), updateTigs(false), updateCache(false),
+             first_time(false), seen_demo_msg(false),
              lastTime(0) {}
 
   void fail(const std::string &msg)
@@ -62,6 +63,7 @@ struct Config
       {
         error = true;
         first_time = true;
+        updateCache = true;
       }
     else
       {
@@ -93,6 +95,11 @@ struct Config
                 //lastTime = root["last_time"].asInt64();
                 lastTime = root["last_time"].asInt();
                 seen_demo_msg = root["seen_demo_msg"].asBool();
+
+                int cache = root["cache_version"].asInt();
+                if(cache != 1)
+                  updateCache = true;
+
                 if(lastTime < 0) lastTime = 0;
               }
             catch(...)
@@ -107,8 +114,9 @@ struct Config
       {
         updateList = true;
         //updateTigs = true;
-        write();
       }
+
+    write();
   }
 
   void write()
@@ -118,6 +126,7 @@ struct Config
     // TODO: Subject to 2038-bug
     root["last_time"] = (int)lastTime;
     root["seen_demo_msg"] = seen_demo_msg;
+    root["cache_version"] = 1;
 
     writeJson(filename, root);
   }

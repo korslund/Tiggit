@@ -1547,7 +1547,7 @@ public:
         // is much faster and more server-friendly than spawning a
         // gazillion connections to get all the tigfiles and images
         // individually.
-        if(conf.first_time)
+        if(conf.updateCache)
           {
             CacheFetcher cf(this);
             cf.goDoItAlready();

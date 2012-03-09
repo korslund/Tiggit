@@ -16,7 +16,7 @@ struct CacheFetcher : ProgressHolder
 
   void goDoItAlready()
   {
-    setMsg("Downloading first time data...");
+    setMsg("Downloading data set...");
 
     // Start downloading the latest version
     std::string zip = get.getPath("cache.zip");
