@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include "tmpdir.hpp"
 #include "curl_get.hpp"
+#include "decodeurl.hpp"
 
 struct FileGetter
 {

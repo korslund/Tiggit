@@ -24,11 +24,19 @@ Json::Value parseJsonString(const std::string &string)
 }
 */
 
-void writeJson(const std::string &file, const Json::Value &value)
+void writeJson(const std::string &file, const Json::Value &value, bool fast=false)
 {
   std::ofstream of(file.c_str());
   if(of)
-    of << value;
+    {
+      if(fast)
+        {
+          Json::FastWriter w;
+          of << w.write(value);
+        }
+      else
+        of << value;
+    }
   else
     std::cout << "WARNING: Unable to open " << file << " for writing\n";
 }

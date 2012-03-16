@@ -24,7 +24,7 @@ struct Config
 
   Config() : updateList(false), updateTigs(false), updateCache(false),
              first_time(false), seen_demo_msg(false),
-             lastTime(0) {}
+             lastTime(0x7fffffffffff) {}
 
   void fail(const std::string &msg)
   {
