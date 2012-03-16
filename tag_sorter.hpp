@@ -77,12 +77,13 @@ struct TagSorter
       }
 
     // Next move this list over to the output
-    output.resize(lookup.size());
-    int index = 0;
+    //output.resize(lookup.size());
+    //int index = 0;
     for(ELookup::iterator it = lookup.begin();
         it != lookup.end(); it++)
       {
-        Entry &e = output[index++];
+        //Entry &e = output[index++];
+        Entry e;
         e.tag = it->first;
         e.games = it->second;
         e.important = false;
@@ -97,6 +98,16 @@ struct TagSorter
 
         if(e.important)
           e.tag[0] = toupper(e.tag[0]);
+
+        /* Cleanup hack: The tag list was too big and messy, so as a
+           temporary solution, cut out everything but the most
+           relevant tags. This means the ones marked 'important',
+           pluss single-player and multi-player (which I want to
+           appear below the others and non-capitalized, that's why
+           they aren't marked important.)
+         */
+        if(e.important || e.tag == "single-player" || e.tag == "multi-player")
+          output.push_back(e);
       }
 
     // Finally, sort the output
