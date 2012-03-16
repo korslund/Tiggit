@@ -40,7 +40,7 @@ struct GameInfo
   // Rate the game and send the rating off to the server
   void rateGame(int rating)
   {
-    assert(rating >= 0 && rating <= 4);
+    assert(rating >= 0 && rating <= 5);
 
     // No point in voting more than once, the server will filter it
     // out.

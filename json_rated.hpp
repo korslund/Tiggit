@@ -45,13 +45,13 @@ public:
     int rate = -1;
     if(ratings.find(game) != ratings.end())
       rate = ratings[game];
-    if(rate < -1 || rate > 4) rate = -1;
+    if(rate < -1 || rate > 5) rate = -1;
     return rate;
   }
 
   void setRating(const std::string &game, int rate)
   {
-    assert(rate >= 0 && rate <= 4);
+    assert(rate >= 0 && rate <= 5);
     ratings[game] = rate;
     write();
   }

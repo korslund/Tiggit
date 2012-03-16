@@ -86,8 +86,7 @@ int main()
   reader.loadData(get.getPath("all_games.json"), data);
   cout << "Loaded " << data.arr.size() << " games\n";
 
-  Json::Value output;
-
+  Json::Value tigdata;
   for(int i=0; i<data.arr.size(); i++)
     {
       const DataList::Entry &e = data.arr[i];
@@ -108,10 +107,9 @@ int main()
       if(t.isDemo)
         val["isdemo"] = true;
 
-      output[e.urlname] = val;
+      tigdata[e.urlname] = val;
     }
 
-  write("web_gamedata.json", output);
 
   // Create a list sorted by rating
   vector<int> games(data.arr.size());
@@ -120,11 +118,9 @@ int main()
 
   sort(games.begin(), games.end(), RateSort(data));
 
-  output = Json::Value();
+  Json::Value allByRate;
   for(int i=0; i<games.size(); i++)
-    output.append(data.arr[games[i]].urlname);
-
-  write("web_sortby_rate.json", output);
+    allByRate.append(data.arr[games[i]].urlname);
 
   // Create category lists
   TagSorter tags;
@@ -132,7 +128,7 @@ int main()
 
   tags.process(data);
   tags.makeTagList(games, taglist);
-  output = Json::Value();
+  Json::Value tagsByRate;
   for(int i=0; i<taglist.size(); i++)
     {
       const TagSorter::Entry &e = taglist[i];
@@ -142,10 +138,15 @@ int main()
       Json::Value list;
       for(int i=0; i<e.games.size(); i++)
         list.append(data.arr[games[e.games[i]]].urlname);
-      output[e.tag] = list;
+      tagsByRate[e.tag] = list;
     }
 
-  write("web_tags_sortby_rate.json", output);
+  Json::Value output;
+  output["gamedata"] = tigdata;
+  output["all_by_rate"] = allByRate;
+  output["tags_by_rate"] = tagsByRate;
+
+  write("web_gamedata.json", output);
 
   return 0;
 }

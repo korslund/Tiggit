@@ -195,7 +195,7 @@ struct TigListReader
         float rating = game.get("rating", -1).asDouble();
         int rateCount = game["rate_count"].asUInt();
         int dlCount = game["dl_count"].asUInt();
-        if(rating > 4) rating = -1;
+        if(rating > 5) rating = -1;
 
         // Get and parse tigfile
         DataList::TigInfo ti;

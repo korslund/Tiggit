@@ -404,7 +404,7 @@ struct ListTab : TabBase, ScreenshotCallback
   StatusNotify *stat;
   wxChoice *rateBox;
   wxStaticText *rateText;
-  wxString rateString[6];
+  wxString rateString[7];
 
   std::vector<TagSorter::Entry> taglist;
 
@@ -462,23 +462,25 @@ struct ListTab : TabBase, ScreenshotCallback
     buttonHolder->Add(supportButton, 0, wxALIGN_RIGHT);
     buttonHolder->Add(buttonBar, 0);
 
-    wxString choices[6];
+    wxString choices[7];
     choices[0] = wxT("Rate this game");
-    choices[1] = wxT("4: Awesome!");
-    choices[2] = wxT("3: Very Good");
-    choices[3] = wxT("2: It's OK");
-    choices[4] = wxT("1: Meh");
-    choices[5] = wxT("0: Terrible!");
+    choices[1] = wxT("5: Awesome!");
+    choices[2] = wxT("4: Very Good");
+    choices[3] = wxT("3: It's Fine");
+    choices[4] = wxT("2: Meh");
+    choices[5] = wxT("1: Very Bad");
+    choices[6] = wxT("0: Unplayable");
 
     rateString[0] = wxT("Your rating: not rated");
-    rateString[1] = wxT("Your rating: 0 (terrible)");
-    rateString[2] = wxT("Your rating: 1 (meh)");
-    rateString[3] = wxT("Your rating: 2 (ok)");
-    rateString[4] = wxT("Your rating: 3 (very good)");
-    rateString[5] = wxT("Your rating: 4 (awesome)");
+    rateString[1] = wxT("Your rating: 0 (unplayable)");
+    rateString[2] = wxT("Your rating: 1 (very bad)");
+    rateString[3] = wxT("Your rating: 2 (meh)");
+    rateString[4] = wxT("Your rating: 3 (fine)");
+    rateString[5] = wxT("Your rating: 4 (very good)");
+    rateString[6] = wxT("Your rating: 5 (awesome)");
 
     rateBox = new wxChoice(this, myID_RATE, wxDefaultPosition, wxDefaultSize,
-                           6, choices);
+                           7, choices);
     rateText = new wxStaticText(this, wxID_ANY, wxT(""));
 
     wxBoxSizer *rateBar = new wxBoxSizer(wxHORIZONTAL);
@@ -595,8 +597,8 @@ struct ListTab : TabBase, ScreenshotCallback
 
     // The first choice is just "Rate this game"
     if(rate == 0) return;
-    rate = 5 - rate; // The rest are in reverse order
-    assert(rate >= 0 && rate <= 4);
+    rate = 6 - rate; // The rest are in reverse order
+    assert(rate >= 0 && rate <= 5);
 
     if(select < 0 || select >= lister.size())
       return;
@@ -683,7 +685,7 @@ struct ListTab : TabBase, ScreenshotCallback
       {
         // Yup. Update textbox to reflect our previous rating.
         rateBox->Disable();
-        assert(rating >= 0 && rating <= 4);
+        assert(rating >= 0 && rating <= 5);
         rateText->SetLabel(rateString[rating+1]);
       }
   }
