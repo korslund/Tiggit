@@ -133,7 +133,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
       fs::create_directories(bin);
 
       // Copy all our sibling files to bin/
-      fs::path from = getExe().branch_path();
+      fs::path from = getExe().parent_path();
       copy_files(from, bin);
 
       // Create shortcuts

@@ -54,7 +54,7 @@ struct Updater : ProgressHolder
     string this_exe = string(this_wx.mb_str());
 
     // Is there an override file in our current dir?
-    if(exists(path(this_exe).branch_path() / "override"))
+    if(exists(path(this_exe).parent_path() / "override"))
       // If so, skip auto update and just run the current version.
       return false;
 

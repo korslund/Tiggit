@@ -466,7 +466,7 @@ struct ListTab : TabBase, ScreenshotCallback
     choices[0] = wxT("Rate this game");
     choices[1] = wxT("5: Awesome!");
     choices[2] = wxT("4: Very Good");
-    choices[3] = wxT("3: It's Fine");
+    choices[3] = wxT("3: It's OK");
     choices[4] = wxT("2: Meh");
     choices[5] = wxT("1: Very Bad");
     choices[6] = wxT("0: Unplayable");
@@ -475,7 +475,7 @@ struct ListTab : TabBase, ScreenshotCallback
     rateString[1] = wxT("Your rating: 0 (unplayable)");
     rateString[2] = wxT("Your rating: 1 (very bad)");
     rateString[3] = wxT("Your rating: 2 (meh)");
-    rateString[4] = wxT("Your rating: 3 (fine)");
+    rateString[4] = wxT("Your rating: 3 (ok)");
     rateString[5] = wxT("Your rating: 4 (very good)");
     rateString[6] = wxT("Your rating: 5 (awesome)");
 
@@ -940,7 +940,7 @@ struct ListTab : TabBase, ScreenshotCallback
               workDir = dir / e.entry.tigInfo.subdir;
             else
               // Use base path of the executable
-              workDir = program.branch_path();
+              workDir = program.parent_path();
 
             wxSetWorkingDirectory(wxString(workDir.string().c_str(), wxConvUTF8));
 

@@ -41,7 +41,7 @@ struct UnZip
         path dest_file = dest_dir / ent.d_name;
 
         // Make sure the directory exists
-        path dest_branch = dest_file.branch_path();
+        path dest_branch = dest_file.parent_path();
 
         boost::filesystem::create_directories(dest_branch);
 

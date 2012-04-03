@@ -38,7 +38,7 @@ struct FileGetter
     path dest = base / file;
 
     // Make sure the destination dir exists
-    create_directories(dest.branch_path());
+    create_directories(dest.parent_path());
 
     return dest.string();
   }
