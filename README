@@ -2,7 +2,8 @@ The TIGGIT indie game installer
 -------------------------------
 
 This is an alpha version of a new game installer / distribution /
-thingie I'm working on.
+thingie I'm working on. It is released under the GNU General Public
+License v3.
 
 For more info, check out http://tiggit.net/ .
 
@@ -13,4 +14,5 @@ but you should be able to get going with CMake.
 Still, if you want to improve tiggit, all help and suggestions are
 highly welcome.
 
-Send me a mail at korslund@gmail.com or send pull requests through github.
+Send me a mail at korslund@gmail.com, or to publish code send me a
+pull request through github.
