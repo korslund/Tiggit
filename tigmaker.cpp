@@ -182,6 +182,8 @@ enum MyIDs
     myID_DEVNAME,
     myID_SHOT,
     myID_PAYPAL,
+    myID_TYPE,
+    myID_TAGS,
 
     myID_SAVE,
     myID_CLEAR,
@@ -191,7 +193,7 @@ enum MyIDs
 struct TheFrame : public wxFrame
 {
   wxTextCtrl *title, *urlname, *url, *launch, *version,
-    *desc, *homepage, *devname, *shot, *paypal;
+    *desc, *homepage, *devname, *shot, *paypal, *type, *tags;
   wxPanel *panel;
   wxBoxSizer *sizer;
 
@@ -233,7 +235,7 @@ struct TheFrame : public wxFrame
   }
 
   TheFrame()
-    : wxFrame(NULL, wxID_ANY, wxT("Register games"), wxDefaultPosition, wxSize(480, 600)),
+    : wxFrame(NULL, wxID_ANY, wxT("Register games"), wxDefaultPosition, wxSize(480, 700)),
       urlChanged(false)
   {
     panel = new wxPanel(this);
@@ -260,6 +262,9 @@ struct TheFrame : public wxFrame
     shot = addText("Screenshot", myID_SHOT);
     devname = addText("Developer", myID_DEVNAME);
     paypal = addText("Paypal", myID_PAYPAL);
+    type = addText("Type", myID_TYPE);
+    tags = addText("Tags", myID_TAGS);
+    sizer->Add(new wxStaticText(panel, wxID_ANY, wxT("Suggested tags: arcade action cards casual fps fighter puzzle platform strategy music simulation racing role-playing single-player multi-player"), wxDefaultPosition, wxSize(400,55)), 0, wxTOP, 4);
 
     // Buttons at the bottom (of the sea)
     //sizer->AddStretchSpacer();
@@ -368,6 +373,8 @@ struct TheFrame : public wxFrame
     set(tig, "devname", devname);
     set(tig, "paypal", paypal);
     set(tig, "shot", shot);
+    set(tig, "type", type);
+    set(tig, "tags", tags);
 
     string s_urlname = string(urlname->GetValue().mb_str());
     string file = s_urlname + ".tig";
@@ -435,6 +442,8 @@ struct TheFrame : public wxFrame
     devname->Clear();
     shot->Clear();
     paypal->Clear();
+    type->Clear();
+    tags->Clear();
 
     // Happens automatically but to make sure:
     urlChanged = false;
@@ -461,9 +470,6 @@ class MyApp : public wxApp
 public:
   bool OnInit()
   {
-    cout << "TO USE THIS, ADD TAGS TO IT FIRST\n";
-    return false;
-
     if (!wxApp::OnInit())
       return false;
 

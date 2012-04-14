@@ -1232,7 +1232,7 @@ struct DemoListTab : ListTabNonEmpty
   {
     list->addColumn(wxT("Name"), 300, new TitleCol);
     list->addColumn(wxT("Rating"), 70, new RatingCol);
-    list->addColumn(wxT("Price"), 70, new PriceCol);
+    //list->addColumn(wxT("Price"), 70, new PriceCol);
     //list->addColumn(wxT("Date added"), 160, new AddDateCol);
 
     lister.sortRating();

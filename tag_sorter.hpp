@@ -22,7 +22,6 @@ const char* itags[] =
     "fps",
     "fighter",
     "adventure",
-    "arcade",
     "racing",
     "role-playing",
     "\0"
