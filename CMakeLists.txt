@@ -22,3 +22,5 @@ target_link_libraries(tiggit ${LIBS})
 
 add_executable(tigmaker tigmaker.cpp ${JSON})
 target_link_libraries(tigmaker ${MLIBS})
+
+add_executable(fix_json fix_json.cpp ${JSON})

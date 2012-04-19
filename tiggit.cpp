@@ -87,6 +87,11 @@ void updateData(bool download)
         {
           // Then fail, nothing more to do
           wxString msg(e.what(), wxConvUTF8);
+
+          // Make sure we delete the file - no point in keeping an
+          // invalid cache.
+          boost::filesystem::remove(lstfile);
+
           wxMessageBox(msg, wxT("Error"), wxOK | wxICON_ERROR);
         }
       else
@@ -1033,7 +1038,7 @@ struct ListTab : TabBase, ScreenshotCallback
             // Warn the user that you can't actually download finished
             // games here yet
             if(!conf.seen_demo_msg)
-              wxMessageBox(wxT("NOTE: Purchasing of games happens entirely outside of the tiggit system. We have not yet integrated any shopping functions into the client itself.\n\nWe still encourage you to buy games, but unfortunately you will NOT currently be able to find or play these newly purchased games inside the tiggit client. Instead you must download, install and run these games manually.\n\nWe know this is inconvenient, so this is something we are working on to improve in the near future."),
+              wxMessageBox(wxT("NOTE: Purchasing of games happens entirely outside of the tiggit system. We have not yet integrated any shopping functions into the launcher itself.\n\nWe still encourage you to buy games, but unfortunately you will NOT currently be able to find or play these newly purchased games inside the tiggit launcher. Instead you must download, install and run these games manually.\n\nWe know this is inconvenient, so this is something we hope to improve in the near future, in cooperation with game developers."),
                            wxT("Warning"), wxOK);
 
             conf.shown_demo_msg();
