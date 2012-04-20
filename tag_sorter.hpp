@@ -6,6 +6,7 @@
 #include <string>
 #include <algorithm>
 #include <map>
+#include <set>
 #include <boost/algorithm/string.hpp>
 
 const char* itags[] =
@@ -23,13 +24,15 @@ const char* itags[] =
     "fighter",
     "adventure",
     "racing",
-    "role-playing",
+    "shooter",
+    "rogue-like",
+    "rpg",
     "\0"
   };
 
 struct TagSorter
 {
-  std::vector<std::vector<std::string> > allTags;
+  std::vector<std::set<std::string> > allTags;
 
   struct Entry
   {
@@ -69,10 +72,11 @@ struct TagSorter
       {
         int game = selection[i];
         assert(game >= 0 && game < allTags.size());
-        vector<string> &tags = allTags[game];
+        set<string> &tags = allTags[game];
 
-        for(int t=0; t<tags.size(); t++)
-          lookup[tags[t]].push_back(i);
+        set<string>::iterator it;
+        for(it = tags.begin(); it != tags.end(); it++)
+          lookup[*it].push_back(i);
       }
 
     // Next move this list over to the output
@@ -125,7 +129,7 @@ struct TagSorter
       {
         string s=data.arr[i].tigInfo.tags;
 
-        vector<string> &tags = allTags[i];
+        set<string> &tags = allTags[i];
 
         while(true)
           {
@@ -139,11 +143,22 @@ struct TagSorter
 
             string tag = s.substr(0,end);
 
-            /* TODO: Do tag massaging here. This may include:
-               - collapsing common synonyms (such as single-player and
-                 singleplayer)
-               - converting everything to lower-case
-               - doing other filtering
+            if(tag == "role-playing")
+              tag = "rpg";
+            else if(tag == "shooting")
+              tag = "shooter";
+            else if(tag == "roguelike")
+              tag = "rogue-like";
+            else if(tag == "single" || tag == "singleplayer")
+              tag = "single-player";
+            else if(tag == "multi" || tag == "multiplayer")
+              tag = "multi-player";
+
+            /* TODO:
+               - add other synonyms as we need them
+               - maybe make a more general system for synonyms
+               - converting everything to lower-case before starting
+               - possibly doing other filtering
 
                We should also cull repeated tags - whether they are
                repeated in the file itself or become repeated as a
@@ -151,7 +166,7 @@ struct TagSorter
                may be to simply use a set here, rather than a vector.
              */
 
-            tags.push_back(tag);
+            tags.insert(tag);
 
             s = s.substr(end);
           }

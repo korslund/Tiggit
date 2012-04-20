@@ -43,12 +43,11 @@ private:
         CurlGet::get(url, file, &curl_progress, this);
 
         if(abortRequested()) setAbort();
-        else if(completed)
+        else
           {
             setDone();
             success = true;
           }
-        else setError("Unknown error");
       }
     catch(std::exception &e)
       {
@@ -74,11 +73,6 @@ private:
   {
     current = dl_now;
     total = dl_total;
-
-    // Are we done?
-    completed = false;
-    if(current == total && total != 0)
-      completed = true;
 
     // Did the user request an abort?
     if(abortRequested())
