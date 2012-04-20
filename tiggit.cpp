@@ -531,12 +531,6 @@ struct ListTab : TabBase, ScreenshotCallback
 
     SetSizer(panes);
 
-    // Add delete = 2nd button accelerator
-    wxAcceleratorEntry entries[1];
-    entries[0].Set(wxACCEL_NORMAL, WXK_DELETE, myID_BUTTON2);
-    wxAcceleratorTable accel(1, entries);
-    SetAcceleratorTable(accel);
-
     Connect(myID_TAGS, wxEVT_COMMAND_LISTBOX_SELECTED,
             wxCommandEventHandler(ListTab::onTagSelect));
 
@@ -1143,7 +1137,10 @@ struct ListTab : TabBase, ScreenshotCallback
         dir = get.getPath(dir.string());
 
         if((wxGetOsVersion() & wxOS_WINDOWS) != 0)
-          wxShell(wxT("start ") + wxString(dir.string().c_str(), wxConvUTF8));
+          {
+            string command = "explorer \"" + dir.string() + "\"";
+            wxExecute(wxString(command.c_str(), wxConvUTF8), wxEXEC_ASYNC, NULL);
+          }
       }
 
     else if(id == myID_REFRESH_ITEM)
@@ -1263,6 +1260,12 @@ struct InstalledListTab : ListTab
   {
     list->addColumn(wxT("Name"), 300, new TitleCol);
     list->addColumn(wxT("Status"), 170, new StatusCol);
+
+    // Add delete = 2nd button accelerator
+    wxAcceleratorEntry entries[1];
+    entries[0].Set(wxACCEL_NORMAL, WXK_DELETE, myID_BUTTON2);
+    wxAcceleratorTable accel(1, entries);
+    SetAcceleratorTable(accel);
   }
 
   void tick()
@@ -1341,11 +1344,16 @@ public:
        This works on Linux but unfortunately not on Windows, and I
        don't know why.
      */
+
+    /*
+      DISABLED for now since they messes up the search text box.
+
     wxAcceleratorEntry entries[2];
     entries[0].Set(wxACCEL_NORMAL, WXK_LEFT, myID_GOLEFT);
     entries[1].Set(wxACCEL_NORMAL, WXK_RIGHT, myID_GORIGHT);
     wxAcceleratorTable accel(2, entries);
     SetAcceleratorTable(accel);
+    */
 
     Connect(wxID_ABOUT, wxEVT_COMMAND_MENU_SELECTED,
             wxCommandEventHandler(MyFrame::onAbout));
