@@ -10,6 +10,7 @@
 #include "jobqueue.hpp"
 #include "screenshot_loader.hpp"
 #include "json_rated.hpp"
+#include "config.hpp"
 
 #include <time.h>
 #include <assert.h>
@@ -253,7 +254,13 @@ struct GameInfo
     tigurl = wxString(e.tigurl.c_str(), wxConvUTF8);
 
     if(e.rateCount > 0 && e.rating > 0)
-      rating = wxString::Format(wxT("%3.2f"), e.rating);
+      {
+        rating = wxString::Format(wxT("%3.2f"), e.rating);
+
+        if(conf.debug)
+          rating += wxString::Format(wxT(" (%d)"), e.rateCount);
+      }
+
     dlCount << e.dlCount;
     price = wxString::Format(wxT("$%3.2f"), e.tigInfo.price);
 

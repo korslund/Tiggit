@@ -17,13 +17,16 @@ struct Config
   // Set to true the first time we run only
   bool first_time;
 
+  // Show debug / untested data
+  bool debug;
+
   // True if the user has seen the 'demo' tab message
   bool seen_demo_msg;
 
   int64_t lastTime;
 
   Config() : updateList(false), updateTigs(false), updateCache(false),
-             first_time(false), seen_demo_msg(false),
+             first_time(false), debug(false), seen_demo_msg(false),
              lastTime(0x7fffffffffff) {}
 
   void fail(const std::string &msg)
@@ -95,6 +98,7 @@ struct Config
                 //lastTime = root["last_time"].asInt64();
                 lastTime = root["last_time"].asInt();
                 seen_demo_msg = root["seen_demo_msg"].asBool();
+                debug = root["debug"].asBool();
 
                 int cache = root["cache_version"].asInt();
                 if(cache != 1)
@@ -127,6 +131,7 @@ struct Config
     root["last_time"] = (int)lastTime;
     root["seen_demo_msg"] = seen_demo_msg;
     root["cache_version"] = 1;
+    root["debug"] = debug;
 
     writeJson(filename, root);
   }

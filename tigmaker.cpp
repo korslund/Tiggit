@@ -7,6 +7,7 @@
 #include <assert.h>
 #include "readjson.hpp"
 #include "curl_get.hpp"
+#include "downloadjob.hpp"
 
 using namespace std;
 
@@ -24,6 +25,16 @@ string char2hex( char dec )
   r.append( &dig2, 1);
   return r;
 }
+
+// Ask the user an OK/Cancel question.
+bool ask(const wxString &question)
+{
+  return wxMessageBox(question, wxT("Please confirm"),
+                      wxOK | wxCANCEL | wxICON_QUESTION) == wxOK;
+}
+
+bool ask(const std::string &q)
+{ return ask(wxString(q.c_str(), wxConvUTF8)); }
 
 // From: http://www.zedwood.com/article/111/cpp-urlencode-function
 string urlencode(const string &c)
@@ -97,10 +108,10 @@ struct PreLoad
 struct Config
 {
   // Base url location for tigfile
-  std::string baseUrl,
+  std::string baseUrl, imageUrl,
 
-  // Where to store the tigfile on this computer
-    localPath,
+  // Where to store tigfiles and screenshots on this computer
+    localPath, imagePath,
 
   // Default values for some fields
     defDevname,
@@ -131,9 +142,11 @@ struct Config
 
         // Required values
         localPath = root["local_path"].asString();
+        imagePath = root["image_path"].asString();
         baseUrl = root["base_url"].asString();
+        imageUrl = root["image_url"].asString();
 
-        if(localPath == "" || baseUrl == "")
+        if(localPath == "" || baseUrl == "" || imagePath == "" || imageUrl == "")
           throw std::exception();
       }
     catch(...)
@@ -182,6 +195,7 @@ enum MyIDs
     myID_DEVNAME,
     myID_SHOT,
     myID_PAYPAL,
+    myID_BUYPAGE,
     myID_TYPE,
     myID_TAGS,
 
@@ -193,7 +207,7 @@ enum MyIDs
 struct TheFrame : public wxFrame
 {
   wxTextCtrl *title, *urlname, *url, *launch, *version,
-    *desc, *homepage, *devname, *shot, *paypal, *type, *tags;
+    *desc, *homepage, *devname, *shot, *paypal, *buypage, *type, *tags;
   wxPanel *panel;
   wxBoxSizer *sizer;
 
@@ -235,7 +249,7 @@ struct TheFrame : public wxFrame
   }
 
   TheFrame()
-    : wxFrame(NULL, wxID_ANY, wxT("Register games"), wxDefaultPosition, wxSize(480, 700)),
+    : wxFrame(NULL, wxID_ANY, wxT("Register games"), wxDefaultPosition, wxSize(480, 730)),
       urlChanged(false)
   {
     panel = new wxPanel(this);
@@ -262,6 +276,7 @@ struct TheFrame : public wxFrame
     shot = addText("Screenshot", myID_SHOT);
     devname = addText("Developer", myID_DEVNAME);
     paypal = addText("Paypal", myID_PAYPAL);
+    buypage = addText("Buypage", myID_BUYPAGE);
     type = addText("Type", myID_TYPE);
     tags = addText("Tags", myID_TAGS);
     sizer->Add(new wxStaticText(panel, wxID_ANY, wxT("Suggested tags: arcade action cards casual fps fighter puzzle platform strategy music simulation racing role-playing single-player multi-player"), wxDefaultPosition, wxSize(400,55)), 0, wxTOP, 4);
@@ -360,6 +375,52 @@ struct TheFrame : public wxFrame
       v[key] = value;
   }
 
+  bool fixImage(const std::string &url, const std::string &imgfile)
+  {
+    DownloadJob dl(url, imgfile);
+    dl.runNoThread();
+    if(!dl.isSuccess())
+      {
+        cout << "WARNING: " << dl.getError() << endl;
+        return false;
+      }
+
+    wxImage img;
+    if(!img.LoadFile(wxString(imgfile.c_str(), wxConvUTF8)))
+      {
+        cout << "WARNING: Failed to load image\n";
+        return false;
+      }
+
+    int W = img.GetWidth();
+    int H = img.GetHeight();
+
+    if(W > 300 || H > 260)
+      {
+        float aspect = W*1.0/H;
+
+        if(aspect >= 300.0/260.0)
+          {
+            // Use full width
+            W = 300;
+            H = (int)(300/aspect);
+          }
+        else
+          {
+            // Use full height
+            H = 260;
+            W = (int)(260*aspect);
+          }
+
+        // Resize the image, and then save the correctly sized image.
+        img.Rescale(W, H, wxIMAGE_QUALITY_HIGH);
+        img.SaveFile(wxString(imgfile.c_str(), wxConvUTF8), wxBITMAP_TYPE_PNG);
+      }
+
+    cout << "Created " << imgfile << endl;
+    return true;
+  }
+
   void onSave(wxCommandEvent &event)
   {
     Json::Value tig;
@@ -372,6 +433,7 @@ struct TheFrame : public wxFrame
     set(tig, "homepage", homepage);
     set(tig, "devname", devname);
     set(tig, "paypal", paypal);
+    set(tig, "buypage", buypage);
     set(tig, "shot", shot);
     set(tig, "type", type);
     set(tig, "tags", tags);
@@ -380,6 +442,21 @@ struct TheFrame : public wxFrame
     string file = s_urlname + ".tig";
     string s_tigurl = conf.baseUrl + file;
     set(tig, "location", s_tigurl);
+
+    string s_shot = string(shot->GetValue().mb_str());
+    string imgfile;
+
+    // Download and create resized screenshot
+    if(s_shot != "")
+      {
+        imgfile = s_urlname + ".png";
+        string s_imgurl = conf.imageUrl + imgfile;
+        set(tig, "shot300x260", s_imgurl);
+        imgfile = conf.imagePath + imgfile;
+        if(!fixImage(s_shot, imgfile))
+          if(!ask("Image conversion failed. Continue anyway?"))
+             return;
+      }
 
     file = conf.localPath + file;
     writeJson(file, tig);
@@ -442,6 +519,7 @@ struct TheFrame : public wxFrame
     devname->Clear();
     shot->Clear();
     paypal->Clear();
+    buypage->Clear();
     type->Clear();
     tags->Clear();
 
@@ -475,6 +553,8 @@ public:
 
     if(!conf.read("tigmaker.json"))
       return false;
+
+    wxInitAllImageHandlers();
 
     TheFrame *frame = new TheFrame();
     frame->Show(true);

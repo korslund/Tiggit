@@ -3,6 +3,7 @@
 
 #include "curl_get.hpp"
 #include "jobify.hpp"
+#include <boost/filesystem.hpp>
 
 /* Download a file in a separate thread.
  */

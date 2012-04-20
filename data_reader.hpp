@@ -194,7 +194,7 @@ struct TigListReader
         // Get rating and download count info
         float rating = game.get("rating", -1).asDouble();
         int rateCount = game["rate_count"].asUInt();
-        int dlCount = game["dl_count"].asUInt();
+        int dlCount = game["downloads"].asUInt();
         if(rating > 5) rating = -1;
 
         // Get and parse tigfile

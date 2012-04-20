@@ -55,8 +55,8 @@ void updateData(bool download)
       time_t ft = boost::filesystem::last_write_time(lstfile);
       time_t now = time(0);
 
-      // 24 hour updates should be ok
-      if(difftime(now,ft) > 60*60*24)
+      // update game list once an hour
+      if(difftime(now,ft) > 60*60*1)
         download = true;
     }
   else
@@ -345,6 +345,14 @@ struct RatingCol : ColumnHandler
   wxString getText(GameInfo &e)
   {
     return e.rating;
+  }
+};
+
+struct DownloadsCol : ColumnHandler
+{
+  wxString getText(GameInfo &e)
+  {
+    return e.dlCount;
   }
 };
 
@@ -1212,7 +1220,8 @@ struct FreewareListTab : ListTab
   {
     list->addColumn(wxT("Name"), 300, new TitleCol);
     list->addColumn(wxT("Rating"), 70, new RatingCol);
-    //list->addColumn(wxT("Date added"), 160, new AddDateCol);
+    if(conf.debug)
+      list->addColumn(wxT("Downloads"), 70, new DownloadsCol);
 
     lister.sortRating();
     listHasChanged();
@@ -1237,8 +1246,9 @@ struct DemoListTab : ListTabNonEmpty
   {
     list->addColumn(wxT("Name"), 300, new TitleCol);
     list->addColumn(wxT("Rating"), 70, new RatingCol);
+    if(conf.debug)
+      list->addColumn(wxT("Downloads"), 70, new DownloadsCol);
     //list->addColumn(wxT("Price"), 70, new PriceCol);
-    //list->addColumn(wxT("Date added"), 160, new AddDateCol);
 
     lister.sortRating();
     listHasChanged();
@@ -1295,7 +1305,7 @@ public:
 
     wxMenu *menuList = new wxMenu;
     menuList->Append(myID_MENU_REFRESH, wxT("&Reload List"));
-    menuList->Append(myID_MENU_REFRESH_TOTAL, wxT("Reload E&verything"));
+    //menuList->Append(myID_MENU_REFRESH_TOTAL, wxT("Reload E&verything"));
 
     wxMenuBar *menuBar = new wxMenuBar;
     menuBar->Append(menuFile, _("&App"));
