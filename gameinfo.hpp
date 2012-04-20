@@ -135,7 +135,6 @@ struct GameInfo
                 // for use.
                 assert(isUnpacking());
                 setInstalled();
-                statusChange = true;
               }
           }
         else

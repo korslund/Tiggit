@@ -1113,7 +1113,8 @@ struct ListTab : TabBase, ScreenshotCallback
 
     // Currently only supported in Windows
     if((wxGetOsVersion() & wxOS_WINDOWS) != 0)
-      menu.Append(myID_OPEN_LOCATION, wxT("Open Location"));
+      if(e.isInstalled())
+        menu.Append(myID_OPEN_LOCATION, wxT("Open Location"));
 
     //menu.Append(myID_REFRESH_ITEM, wxT("Refresh Info"));
 
