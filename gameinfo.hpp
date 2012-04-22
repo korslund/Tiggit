@@ -99,7 +99,7 @@ struct GameInfo
      May also throw exceptions. These should also be counted as status
      changes (same as when returning 2.)
   */
-  bool updateStatus()
+  int updateStatus()
   {
     // Are we doing anything at the moment?
     if(!isWorking())
