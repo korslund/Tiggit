@@ -149,6 +149,8 @@ struct TagSorter
               tag = "shooter";
             else if(tag == "roguelike")
               tag = "rogue-like";
+            else if(tag == "platformer")
+              tag = "platform";
             else if(tag == "single" || tag == "singleplayer")
               tag = "single-player";
             else if(tag == "multi" || tag == "multiplayer")

@@ -89,11 +89,15 @@ struct GameInfo
     setDownloading();
   }
 
-  /* Called regularly to update status. Returns true if the game
-     changed to/from non-installed status.
+  /* Called regularly to update status. Returns:
+
+     0 - status has not changed
+     1 - status has changed and the install list should be updated
+     2 - status has changed, display lists and install list should be
+         updated
 
      May also throw exceptions. These should also be counted as status
-     changes (same as when returning 'true'.)
+     changes (same as when returning 2.)
   */
   bool updateStatus()
   {
@@ -103,7 +107,7 @@ struct GameInfo
 
     assert(job);
 
-    bool statusChange = false;
+    int exitStatus = 0;
     bool error = false;
     StatusJob *newJob = NULL;
     std::string errMsg = "";
@@ -133,6 +137,7 @@ struct GameInfo
               {
                 // The game has finished installing, and is now ready
                 // for use.
+                exitStatus = 1;
                 assert(isUnpacking());
                 setInstalled();
               }
@@ -140,7 +145,7 @@ struct GameInfo
         else
           {
             // The job did not finish
-            statusChange = true;
+            exitStatus = 2;
             setUninstalled();
 
             // Did it fail?
@@ -187,7 +192,7 @@ struct GameInfo
     if(error)
       throw std::runtime_error(errMsg);
 
-    return statusChange;
+    return exitStatus;
   }
 
   /* Request the screenshot of this game. The parameter callback will

@@ -811,8 +811,10 @@ struct ListTab : TabBase, ScreenshotCallback
 
     try
       {
-        if(e.updateStatus())
-          statusChanged();
+        int i = e.updateStatus();
+
+        if(i>0)
+          statusChanged(false, i == 2);
       }
     catch(std::exception &e)
       {
@@ -863,12 +865,15 @@ struct ListTab : TabBase, ScreenshotCallback
   }
 
   /* Called whenever an item switches lists. Set newInst to true if we
-     should switch to the "Installed" tab.
+     should switch to the "Installed" tab. dataChange is true if the
+     lists have changed (meaning we have to update all the display
+     lists)
   */
-  void statusChanged(bool newInst=false)
+  void statusChanged(bool newInst=false, bool dataChange=true)
   {
-    // Notify our parent that lists have changed
-    stat->onDataChanged();
+    // Notify our parent if lists have changed
+    if(dataChange)
+      stat->onDataChanged();
 
     // Write install status to config file
     jinst.write(data);
