@@ -5,10 +5,14 @@
 #include <wx/listctrl.h>
 #include <vector>
 #include <algorithm>
+#include <set>
 #include <time.h>
+#include "filegetter.hpp"
+#include "readjson.hpp"
 
 struct NewsItem
 {
+  int id;
   time_t dateNum;
   wxString date, subject, body;
   bool read;
@@ -24,24 +28,104 @@ struct NewsHolder
 {
   std::vector<NewsItem> items;
 
-  void addItem(time_t time, const wxString &subject, const wxString &body, bool read)
+  void addItem(int id, time_t time, const std::string &sub, const std::string &body, bool isRead=false)
+  {
+    addItem(id, time,
+            wxString(sub.c_str(), wxConvUTF8),
+            wxString(body.c_str(), wxConvUTF8),
+            isRead);
+  }
+
+  void addItem(int id, time_t time, const wxString &subject, const wxString &body, bool isRead=false)
   {
     NewsItem e;
 
     char buf[50];
     strftime(buf,50, "%Y-%m-%d", gmtime(&time));
     e.date = wxString(buf, wxConvUTF8);
+
+    e.id = id;
     e.dateNum = time;
     e.subject = subject;
     e.body = body;
-    e.read = read;
+    e.read = isRead;
 
     items.push_back(e);
   }
 
-  void sort()
+  void writeStatus()
   {
-    std::sort(items.begin(), items.end());
+    using namespace Json;
+
+    Value v;
+
+    for(int i=0; i<items.size(); i++)
+      if(items[i].read)
+        v.append(items[i].id);
+
+    writeJson(get.getPath("readnews.json"), v);
+  }
+
+  void reload()
+  {
+    using namespace Json;
+    using namespace std;
+
+    items.resize(0);
+
+    // TODO: This is just a temporary solution until we implement the
+    // new data fetching architecture.
+    try
+      {
+        Value root = readJson(get.getTo("http://tiggit.net/api/news.json", "news.json"));
+
+        if(!root.isObject())
+          {
+            addItem(0, time(NULL), "No news", "No news items were found", true);
+            return;
+          }
+
+        Value::Members keys = root.getMemberNames();
+        Value::Members::iterator it;
+        for(it = keys.begin(); it != keys.end(); it++)
+          {
+            const string &id = *it;
+            Value ent = root[id];
+
+            addItem(atoi(id.c_str()),
+                    ent["date"].asUInt(),
+                    ent["subject"].asString(),
+                    ent["body"].asString());
+          }
+
+        // Apply read-status
+        try
+          {
+            root = readJson(get.getPath("readnews.json"));
+
+            std::set<int> haveRead;
+
+            for(int i=0; i<root.size(); i++)
+              haveRead.insert(root[i].asUInt());
+
+            // Apply status
+            for(int i=0; i<items.size(); i++)
+              if(haveRead.count(items[i].id))
+                items[i].read = true;
+          }
+        // Ignore missing readnews.json file
+        catch(...) {}
+
+        sort(items.begin(), items.end());
+      }
+    catch(std::exception &e)
+      {
+        addItem(0, time(NULL), "Error loading news", e.what(), true);
+      }
+    catch(...)
+      {
+        addItem(0, time(NULL), "Error loading news", "Unknown error", true);
+      }
   }
 };
 
@@ -56,12 +140,9 @@ public:
                  wxBORDER_SUNKEN | wxLC_REPORT | wxLC_VIRTUAL | wxLC_SINGLE_SEL),
       news(NULL)
   {
-    /*
     wxFont fnt = unreadStyle.GetFont();
     fnt.SetWeight(wxFONTWEIGHT_BOLD);
     unreadStyle.SetFont(fnt);
-    //*/
-
     readStyle.SetTextColour(wxColour(128,128,128));
 
     wxListItem col;
@@ -79,6 +160,7 @@ public:
   void setData(NewsHolder &n)
   {
     news = &n;
+    n.reload();
     SetItemCount(news->items.size());
   }
 
@@ -119,6 +201,7 @@ public:
       {
         i->read = true;
         Refresh();
+        news->writeStatus();
         return true;
       }
     return false;
@@ -127,6 +210,11 @@ public:
 
 #define myID_NEWSLIST 10043
 #define myID_NEWSVIEW 10044
+#define myID_BGETNEWS 10045
+#define myID_BMARKALL 10046
+#define myID_TIGHOME  10060
+#define myID_TIGFORUM 10061
+#define myID_TIGBLOG  10062
 
 // The "Latest News" tab
 struct NewsTab : TabBase
@@ -145,14 +233,22 @@ struct NewsTab : TabBase
        /*wxBORDER_NONE | */wxTE_MULTILINE | wxTE_READONLY | wxTE_AUTO_URL | wxTE_RICH);
 
     wxBoxSizer *buttons = new wxBoxSizer(wxHORIZONTAL);
-    buttons->Add(new wxButton(this, 0, wxT("Mark all as read")),
+    buttons->Add(new wxButton(this, myID_BMARKALL, wxT("Mark all as read")),
                  0, wxLEFT | wxTOP | wxBOTTOM, 5);
-    buttons->Add(new wxButton(this, 0, wxT("Refresh list")),
+    buttons->Add(new wxButton(this, myID_BGETNEWS, wxT("Refresh list")),
+                 0, wxLEFT | wxTOP | wxBOTTOM, 5);
+    buttons->Add(new wxStaticText(this, wxID_ANY, wxT("       Visit:")),
+                 0, wxLEFT | wxTOP, 11);
+    buttons->Add(new wxButton(this, myID_TIGHOME, wxT("Tiggit.net")),
+                 0, wxLEFT | wxTOP | wxBOTTOM, 5);
+    buttons->Add(new wxButton(this, myID_TIGFORUM, wxT("Tiggit Forum")),
+                 0, wxLEFT | wxTOP | wxBOTTOM, 5);
+    buttons->Add(new wxButton(this, myID_TIGBLOG, wxT("Tiggit Blog")),
                  0, wxLEFT | wxTOP | wxBOTTOM, 5);
 
     wxBoxSizer *views = new wxBoxSizer(wxHORIZONTAL);
-    views->Add(list, 1, wxGROW | wxALL, 5);
-    views->Add(textView, 1, wxGROW | wxALL, 5);
+    views->Add(list, 1, wxGROW | wxLEFT | wxBOTTOM, 5);
+    views->Add(textView, 1, wxGROW | wxBOTTOM | wxRIGHT | wxLEFT, 5);
 
     wxBoxSizer *all = new wxBoxSizer(wxVERTICAL);
     all->Add(buttons);
@@ -167,11 +263,51 @@ struct NewsTab : TabBase
     Connect(myID_NEWSLIST, wxEVT_COMMAND_LIST_ITEM_DESELECTED,
             wxListEventHandler(NewsTab::onListDeselect));
 
-    data.addItem(time(NULL), wxT("Test 1"), wxT("http://tiggit.net/"), false);
-    data.addItem(time(NULL)-60*60*24*2, wxT("Test 2"), wxT("Test2"), true);
-    data.addItem(time(NULL)+60*60*24*2, wxT("Test 3"), wxT("Test3"), false);
-    data.sort();
+    Connect(myID_BMARKALL, wxEVT_COMMAND_BUTTON_CLICKED,
+            wxCommandEventHandler(NewsTab::onReadAll));
+    Connect(myID_BGETNEWS, wxEVT_COMMAND_BUTTON_CLICKED,
+            wxCommandEventHandler(NewsTab::onGetNews));
+
+    Connect(myID_TIGHOME, wxEVT_COMMAND_BUTTON_CLICKED,
+            wxCommandEventHandler(NewsTab::onWebsite));
+    Connect(myID_TIGFORUM, wxEVT_COMMAND_BUTTON_CLICKED,
+            wxCommandEventHandler(NewsTab::onWebsite));
+    Connect(myID_TIGBLOG, wxEVT_COMMAND_BUTTON_CLICKED,
+            wxCommandEventHandler(NewsTab::onWebsite));
+
+    reloadData();
+  }
+
+  void reloadData()
+  {
     list->setData(data);
+  }
+
+  void onWebsite(wxCommandEvent &event)
+  {
+    int id = event.GetId();
+
+    wxString url;
+
+    if(id == myID_TIGHOME) url = wxT("http://tiggit.net/");
+    if(id == myID_TIGFORUM) url = wxT("http://tiggit.net/forum/");
+    if(id == myID_TIGBLOG) url = wxT("http://tiggit.net/blog");
+
+    wxLaunchDefaultBrowser(url);
+  }
+
+  void onGetNews(wxCommandEvent &event)
+  {
+    reloadData();
+  }
+
+  void onReadAll(wxCommandEvent &event)
+  {
+    for(int i=0; i<data.items.size(); i++)
+      data.items[i].read = true;
+    list->Refresh();
+    data.writeStatus();
+    updateTabName();
   }
 
   void onListSelect(wxListEvent &event)
