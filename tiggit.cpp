@@ -26,6 +26,8 @@
 #include "gameinfo.hpp"
 #include "cache_fetcher.hpp"
 #include "tag_sorter.hpp"
+#include "tabbase.hpp"
+#include "newstab.hpp"
 
 using namespace std;
 
@@ -219,81 +221,6 @@ bool ask(const wxString &question)
   return wxMessageBox(question, wxT("Please confirm"),
                       wxOK | wxCANCEL | wxICON_QUESTION) == wxOK;
 }
-
-struct TabBase : wxPanel
-{
-  wxNotebook *book;
-
-  // Current tab placement in the wxNotebook. MUST be set to -1 when
-  // not inserted!
-  int tabNum;
-
-  TabBase(wxNotebook *parent)
-    : wxPanel(parent), book(parent), tabNum(-1)
-  {}
-
-  // Called when the tab is selected, letting the tab to direct focus
-  // to a sub-element.
-  virtual void takeFocus() = 0;
-
-  // Called regularly to update information. Currently called for all
-  // tabs, will soon only be called for the visible tab. Default is to
-  // do nothing.
-  virtual void tick() {}
-
-  // Called whenever the root data table has changed, basically
-  // instructing a complete reset on everything that depends on the
-  // game database.
-  virtual void dataChanged() = 0;
-
-  // Insert this tab into the wxNotebook, if it has any content
-  virtual void insertMe()
-  {
-    assert(book);
-    book->AddPage(this, wxT(""));
-    tabNum = book->GetPageCount() - 1;
-  }
-
-  // Select this tab, if it is inserted into the book. Returns true if
-  // selection was successful.
-  bool selectMe()
-  {
-    assert(book);
-    if(tabNum >= 0)
-      {
-        book->ChangeSelection(tabNum);
-        return true;
-      }
-    return false;
-  }
-};
-
-// Not currently in use, will be expanded later
-struct NewsTab : TabBase
-{
-  NewsTab(wxNotebook *parent)
-    : TabBase(parent)
-  {
-    new wxStaticText(this, wxID_ANY, wxT("This is a test tab"));
-  }
-
-  void takeFocus()
-  {
-    cout << "Test tab got focus!\n";
-  }
-
-  void dataChanged()
-  {
-    //cout << "The world is changing.\n";
-  }
-
-  // Currently doesn't insert itself at all
-  void insertMe()
-  {
-    Hide();
-    tabNum = -1;
-  }
-};
 
 #define myID_BUTTON1 21
 #define myID_BUTTON2 22
@@ -531,6 +458,9 @@ struct ListTab : TabBase, ScreenshotCallback
 
     SetSizer(panes);
 
+    Connect(myID_TEXTVIEW, wxEVT_COMMAND_TEXT_URL,
+            wxTextUrlEventHandler(ListTab::onUrlEvent));
+
     Connect(myID_TAGS, wxEVT_COMMAND_LISTBOX_SELECTED,
             wxCommandEventHandler(ListTab::onTagSelect));
 
@@ -596,6 +526,16 @@ struct ListTab : TabBase, ScreenshotCallback
 
     // Add new strings to it
     tags->InsertItems(labels.size(), &labels[0], 0);
+  }
+
+  // Respond to clickable URLs in the game description
+  void onUrlEvent(wxTextUrlEvent &event)
+  {
+    if(!event.GetMouseEvent().ButtonDown(wxMOUSE_BTN_LEFT))
+      return;
+
+    wxString url = textView->GetRange(event.GetURLStart(), event.GetURLEnd());
+    wxLaunchDefaultBrowser(url);
   }
 
   void onRating(wxCommandEvent &event)
@@ -1295,7 +1235,7 @@ class MyFrame : public wxFrame, public StatusNotify
   FreewareListTab *freewareTab;
   DemoListTab *demoTab;
   InstalledListTab *installedTab;
-  //NewsTab *newsTab;
+  NewsTab *newsTab;
 
 public:
   MyFrame(const wxString& title, const std::string &ver)
@@ -1337,7 +1277,7 @@ public:
     freewareTab = new FreewareListTab(book, this);
     demoTab = new DemoListTab(book, this);
     installedTab = new InstalledListTab(book, this);
-    //newsTab = new NewsTab(book);
+    newsTab = new NewsTab(book);
 
     wxBoxSizer *mainSizer = new wxBoxSizer(wxVERTICAL);
     mainSizer->Add(book, 1, wxGROW | wxALL, 10);
@@ -1422,7 +1362,7 @@ public:
     freewareTab->insertMe();
     demoTab->insertMe();
     installedTab->insertMe();
-    //newsTab->insertMe();
+    newsTab->insertMe();
 
     // Re-select the previously selected tab, if it exists
     if((sel == NULL) || !sel->selectMe())

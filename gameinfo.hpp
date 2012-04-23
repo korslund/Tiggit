@@ -268,6 +268,8 @@ struct GameInfo
     dlCount << e.dlCount;
     price = wxString::Format(wxT("$%3.2f"), e.tigInfo.price);
 
+    // TODO: Replace with friendlier 'ago' version.
+
     time_t t = e.add_time;
     char buf[50];
     strftime(buf,50, "%Y-%m-%d", gmtime(&t));
