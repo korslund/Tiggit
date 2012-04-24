@@ -222,6 +222,12 @@ bool ask(const wxString &question)
                       wxOK | wxCANCEL | wxICON_QUESTION) == wxOK;
 }
 
+// Display an error message box
+void errorBox(const wxString &msg)
+{
+  wxMessageBox(msg, wxT("Error"), wxOK | wxICON_ERROR);
+}
+
 #define myID_BUTTON1 21
 #define myID_BUTTON2 22
 #define myID_SUPPORT 23
@@ -758,8 +764,7 @@ struct ListTab : TabBase, ScreenshotCallback
       }
     catch(std::exception &e)
       {
-        wxMessageBox(wxString(e.what(), wxConvUTF8),
-                     wxT("Error"), wxOK | wxICON_ERROR);
+        errorBox(wxString(e.what(), wxConvUTF8));
         statusChanged();
       }
 
@@ -879,7 +884,7 @@ struct ListTab : TabBase, ScreenshotCallback
             boost::filesystem::path program = dir / e.entry.tigInfo.launch;
 
             if((wxGetOsVersion() & wxOS_WINDOWS) == 0)
-              cout << "WARNING: Launching will probably not work on your platform.\n";
+              errorBox(wxT("WARNING: Launching will probably not work on your platform.\n"));
 
             // Change the working directory before running. Since none
             // of our own code uses relative paths, this should not
@@ -896,9 +901,11 @@ struct ListTab : TabBase, ScreenshotCallback
 
             wxSetWorkingDirectory(wxString(workDir.string().c_str(), wxConvUTF8));
 
-            int res = wxExecute(wxString(program.string().c_str(), wxConvUTF8));
+            wxString command = wxString(program.string().c_str(), wxConvUTF8);
+
+            int res = wxExecute(command);
             if(res == -1)
-              cout << "Failed to launch " << program << endl;
+              errorBox(wxT("Failed to launch ") + command);
 
             // Update the last launch time
             last_launch = now;
@@ -943,7 +950,7 @@ struct ListTab : TabBase, ScreenshotCallback
 		wxString msg = wxT("Could not uninstall ") + e.name +
 		  wxT(": ") + wxString(string(ex.what()).c_str(), wxConvUTF8)
 		  + wxT("\nPerhaps the game is still running?");
-		wxMessageBox(msg, wxT("Error"), wxOK | wxICON_ERROR);
+                errorBox(msg);
 	      }
           }
       }
@@ -1083,8 +1090,11 @@ struct ListTab : TabBase, ScreenshotCallback
 
         if((wxGetOsVersion() & wxOS_WINDOWS) != 0)
           {
-            string command = "explorer \"" + dir.string() + "\"";
-            wxExecute(wxString(command.c_str(), wxConvUTF8), wxEXEC_ASYNC, NULL);
+            string cmd = "explorer \"" + dir.string() + "\"";
+            wxString command(cmd.c_str(), wxConvUTF8);
+            int res = wxExecute(command);
+            if(res == -1)
+              errorBox(wxT("Failed to launch ") + command);
           }
       }
 
@@ -1552,7 +1562,7 @@ public:
     catch(std::exception &e)
       {
         wxString msg(e.what(), wxConvUTF8);
-        wxMessageBox(msg, wxT("Error"), wxOK | wxICON_ERROR);
+        errorBox(msg);
       }
 
     return false;

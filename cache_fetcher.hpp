@@ -20,7 +20,8 @@ struct CacheFetcher : ProgressHolder
 
     // Start downloading the latest version
     std::string zip = get.getPath("cache.zip");
-    std::string url = "http://tiggit.net/dl/client/cache";
+    //std::string url = "http://tiggit.net/dl/client/cache";
+    std::string url = "http://sourceforge.net/projects/tiggit/files/client_data/cache.zip";
     DownloadJob getter(url, zip);
     getter.run();
 
