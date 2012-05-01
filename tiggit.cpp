@@ -1,7 +1,6 @@
 #define wxUSE_UNICODE 1
 
 #include <wx/wx.h>
-#include <wx/stdpaths.h>
 #include <wx/listctrl.h>
 #include <wx/accel.h>
 #include <wx/imaglist.h>
@@ -13,7 +12,7 @@
 
 #include "image_viewer.hpp"
 #include "decodeurl.hpp"
-#include "filegetter.hpp"
+#include "repo.hpp"
 #include "data_reader.hpp"
 #include "downloadjob.hpp"
 #include "zipjob.hpp"
@@ -1503,12 +1502,10 @@ public:
 
     SetAppName(wxT("tiggit"));
 
-    // Set up the config directory
-    wxString dataDir = wxStandardPaths::Get().GetUserLocalDataDir();
-    get.setBase(string(dataDir.mb_str()));
-
     try
       {
+        Repository::setupPaths();
+
         string version;
         {
           // Do auto update step. This requires us to immediately exit
@@ -1535,22 +1532,8 @@ public:
           }
 
         updateData(conf.updateList);
-
         //tig_reader.addTests(data);
-
         wxInitAllImageHandlers();
-
-        // Do a full-scale image preload run. This will eat some
-        // bandwith and CPU the first time we run, but won't affect
-        // performance much on later runs. And in any case it's much
-        // preferable to waiting for each image to load.
-
-        /* UPDATE: With our cache mechanism above, this is less
-           necessary now.
-
-        for(int i=0; i<data.arr.size(); i++)
-          GameInfo::conv(data.arr[i]).requestShot();
-        */
 
         MyFrame *frame = new MyFrame(wxT("Tiggit - The Indie Game Installer"),
                                      version);

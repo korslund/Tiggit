@@ -38,7 +38,7 @@ void writeJson(const std::string &file, const Json::Value &value, bool fast=fals
         of << value;
     }
   else
-    std::cout << "WARNING: Unable to open " << file << " for writing\n";
+    throw std::runtime_error("Unable to open " + file + " for writing\n");
 }
 
 Json::Value readJson(const std::string &file)
