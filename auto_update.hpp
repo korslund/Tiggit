@@ -20,11 +20,16 @@ struct Updater : ProgressHolder
                     DataList::TigInfo &ti,
                     const std::string &ver)
   {
-    // Fetch the latest client information
-    std::string tig = get.getFile(url);
+    try
+      {
+        // Fetch the latest client information
+        std::string tig = get.getFile(url);
 
-    if(!TigListReader::decodeTigFile(tig, ti))
-      return true;
+        if(!TigListReader::decodeTigFile(tig, ti))
+          return true;
+      }
+    // Ignore errors and just keep existing version
+    catch(...) { return true; }
 
     // Do we have the latest version?
     if(ver == ti.version)
@@ -39,7 +44,7 @@ struct Updater : ProgressHolder
 
     If it returns true, you should immediately exit the application.
   */
-  bool doAutoUpdate()
+  bool doAutoUpdate(const std::string &this_exe)
   {
     using namespace Json;
     using namespace boost::filesystem;
@@ -48,10 +53,6 @@ struct Updater : ProgressHolder
     // Unless we're on windows, there's not much more to do right now.
     if((wxGetOsVersion() & wxOS_WINDOWS) == 0)
       return false;
-
-    // Our own exe path
-    wxString this_wx = wxStandardPaths::Get().GetExecutablePath();
-    string this_exe = string(this_wx.mb_str());
 
     // Is there an override file in our current dir?
     if(exists(path(this_exe).parent_path() / "override"))

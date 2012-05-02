@@ -29,15 +29,10 @@ struct Config
   // True if the user has seen the 'demo' tab message.
   bool seen_demo_msg;
 
-  // True if the user has been asked about where to install games and
-  // the program itself
-  bool has_asked_dirs;
-
   int64_t lastTime;
 
   Config() : updateList(false), updateTigs(false), updateCache(false),
              first_time(false), debug(false), seen_demo_msg(false),
-             has_asked_dirs(false),
              lastTime(0x7fffffffffff) {}
 
   void fail(const std::string &msg)
@@ -52,17 +47,6 @@ struct Config
     if(newTime > lastTime)
       {
         lastTime = newTime;
-        write();
-      }
-  }
-
-  // Called by the install system if this user has been asked about
-  // install directories
-  void setAskedDirs()
-  {
-    if(!has_asked_dirs)
-      {
-        has_asked_dirs = true;
         write();
       }
   }
@@ -126,7 +110,6 @@ struct Config
                 //lastTime = root["last_time"].asInt64();
                 lastTime = root["last_time"].asInt();
                 seen_demo_msg = root["seen_demo_msg"].asBool();
-                has_asked_dirs = root["has_asked_dirs"].asBool();
                 debug = root["debug"].asBool();
                 gamedir = root["gamedir"].asString();
 
@@ -163,7 +146,6 @@ struct Config
     // TODO: Subject to 2038-bug
     root["last_time"] = (int)lastTime;
     root["seen_demo_msg"] = seen_demo_msg;
-    root["has_asked_dirs"] = has_asked_dirs;
     root["cache_version"] = 1;
     root["debug"] = debug;
     root["gamedir"] = gamedir;

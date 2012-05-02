@@ -38,6 +38,19 @@ TagSorter tagSorter;
 // Temporary hack
 bool gHasDemos = false;
 
+// Ask the user an OK/Cancel question.
+bool ask(const wxString &question)
+{
+  return wxMessageBox(question, wxT("Please confirm"),
+                      wxOK | wxCANCEL | wxICON_QUESTION) == wxOK;
+}
+
+// Display an error message box
+void errorBox(const wxString &msg)
+{
+  wxMessageBox(msg, wxT("Error"), wxOK | wxICON_ERROR);
+}
+
 // Update data from all_games.json. If the parameter is true, force
 // download. If not, download only if the existing file is too old.
 void updateData(bool download)
@@ -93,7 +106,7 @@ void updateData(bool download)
           // invalid cache.
           boost::filesystem::remove(lstfile);
 
-          wxMessageBox(msg, wxT("Error"), wxOK | wxICON_ERROR);
+          errorBox(msg);
         }
       else
         // Nope. Try again, this time force a download.
@@ -213,19 +226,6 @@ public:
     return h->getText(GameInfo::conv(lister.get(item)));
   }
 };
-
-// Ask the user an OK/Cancel question.
-bool ask(const wxString &question)
-{
-  return wxMessageBox(question, wxT("Please confirm"),
-                      wxOK | wxCANCEL | wxICON_QUESTION) == wxOK;
-}
-
-// Display an error message box
-void errorBox(const wxString &msg)
-{
-  wxMessageBox(msg, wxT("Error"), wxOK | wxICON_ERROR);
-}
 
 #define myID_BUTTON1 21
 #define myID_BUTTON2 22
@@ -1506,15 +1506,16 @@ public:
 
     try
       {
-        Repository::setupPaths(string(wxStandardPaths::Get().GetExecutablePath().mb_str()),
-                               string(wxStandardPaths::Get().GetUserLocalDataDir().mb_str()));
+        string exe(wxStandardPaths::Get().GetExecutablePath().mb_str());
+        string appData(wxStandardPaths::Get().GetUserLocalDataDir().mb_str());
+        Repository::setupPaths(exe, appData);
 
         string version;
         {
           // Do auto update step. This requires us to immediately exit
           // in some cases.
           Updater upd(this);
-          if(upd.doAutoUpdate())
+          if(upd.doAutoUpdate(exe))
             return false;
 
           version = upd.version;

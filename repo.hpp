@@ -35,7 +35,6 @@ struct Repository
 
     path repoDir;
     bool write = false; // If true, write paths.json
-    bool hasAsked = false; // Whether user has chosen directories
     bool upgrading = false; // We are upgrading from an old directory
 
     // If the paths file exists, use it
@@ -93,7 +92,6 @@ struct Repository
         throw std::runtime_error("Cannot find repository. Installation not implemented yet.");
         // Always write result after asking the user
         write = true;
-        hasAsked = true;
       }
 
     // We must have set a repository directory at this point, or failed.
@@ -114,20 +112,9 @@ struct Repository
     get.setBase(repoDir);
     conf.load(repoDir.string());
 
-    // Notify the config that the user has set directories
-    if(hasAsked)
-      conf.setAskedDirs();
-
     // Be backwards compatible with old repositories
     if(upgrading && is_directory(repoDir / "data"))
       conf.setGameDir("data");
-
-    // If an existing user has not yet been asked about directories,
-    // give them a chance to move.
-    /*
-    if(!hasAsked && !conf.has_asked_dirs)
-      userMoveDirs();
-    */
   }
 };
 
