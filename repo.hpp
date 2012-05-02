@@ -1,8 +1,10 @@
 #ifndef __REPO_HPP_
 #define __REPO_HPP_
 
-// TODO: Will incorporate filegetter into this file soon
+// TODO: Will incorporate filegetter into this file soon, and move the
+// shared Config instance into the Repository object.
 #include "filegetter.hpp"
+#include "config.hpp"
 #include "readjson.hpp"
 #include <boost/filesystem.hpp>
 #include <wx/stdpaths.h>
@@ -13,59 +15,53 @@ struct Repository
 {
   // TODO: Make non-static, kill all global variables, and pass along
   // paths.
-  static void setupPaths()
+  static void setupPaths(const std::string &exePath,
+                         const std::string &appData)
   {
     using namespace boost::filesystem;
     using namespace Json;
     using namespace std;
 
-    path exe = string(wxStandardPaths::Get().GetExecutablePath().mb_str());
+    /* For browsing dirs: ::wxDirSelector();
+
+       General wx note: we should remove ALL wxWidgets influence on
+       this file, and on anything outside the interface layer. Do
+       dialogs through callbacks.
+     */
+
+    path exe = exePath;
     path exeDir = exe.parent_path();
-    path conf = exeDir / "paths.json";
+    path pathfile = exeDir / "paths.json";
 
     path repoDir;
-    bool write = false;
+    bool write = false; // If true, write paths.json
+    bool hasAsked = false; // Whether user has chosen directories
+    bool upgrading = false; // We are upgrading from an old directory
 
     // If the paths file exists, use it
-    if(exists(conf))
+    if(exists(pathfile))
       {
         try
           {
-            Value root = readJson(conf.string());
+            Value root = readJson(pathfile.string());
             repoDir = root["repo_dir"].asString();
           }
+        // Failure to set repoDir is handled below
         catch(...) {}
       }
     else
       {
         // Assume missing dir means we are converting from the old system
-        path appdata = string(wxStandardPaths::Get().GetUserLocalDataDir().mb_str());
+        path appdata = appData;
 
         // If there is a 'config' file there, then we've found our
         // repository
         if(exists(appdata / "config"))
           {
+            // Use the old location.
             repoDir = appdata;
-
             write = true;
-
-            /* At this point we know we are upgrading an old
-               installation (since we found config, but didn't have
-               paths.json).
-
-               So while we're here, give the user a chance to move to a
-               new location.
-            */
-
-            // TODO: Call the EXACT same function here as you would
-            // call for the menu -> Change Directories options.
-
-            /* Also, the exe location will be set as an instance
-               variable here, and used to install to that
-               location. Figure this out.
-             */
-
-            cout << "Using old repository at " << repoDir << endl;
+            upgrading = true;
 
             // Use portable paths if possible
             if(exeDir == repoDir / "bin")
@@ -83,19 +79,21 @@ struct Repository
            should also give the option of where to install the launcher
            itself, and whether to set up icons etc.
 
-           TODO: If the installer and games are installed at the same
-           place, always use a portable setup. Or 'portable' could be a
-           separate option (install games and launcher in the same
-           place).
-
-           Also: should also work if the user selects an existing
-           repo. We don't care about that at all at this point. The
-           rest of the system takes care of using what's actually in
-           the dirs.
+           We do not accept empty dirs as a response, that will reopen
+           the window. The user can also abort, causing the program to
+           exit.
         */
+
+        /* If a portable_zip marker file is present, then ask the user
+           if they want to use the current install location (which
+           presumably is wherever they unpacked the zip file.)
+         */
+        bool isZipInstall = exists(exeDir/"portable_zip.txt");
+
         throw std::runtime_error("Cannot find repository. Installation not implemented yet.");
         // Always write result after asking the user
         write = true;
+        hasAsked = true;
       }
 
     // We must have set a repository directory at this point, or failed.
@@ -105,7 +103,7 @@ struct Repository
       {
         Value root;
         root["repo_dir"] = repoDir.string();
-        writeJson(conf.string(), root);
+        writeJson(pathfile.string(), root);
       }
 
     // Expand relative paths for internal use, to make sure everything
@@ -114,6 +112,22 @@ struct Repository
       repoDir = absolute(repoDir, exeDir);
 
     get.setBase(repoDir);
+    conf.load(repoDir.string());
+
+    // Notify the config that the user has set directories
+    if(hasAsked)
+      conf.setAskedDirs();
+
+    // Be backwards compatible with old repositories
+    if(upgrading && is_directory(repoDir / "data"))
+      conf.setGameDir("data");
+
+    // If an existing user has not yet been asked about directories,
+    // give them a chance to move.
+    /*
+    if(!hasAsked && !conf.has_asked_dirs)
+      userMoveDirs();
+    */
   }
 };
 

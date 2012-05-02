@@ -123,7 +123,7 @@ struct GameInfo
                 assert(g);
 
                 // Get install path
-                boost::filesystem::path dir = "data";
+                boost::filesystem::path dir = conf.gamedir;
                 dir /= entry.idname;
 
                 // Set up installer

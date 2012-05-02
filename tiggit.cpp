@@ -861,7 +861,7 @@ struct ListTab : TabBase, ScreenshotCallback
         // doesn't know about the rest of the program is the best bet.
 
         // Construct the install path
-        boost::filesystem::path dir = "data";
+        boost::filesystem::path dir = conf.gamedir;
         dir /= e.entry.idname;
         dir = get.getPath(dir.string());
 
@@ -990,11 +990,13 @@ struct ListTab : TabBase, ScreenshotCallback
 
             // Warn the user that you can't actually download finished
             // games here yet
+            /*
             if(!conf.seen_demo_msg)
               wxMessageBox(wxT("NOTE: Purchasing of games happens entirely outside of the tiggit system. We have not yet integrated any shopping functions into the launcher itself.\n\nWe still encourage you to buy games, but unfortunately you will NOT currently be able to find or play these newly purchased games inside the tiggit launcher. Instead you must download, install and run these games manually.\n\nWe know this is inconvenient, so this is something we hope to improve in the near future, in cooperation with game developers."),
                            wxT("Warning"), wxOK);
 
             conf.shown_demo_msg();
+            */
           }
 
         else
@@ -1083,7 +1085,7 @@ struct ListTab : TabBase, ScreenshotCallback
 
     else if(id == myID_OPEN_LOCATION)
       {
-        boost::filesystem::path dir = "data";
+        boost::filesystem::path dir = conf.gamedir;
         dir /= e.idname;
         dir = get.getPath(dir.string());
 
@@ -1504,7 +1506,8 @@ public:
 
     try
       {
-        Repository::setupPaths();
+        Repository::setupPaths(string(wxStandardPaths::Get().GetExecutablePath().mb_str()),
+                               string(wxStandardPaths::Get().GetUserLocalDataDir().mb_str()));
 
         string version;
         {
@@ -1517,7 +1520,6 @@ public:
           version = upd.version;
         }
 
-        conf.load(get.base);
         auth.load();
         ratings.read();
 
