@@ -4,6 +4,7 @@
 #include <boost/algorithm/string.hpp>
 #include "data_reader.hpp"
 #include "progress_holder.hpp"
+#include "config.hpp"
 
 struct Updater : ProgressHolder
 {
@@ -60,7 +61,8 @@ struct Updater : ProgressHolder
       return false;
 
     // Canonical path
-    path canon_path = get.getPath("bin");
+    path canon_path = conf.fullexedir;
+
     string canon_exe = (canon_path/"tiggit.exe").string();
 
     // Temporary exe used for updates
@@ -76,15 +78,15 @@ struct Updater : ProgressHolder
         // Check if there is a download update available
         if(exists(up_dest))
           {
-            // Yup. Most likely we are running update/tiggit.exe right
-            // now. In any case, since the bin/ version is not
+            // Yup. Most likely we are running update.exe right
+            // now. In any case, since the tiggit.exe version is not
             // running, we can overwrite it.
 
             setMsg("Installing update...");
 
-            // Wait a little while in case bin/ launched us, to give
-            // it time to exit. (Not a terribly robust solution, I
-            // know, fix it later.)
+            // Wait a little while in case canon_exe launched us, to
+            // give it time to exit. (Not a terribly robust solution,
+            // I know, fix it later.)
             wxSleep(1);
 
             // Copy files over
@@ -140,9 +142,13 @@ struct Updater : ProgressHolder
           }
       }
 
+    // At this point, we know we are running from our canonical
+    // path. Our job now is to check if we are running the latest
+    // version, and to upgrade if we are not.
+
     // Get current version
     {
-      ifstream inf(get.getPath("bin/version").c_str());
+      ifstream inf((canon_path / "version").string().c_str());
       if(inf)
         inf >> version;
     }
@@ -156,33 +162,37 @@ struct Updater : ProgressHolder
     string vermsg = "Downloading latest update, please wait...\n"
       + version + " -> " + ti.version;
 
-    bool ok = doUpdate(ti.url, up_dest, vermsg);
-
-    if(!ok)
+    if(!doUpdate(ti.url, up_dest, vermsg))
       return false;
 
     // Check if there are any new dll files as well
     string dll_version;
     {
       // Current dll version
-      ifstream inf(get.getPath("bin/dll_version").c_str());
+      ifstream inf((canon_path / "dll_version").string().c_str());
       if(inf)
         inf >> dll_version;
     }
-    ok = false;
+
+    bool newDlls = false;
     if(!checkVersion("http://tiggit.net/client/dlls.tig", ti, dll_version))
       {
         // Get the DLL files as well
-        ok = doUpdate(ti.url, up_dest, vermsg);
+        if(!doUpdate(ti.url, up_dest, vermsg))
+          return false;
+        newDlls = true;
       }
 
-    // Figure out what to run at this point
-    string run = get.getPath("update/tiggit.exe");
+    /* Figure out what to run at this point. If we got new dlls, we
+       have to run tiggit.exe in the update/ dir, because it will
+       depend on the updated DLL files.
 
-    if(!ok)
+       If there are no new dlls however, we have to move it to
+       canon_path/update.exe, because it depends on the OLD dll files.
+    */
+    string run = get.getPath("update/tiggit.exe");
+    if(!newDlls)
       {
-        // No new DLLs. We need to copy the new exe in with the old
-        // DLLs to make sure it runs.
         copy_file(run, tmp_exe);
         run = tmp_exe;
       }

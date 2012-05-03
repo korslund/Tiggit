@@ -934,6 +934,7 @@ struct ListTab : TabBase, ScreenshotCallback
                 wxSetWorkingDirectory(wxString(get.base.string().c_str(), wxConvUTF8));
 
                 // Kill all the files
+                wxBusyCursor busy;
 		boost::filesystem::remove_all(dir);
 
 		// Revert status

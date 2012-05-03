@@ -15,7 +15,7 @@
 
 struct Config
 {
-  std::string filename, gamedir;
+  std::string filename, gamedir, exedir, fullexedir;
 
   // Set true when a forced update is necessary.
   bool updateList, updateTigs, updateCache;
@@ -66,6 +66,12 @@ struct Config
     write();
   }
 
+  void setExeDir(const std::string &name)
+  {
+    exedir = name;
+    write();
+  }
+
   void load(const boost::filesystem::path &where)
   {
     using namespace std;
@@ -112,6 +118,7 @@ struct Config
                 seen_demo_msg = root["seen_demo_msg"].asBool();
                 debug = root["debug"].asBool();
                 gamedir = root["gamedir"].asString();
+                exedir = root["exedir"].asString();
 
                 if(gamedir == "")
                   gamedir = "games";
@@ -149,6 +156,7 @@ struct Config
     root["cache_version"] = 1;
     root["debug"] = debug;
     root["gamedir"] = gamedir;
+    root["exedir"] = exedir;
 
     writeJson(filename, root);
   }

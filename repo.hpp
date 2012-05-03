@@ -32,6 +32,7 @@ struct Repository
     path exe = exePath;
     path exeDir = exe.parent_path();
     path pathfile = exeDir / "paths.json";
+    string finalExeDir;
 
     path repoDir;
     bool write = false; // If true, write paths.json
@@ -64,14 +65,17 @@ struct Repository
 
             // Use portable paths if possible
             if(exeDir == repoDir / "bin")
-              repoDir = "../";
+              {
+                repoDir = "../";
+                finalExeDir = "bin";
+              }
           }
       }
 
     // Our repoDir may still be empty at this point
     if(repoDir.empty())
       {
-        /* We we get here, it means nothing was found. We assume this
+        /* If we get here, it means nothing was found. We assume this
            means a new installation.
 
            If so, ask the user where they want to install stuff. We
@@ -90,6 +94,8 @@ struct Repository
         bool isZipInstall = exists(exeDir/"portable_zip.txt");
 
         throw std::runtime_error("Cannot find repository. Installation not implemented yet.");
+        finalExeDir = "something";
+
         // Always write result after asking the user
         write = true;
       }
@@ -97,14 +103,11 @@ struct Repository
     // We must have set a repository directory at this point, or failed.
     assert(!repoDir.empty());
 
+    // Write repo path
     if(write)
-      {
-        Value root;
-        root["repo_dir"] = repoDir.string();
-        writeJson(pathfile.string(), root);
-      }
+      writePaths(exeDir.string(), repoDir.string());
 
-    // Expand relative paths for internal use, to make sure everything
+    // Expand relative path for internal use, to make sure everything
     // still works if we change our working directory.
     if(!repoDir.has_root_path())
       repoDir = absolute(repoDir, exeDir);
@@ -112,9 +115,39 @@ struct Repository
     get.setBase(repoDir);
     conf.load(repoDir.string());
 
+    // If there is no existing exedir configured, and we have a
+    // suggestion for a new one, then use that.
+    if(conf.exedir == "")
+      {
+        if(finalExeDir != "")
+          conf.setExeDir(finalExeDir);
+        else
+          // If there is no configured exe path, no natural
+          // suggestions and no user-supplied path, use existing exe
+          // path.
+          conf.setExeDir(exeDir.string());
+      }
+
+    // Expand relative exe dirs
+    exeDir = conf.exedir;
+    if(!exeDir.has_root_path())
+      exeDir = absolute(exeDir, repoDir);
+    conf.fullexedir = exeDir.string();
+
     // Be backwards compatible with old repositories
     if(upgrading && is_directory(repoDir / "data"))
       conf.setGameDir("data");
+  }
+
+  // Writes dest_dir / "paths.json"
+  static void writePaths(const std::string &dest_dir,
+                         const std::string &value)
+  {
+    Json::Value root;
+    boost::filesystem::path pathfile = dest_dir;
+    pathfile /= "paths.json";
+    root["repo_dir"] = value;
+    writeJson(pathfile.string(), root);
   }
 };
 
