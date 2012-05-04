@@ -120,7 +120,11 @@ class ScreenshotLoader : public ThreadJob
 
         // Resize the image, and then save the correctly sized image
         // to the cache.
-        memImage.Rescale(W, H, wxIMAGE_QUALITY_HIGH);
+        memImage.Rescale(W, H
+#if wxCHECK_VERSION(2, 8, 0)
+                         , wxIMAGE_QUALITY_HIGH
+#endif
+                         );
         memImage.SaveFile(wxString(filename.c_str(), wxConvUTF8), wxBITMAP_TYPE_PNG);
       }
 

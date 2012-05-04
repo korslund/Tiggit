@@ -86,7 +86,12 @@ void updateData(bool download)
           string url = "http://tiggit.net/api/all_games.json";
           get.getTo(url, "all_games.json");
         }
-      catch(...) {}
+      catch(std::exception &e)
+        {
+          // Warn the user that download failed
+          wxString msg(e.what(), wxConvUTF8);
+          errorBox(msg + wxT("\nAttempting to proceed anyway..."));
+        }
     }
 
   try
@@ -1537,7 +1542,7 @@ public:
             cf.goDoItAlready();
           }
 
-        updateData(conf.updateList);
+        updateData(conf.updateList || conf.updateCache);
         //tig_reader.addTests(data);
         wxInitAllImageHandlers();
 

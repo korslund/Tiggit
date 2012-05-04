@@ -12,6 +12,18 @@
 
 struct Repository
 {
+// Quick library version compatibility fix
+  static boost::filesystem::path absolute_path(const boost::filesystem::path& p,
+                                               const boost::filesystem::path& base)
+  {
+    using namespace boost::filesystem;
+#if BOOST_VERSION >= 104600 && BOOST_FILESYSTEM_VERSION >= 3
+    return absolute(p, base);
+#else
+    return complete(p, base);
+#endif
+  }
+
   // TODO: Make non-static, kill all global variables, and pass along
   // paths.
   static void setupPaths(const std::string &exePath,
@@ -89,6 +101,7 @@ struct Repository
     // Expand relative path for internal use, to make sure everything
     // still works when we change our working directory.
     if(!repoDir.has_root_path())
+
       repoDir = absolute(repoDir, exeDir);
 
     get.setBase(repoDir);
