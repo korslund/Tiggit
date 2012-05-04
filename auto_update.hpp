@@ -211,7 +211,7 @@ struct Updater : ProgressHolder
 
     // Get current version
     {
-      ifstream inf((this_path / "version").c_str());
+      ifstream inf((this_path / "version").string().c_str());
       if(inf)
         inf >> version;
     }
@@ -252,7 +252,7 @@ struct Updater : ProgressHolder
     string dll_version;
     {
       // Current dll version
-      ifstream inf((this_path / "dll_version").c_str());
+      ifstream inf((this_path / "dll_version").string().c_str());
       if(inf)
         inf >> dll_version;
     }
