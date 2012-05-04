@@ -4,6 +4,36 @@
 #include <boost/algorithm/string.hpp>
 #include "data_reader.hpp"
 #include "progress_holder.hpp"
+#include <fstream>
+#include <time.h>
+
+struct UpdateLog
+{
+  std::ofstream logfile;
+
+  UpdateLog()
+  {
+    logfile.open("update_log.txt", std::ios::app);
+  }
+
+  void log(const std::string &msg)
+  {
+    using namespace std;
+    char buf[100];
+    time_t now = time(NULL);
+    strftime(buf, 100, "%Y-%m-%d %X", gmtime(&now));
+    string log = buf;
+    log += ":   " + msg;
+    logfile << log << endl;
+  }
+
+  void copyLog(const boost::filesystem::path &from,
+               const boost::filesystem::path &to)
+  {
+    log("Copy: " + from.string() + " => " + to.string());
+    boost::filesystem::copy_file(from, to);
+  }
+};
 
 struct Updater : ProgressHolder
 {
@@ -65,8 +95,12 @@ struct Updater : ProgressHolder
       // If so, skip auto update and just run the current version.
       return false;
 
+    UpdateLog log;
+
     path this_path = this_exe.parent_path();
     gett.setBase(this_path);
+
+    log.log("this_path=" + this_path.string());
 
     // Detect old updater style (to manage the transition
     // alpha_039->alpha_040)
@@ -74,6 +108,8 @@ struct Updater : ProgressHolder
       {
         new_exe = this_path / "tiggit.exe";
         isUpdater = true;
+
+        log.log("Detected old version. Setting isUpdater manually.");
       }
 
     if(isUpdater)
@@ -91,6 +127,8 @@ struct Updater : ProgressHolder
           version, then exit.
          */
 
+        log.log("Updating to new_exe=" + new_exe.string());
+
         setMsg("Installing update...");
 
         // Wait a second to make sure the old program has had time to
@@ -106,7 +144,7 @@ struct Updater : ProgressHolder
             if(exists(new_exe))
               remove(new_exe);
 
-            copy_file(this_exe, new_exe);
+            log.copyLog(this_exe, new_exe);
           }
         else
           {
@@ -129,11 +167,12 @@ struct Updater : ProgressHolder
                   remove(dest);
 
                 // Copy the file
-                copy_file(p, dest);
+                log.copyLog(p, dest);
               }
           }
 
         // In any case, run the new exe and exit the current program.
+        log.log("Running " + new_exe.string());
         wxExecute(wxString(new_exe.c_str(), wxConvUTF8));
         return true;
       }
@@ -149,6 +188,8 @@ struct Updater : ProgressHolder
     if(exists(up_dest) || exists(updater_exe))
       {
         setMsg("Cleaning up...");
+
+        log.log("Cleaning up " + updater_exe + " and " + up_dest + "/");
 
         // Wait a sec to give the program a shot to exit
         wxSleep(1);
@@ -170,7 +211,7 @@ struct Updater : ProgressHolder
 
     // Get current version
     {
-      ifstream inf((this_path / "version").string().c_str());
+      ifstream inf((this_path / "version").c_str());
       if(inf)
         inf >> version;
     }
@@ -190,10 +231,16 @@ struct Updater : ProgressHolder
       if(exists(this_path/"use_test_url"))
         lurl = "http://tiggit.net/client/latest_test.tig";
 
+      log.log("Fetching " + lurl);
       if(checkVersion(lurl, ti, version))
-        // Current version is current, nothing more to do.
-        return false;
+        {
+          // Current version is current, nothing more to do.
+          log.log("Version " + version + " up-to-date");
+          return false;
+        }
     }
+
+    log.log("Upgrading version " + version + " => " + ti.version);
 
     string vermsg = "Downloading latest update, please wait...\n"
       + version + " -> " + ti.version;
@@ -205,7 +252,7 @@ struct Updater : ProgressHolder
     string dll_version;
     {
       // Current dll version
-      ifstream inf((this_path / "dll_version").string().c_str());
+      ifstream inf((this_path / "dll_version").c_str());
       if(inf)
         inf >> dll_version;
     }
@@ -213,6 +260,8 @@ struct Updater : ProgressHolder
     bool newDlls = false;
     if(!checkVersion("http://tiggit.net/client/dlls.tig", ti, dll_version))
       {
+        log.log("Upgrading dll-pack version " + dll_version + " => " + ti.version);
+
         // Get the DLL files as well
         if(!doUpdate(ti.url, up_dest, vermsg))
           return false;
@@ -229,8 +278,8 @@ struct Updater : ProgressHolder
     string run = (up_dest / "tiggit.exe").string();
     if(!newDlls)
       {
-        copy_file(run, updater_exe);
-        copy_file(up_dest/"version", this_path/"version");
+        log.copyLog(run, updater_exe);
+        log.copyLog(up_dest/"version", this_path/"version");
         run = updater_exe;
       }
 
@@ -241,6 +290,7 @@ struct Updater : ProgressHolder
     run += " --update=\"" + this_exe.string() + "\"";
 
     // Run the new exe, and let it figure out the rest
+    log.log("Running " + run);
     int res = wxExecute(wxString(run.c_str(), wxConvUTF8));
     if(res == -1)
       return false;
