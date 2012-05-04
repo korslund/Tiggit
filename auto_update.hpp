@@ -50,7 +50,7 @@ struct Updater : ProgressHolder
     If it returns true, you should immediately exit the application.
   */
   bool doAutoUpdate(const boost::filesystem::path &this_exe, bool isUpdater,
-                    const boost::filesystem::path &new_exe)
+                    boost::filesystem::path new_exe)
   {
     using namespace Json;
     using namespace boost::filesystem;
