@@ -113,9 +113,6 @@ struct Config
                 debug = root["debug"].asBool();
                 gamedir = root["gamedir"].asString();
 
-                if(gamedir == "")
-                  gamedir = "games";
-
                 int cache = root["cache_version"].asInt();
                 if(cache < LAST_CACHE_VERSION)
                   updateCache = true;
@@ -129,6 +126,9 @@ struct Config
               }
           }
       }
+
+    if(gamedir == "")
+      gamedir = "games";
 
     if(error)
       {
