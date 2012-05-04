@@ -84,8 +84,7 @@ struct Updater : ProgressHolder
 
     If it returns true, you should immediately exit the application.
   */
-  bool doAutoUpdate(const boost::filesystem::path &this_exe, bool isUpdater,
-                    boost::filesystem::path new_exe)
+  bool doAutoUpdate(const boost::filesystem::path &this_exe)
   {
     using namespace Json;
     using namespace boost::filesystem;
@@ -106,33 +105,20 @@ struct Updater : ProgressHolder
     UpdateLog log(this_path);
     log.log("this_exe=" + this_exe.string());
 
-    // Detect old updater style (to manage the transition
-    // alpha_039->alpha_040)
-    if(!isUpdater && this_exe.leaf() == "update.exe")
-      {
-        new_exe = this_path / "tiggit.exe";
-        isUpdater = true;
-
-        log.log("Detected old version. Setting isUpdater manually.");
-      }
-
-    if(isUpdater)
+    // Detect if we are an updater
+    if(this_exe.leaf() == "update.exe")
       {
         /*
-          isUpdater is set when we are called with the -u command line
-          parameter.
-
-          This means the update has already been downloaded and
-          unpacked. In fact WE, the currently running exe, is the
-          latest version.
+          This means the latest update has already been downloaded and
+          unpacked, and is the currently running exe.
 
           Our only job is to copy ourself (with or without DLL files,
           as needed) into the location given in new_exe, run that
           version, then exit.
          */
+        path new_exe = this_path / "tiggit.exe";
 
         log.log("Updating to new_exe=" + new_exe.string());
-
         setMsg("Installing update...");
 
         // Wait a second to make sure the old program has had time to
@@ -282,9 +268,6 @@ struct Updater : ProgressHolder
 
     // On unix later:
     //wxShell(("chmod a+x " + run).c_str());
-
-    // Add command line parameter
-    run += " --update=\"" + this_exe.string() + "\"";
 
     // Run the new exe, and let it figure out the rest
     log.log("Running " + run);

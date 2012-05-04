@@ -4,7 +4,6 @@
 #include <wx/listctrl.h>
 #include <wx/accel.h>
 #include <wx/imaglist.h>
-#include <wx/cmdline.h>
 #include <wx/notebook.h>
 #include <wx/stdpaths.h>
 
@@ -1479,12 +1478,6 @@ public:
   }
 };
 
-static const wxCmdLineEntryDesc cmdLineDesc[] =
-  {
-    { wxCMD_LINE_OPTION, wxT("u"), wxT("update"), wxT("Update the given tiggit.exe"), wxCMD_LINE_VAL_STRING },
-    { wxCMD_LINE_NONE }
-  };
-
 struct MyTimer : wxTimer
 {
   MyFrame *frame;
@@ -1505,9 +1498,6 @@ class MyApp : public wxApp
 {
   MyTimer *time;
 
-  wxString updatePath;
-  bool doUpdate;
-
 public:
   virtual bool OnInit()
   {
@@ -1520,14 +1510,13 @@ public:
       {
         string exe(wxStandardPaths::Get().GetExecutablePath().mb_str());
         string appData(wxStandardPaths::Get().GetUserLocalDataDir().mb_str());
-        string upPath(updatePath.mb_str());
 
         // Update the application first
         string version;
         {
           // This requires us to immediately exit in some cases.
           Updater upd(this);
-          if(upd.doAutoUpdate(exe, doUpdate, upPath))
+          if(upd.doAutoUpdate(exe))
             return false;
 
           version = upd.version;
@@ -1566,18 +1555,6 @@ public:
       }
 
     return false;
-  }
-
-  void OnInitCmdLine(wxCmdLineParser& parser)
-  {
-    parser.SetDesc (cmdLineDesc);
-    parser.SetSwitchChars(wxT("-"));
-  }
-
-  bool OnCmdLineParsed(wxCmdLineParser& parser)
-  {
-    doUpdate = parser.Found(wxT("u"), &updatePath);
-    return true;
   }
 };
 
