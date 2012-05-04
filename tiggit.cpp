@@ -6,6 +6,7 @@
 #include <wx/imaglist.h>
 #include <wx/cmdline.h>
 #include <wx/notebook.h>
+#include <wx/stdpaths.h>
 
 #include <iostream>
 #include <assert.h>
@@ -1566,7 +1567,6 @@ public:
 
     return false;
   }
-
 
   void OnInitCmdLine(wxCmdLineParser& parser)
   {

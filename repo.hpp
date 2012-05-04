@@ -7,7 +7,6 @@
 #include "config.hpp"
 #include "readjson.hpp"
 #include <boost/filesystem.hpp>
-#include <wx/stdpaths.h>
 #include <string>
 #include <stdexcept>
 
@@ -74,23 +73,9 @@ struct Repository
         /* If we get here, it means nothing was found. We assume this
            means a new installation.
 
-           If so, ask the user where they want to install stuff. We
-           should also give the option of where to install the launcher
-           itself, and whether to set up icons etc.
-
-           We do not accept empty dirs as a response, that will reopen
-           the window. The user can also abort, causing the program to
-           exit.
+           Use data/ as the default directory.
         */
-
-        /* If a portable_zip marker file is present, then ask the user
-           if they want to use the current install location (which
-           presumably is wherever they unpacked the zip file.)
-         */
-        bool isZipInstall = exists(exeDir/"portable_zip.txt");
-
-        throw std::runtime_error("Cannot find repository. Installation not implemented yet.");
-        // Always write result after asking the user
+        repoDir = "data";
         write = true;
       }
 
@@ -102,7 +87,7 @@ struct Repository
       writePaths(exeDir.string(), repoDir.string());
 
     // Expand relative path for internal use, to make sure everything
-    // still works if we change our working directory.
+    // still works when we change our working directory.
     if(!repoDir.has_root_path())
       repoDir = absolute(repoDir, exeDir);
 
