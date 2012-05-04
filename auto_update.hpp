@@ -156,7 +156,7 @@ struct Updater : ProgressHolder
 
         // In any case, run the new exe and exit the current program.
         log.log("Running " + new_exe.string());
-        wxExecute(wxString(new_exe.c_str(), wxConvUTF8));
+        wxExecute(wxString(new_exe.string().c_str(), wxConvUTF8));
         return true;
       }
 
@@ -164,7 +164,7 @@ struct Updater : ProgressHolder
     string updater_exe = (this_path/"update.exe").string();
 
     // Update destination.
-    string up_dest = (this_path/"update").string();
+    path up_dest = (this_path/"update");
 
     // Kill update remains if there are any
     bool didClean = false;
@@ -172,7 +172,7 @@ struct Updater : ProgressHolder
       {
         setMsg("Cleaning up...");
 
-        log.log("Cleaning up " + updater_exe + " and " + up_dest + "/");
+        log.log("Cleaning up " + updater_exe + " and " + up_dest.string() + "/");
 
         // Wait a sec to give the program a shot to exit
         wxSleep(1);
@@ -228,7 +228,7 @@ struct Updater : ProgressHolder
     string vermsg = "Downloading latest update, please wait...\n"
       + version + " -> " + ti.version;
 
-    if(!doUpdate(ti.url, up_dest, vermsg))
+    if(!doUpdate(ti.url, up_dest.string(), vermsg))
       return false;
 
     // Check if there are any new dll files as well
@@ -246,7 +246,7 @@ struct Updater : ProgressHolder
         log.log("Upgrading dll-pack version " + dll_version + " => " + ti.version);
 
         // Get the DLL files as well
-        if(!doUpdate(ti.url, up_dest, vermsg))
+        if(!doUpdate(ti.url, up_dest.string(), vermsg))
           return false;
         newDlls = true;
       }

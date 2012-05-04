@@ -904,9 +904,9 @@ struct ListTab : TabBase, ScreenshotCallback
               // Use base path of the executable
               workDir = program.parent_path();
 
-            wxSetWorkingDirectory(wxString(workDir.c_str(), wxConvUTF8));
+            wxSetWorkingDirectory(wxString(workDir.string().c_str(), wxConvUTF8));
 
-            wxString command = wxString(program.c_str(), wxConvUTF8);
+            wxString command = wxString(program.string().c_str(), wxConvUTF8);
 
             int res = wxExecute(command);
             if(res == -1)
@@ -937,7 +937,7 @@ struct ListTab : TabBase, ScreenshotCallback
 	      {
                 // First, make sure we are not killing our own working
                 // directory.
-                wxSetWorkingDirectory(wxString(get.base.c_str(), wxConvUTF8));
+                wxSetWorkingDirectory(wxString(get.base.string().c_str(), wxConvUTF8));
 
                 // Kill all the files
                 wxBusyCursor busy;
