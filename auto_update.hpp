@@ -11,9 +11,9 @@ struct UpdateLog
 {
   std::ofstream logfile;
 
-  UpdateLog()
+  UpdateLog(boost::filesystem::path &dir)
   {
-    logfile.open("update_log.txt", std::ios::app);
+    logfile.open((dir / "update_log.txt").string().c_str(), std::ios::app);
   }
 
   void log(const std::string &msg)
@@ -30,8 +30,13 @@ struct UpdateLog
   void copyLog(const boost::filesystem::path &from,
                const boost::filesystem::path &to)
   {
+    using namespace boost::filesystem;
+
     log("Copy: " + from.string() + " => " + to.string());
-    boost::filesystem::copy_file(from, to);
+
+    if(exists(to))
+      remove(to);
+    copy_file(from, to);
   }
 };
 
@@ -95,12 +100,11 @@ struct Updater : ProgressHolder
       // If so, skip auto update and just run the current version.
       return false;
 
-    UpdateLog log;
-
     path this_path = this_exe.parent_path();
     gett.setBase(this_path);
 
-    log.log("this_path=" + this_path.string());
+    UpdateLog log(this_path);
+    log.log("this_exe=" + this_exe.string());
 
     // Detect old updater style (to manage the transition
     // alpha_039->alpha_040)
@@ -140,10 +144,7 @@ struct Updater : ProgressHolder
         // Is the directory the same?
         if(new_path == this_path)
           {
-            // Yes. Just copy the exe.
-            if(exists(new_exe))
-              remove(new_exe);
-
+            // Yes. Just copy the exe file.
             log.copyLog(this_exe, new_exe);
           }
         else
@@ -161,10 +162,6 @@ struct Updater : ProgressHolder
 
                 // Destination
                 path dest = new_path / p.leaf();
-
-                // Remove destination, if it exists
-                if(exists(dest))
-                  remove(dest);
 
                 // Copy the file
                 log.copyLog(p, dest);
