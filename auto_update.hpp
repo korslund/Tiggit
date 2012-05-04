@@ -4,12 +4,13 @@
 #include <boost/algorithm/string.hpp>
 #include "data_reader.hpp"
 #include "progress_holder.hpp"
-#include "config.hpp"
 
 struct Updater : ProgressHolder
 {
   // Current program version.
   std::string version;
+
+  FileGetter gett;
 
   Updater(wxApp *_app)
     : ProgressHolder(_app), version("unknown")
@@ -21,10 +22,13 @@ struct Updater : ProgressHolder
                     DataList::TigInfo &ti,
                     const std::string &ver)
   {
+    setMsg("Checking for updates");
+    wxBusyCursor busy;
+
     try
       {
         // Fetch the latest client information
-        std::string tig = get.getFile(url);
+        std::string tig = gett.getFile(url);
 
         if(!TigListReader::decodeTigFile(tig, ti))
           return true;
@@ -45,13 +49,14 @@ struct Updater : ProgressHolder
 
     If it returns true, you should immediately exit the application.
   */
-  bool doAutoUpdate(const std::string &this_exe)
+  bool doAutoUpdate(const boost::filesystem::path &this_exe, bool isUpdater,
+                    const boost::filesystem::path &new_exe)
   {
     using namespace Json;
     using namespace boost::filesystem;
     using namespace std;
 
-    // Unless we're on windows, there's not much more to do right now.
+    // This part is only done on Windows
     if((wxGetOsVersion() & wxOS_WINDOWS) == 0)
       return false;
 
@@ -60,37 +65,55 @@ struct Updater : ProgressHolder
       // If so, skip auto update and just run the current version.
       return false;
 
-    // Canonical path
-    path canon_path = conf.fullexedir;
+    path this_path = this_exe.parent_path();
+    gett.setBase(this_path);
 
-    string canon_exe = (canon_path/"tiggit.exe").string();
-
-    // Temporary exe used for updates
-    string tmp_exe = (canon_path/"update.exe").string();
-
-    // Update destination. (Don't use getPath, that creates the
-    // directory!)
-    string up_dest = (get.base / "update").string();
-
-    // Are we running from the canonical path?
-    if(!boost::iequals(this_exe, canon_exe))
+    // Detect old updater style (to manage the transition
+    // alpha_039->alpha_040)
+    if(!isUpdater && this_exe.leaf() == "update.exe")
       {
-        // Check if there is a download update available
-        if(exists(up_dest))
+        new_exe = this_path / "tiggit.exe";
+        isUpdater = true;
+      }
+
+    if(isUpdater)
+      {
+        /*
+          isUpdater is set when we are called with the -u command line
+          parameter.
+
+          This means the update has already been downloaded and
+          unpacked. In fact WE, the currently running exe, is the
+          latest version.
+
+          Our only job is to copy ourself (with or without DLL files,
+          as needed) into the location given in new_exe, run that
+          version, then exit.
+         */
+
+        setMsg("Installing update...");
+
+        // Wait a second to make sure the old program has had time to
+        // exit, since we are going to delete the file.
+        wxSleep(1);
+
+        path new_path = new_exe.parent_path();
+
+        // Is the directory the same?
+        if(new_path == this_path)
           {
-            // Yup. Most likely we are running update.exe right
-            // now. In any case, since the tiggit.exe version is not
-            // running, we can overwrite it.
+            // Yes. Just copy the exe.
+            if(exists(new_exe))
+              remove(new_exe);
 
-            setMsg("Installing update...");
-
-            // Wait a little while in case canon_exe launched us, to
-            // give it time to exit. (Not a terribly robust solution,
-            // I know, fix it later.)
-            wxSleep(1);
+            copy_file(this_exe, new_exe);
+          }
+        else
+          {
+            // Nope. That means we have an entire directory to update.
 
             // Copy files over
-            directory_iterator iter(up_dest), end;
+            directory_iterator iter(this_path), end;
             for(; iter != end; ++iter)
               {
                 path p = iter->path();
@@ -99,7 +122,7 @@ struct Updater : ProgressHolder
                 if(!is_regular_file(p)) continue;
 
                 // Destination
-                path dest = canon_path / p.leaf();
+                path dest = new_path / p.leaf();
 
                 // Remove destination, if it exists
                 if(exists(dest))
@@ -110,48 +133,52 @@ struct Updater : ProgressHolder
               }
           }
 
-        // In any case, run the canonical path and exit the current
-        // instance
-        wxExecute(wxString(canon_exe.c_str(), wxConvUTF8));
+        // In any case, run the new exe and exit the current program.
+        wxExecute(wxString(new_exe.c_str(), wxConvUTF8));
         return true;
       }
-    else
+
+    // Temporary exe used for updates
+    string updater_exe = (this_path/"update.exe").string();
+
+    // Update destination.
+    string up_dest = (this_path/"update").string();
+
+    // Kill update remains if there are any
+    bool didClean = false;
+    if(exists(up_dest) || exists(updater_exe))
       {
-        // We are running a correctly installed exe
+        setMsg("Cleaning up...");
 
-        // TODO: At some later point, we will use this spot to check
-        // for updates previously unpacked at runtime. This is less
-        // disruptive than downloading updates at startup, as we are
-        // currently doing below.
+        // Wait a sec to give the program a shot to exit
+        wxSleep(1);
 
-        // Kill update remains if there are any
-        if(exists(up_dest) || exists(tmp_exe))
-          {
-            setMsg("Cleaning up...");
+        // Kill update/
+        if(exists(up_dest))
+          remove_all(up_dest);
 
-            // Wait a sec to give the program a shot to exit
-            wxSleep(1);
+        // Ditto for updater_exe
+        if(exists(updater_exe))
+          remove(updater_exe);
 
-            // Kill update/
-            if(exists(up_dest))
-              remove_all(up_dest);
-
-            // Ditto for tmp_exe
-            if(exists(tmp_exe))
-              remove(tmp_exe);
-          }
+        didClean = true;
       }
 
-    // At this point, we know we are running from our canonical
+    // At this point, we know we are running from our correct install
     // path. Our job now is to check if we are running the latest
     // version, and to upgrade if we are not.
 
     // Get current version
     {
-      ifstream inf((canon_path / "version").string().c_str());
+      ifstream inf((this_path / "version").string().c_str());
       if(inf)
         inf >> version;
     }
+
+    // If we just did an upgrade round, no point in doing it
+    // again. Just exit.
+    if(didClean)
+      return false;
 
     // Fetch the latest client information
     DataList::TigInfo ti;
@@ -169,7 +196,7 @@ struct Updater : ProgressHolder
     string dll_version;
     {
       // Current dll version
-      ifstream inf((canon_path / "dll_version").string().c_str());
+      ifstream inf((this_path / "dll_version").string().c_str());
       if(inf)
         inf >> dll_version;
     }
@@ -188,17 +215,21 @@ struct Updater : ProgressHolder
        depend on the updated DLL files.
 
        If there are no new dlls however, we have to move it to
-       canon_path/update.exe, because it depends on the OLD dll files.
+       this_path/update.exe, because it depends on the OLD dll files.
     */
-    string run = get.getPath("update/tiggit.exe");
+    string run = (up_dest / "tiggit.exe").string();
     if(!newDlls)
       {
-        copy_file(run, tmp_exe);
-        run = tmp_exe;
+        copy_file(run, updater_exe);
+        copy_file(up_dest/"version", this_path/"version");
+        run = updater_exe;
       }
 
-    // On unix only
+    // On unix later:
     //wxShell(("chmod a+x " + run).c_str());
+
+    // Add command line parameter
+    run += " --update=\"" + this_exe.string() + "\"";
 
     // Run the new exe, and let it figure out the rest
     int res = wxExecute(wxString(run.c_str(), wxConvUTF8));
@@ -218,7 +249,7 @@ struct Updater : ProgressHolder
     setMsg(vermsg + "\n" + url);
 
     // Start downloading the latest version
-    std::string zip = get.getPath("update.zip");
+    std::string zip = gett.getPath("update.zip");
     DownloadJob getter(url, zip);
     getter.run();
 

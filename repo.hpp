@@ -32,7 +32,6 @@ struct Repository
     path exe = exePath;
     path exeDir = exe.parent_path();
     path pathfile = exeDir / "paths.json";
-    string finalExeDir;
 
     path repoDir;
     bool write = false; // If true, write paths.json
@@ -65,10 +64,7 @@ struct Repository
 
             // Use portable paths if possible
             if(exeDir == repoDir / "bin")
-              {
-                repoDir = "../";
-                finalExeDir = "bin";
-              }
+              repoDir = "../";
           }
       }
 
@@ -94,8 +90,6 @@ struct Repository
         bool isZipInstall = exists(exeDir/"portable_zip.txt");
 
         throw std::runtime_error("Cannot find repository. Installation not implemented yet.");
-        finalExeDir = "something";
-
         // Always write result after asking the user
         write = true;
       }
@@ -114,25 +108,6 @@ struct Repository
 
     get.setBase(repoDir);
     conf.load(repoDir.string());
-
-    // If there is no existing exedir configured, and we have a
-    // suggestion for a new one, then use that.
-    if(conf.exedir == "")
-      {
-        if(finalExeDir != "")
-          conf.setExeDir(finalExeDir);
-        else
-          // If there is no configured exe path, no natural
-          // suggestions and no user-supplied path, use existing exe
-          // path.
-          conf.setExeDir(exeDir.string());
-      }
-
-    // Expand relative exe dirs
-    exeDir = conf.exedir;
-    if(!exeDir.has_root_path())
-      exeDir = absolute(exeDir, repoDir);
-    conf.fullexedir = exeDir.string();
 
     // Be backwards compatible with old repositories
     if(upgrading && is_directory(repoDir / "data"))
