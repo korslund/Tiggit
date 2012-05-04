@@ -182,9 +182,18 @@ struct Updater : ProgressHolder
 
     // Fetch the latest client information
     DataList::TigInfo ti;
-    if(checkVersion("http://tiggit.net/client/latest.tig", ti, version))
-      // Current version is current, nothing more to do.
-      return false;
+    {
+      string lurl = "http://tiggit.net/client/latest.tig";
+
+      // Hack to allow testing the updater without making it
+      // public. We will improve this later.
+      if(exists(this_path/"use_test_url"))
+        lurl = "http://tiggit.net/client/latest_test.tig";
+
+      if(checkVersion(lurl, ti, version))
+        // Current version is current, nothing more to do.
+        return false;
+    }
 
     string vermsg = "Downloading latest update, please wait...\n"
       + version + " -> " + ti.version;
