@@ -101,8 +101,7 @@ struct Repository
     // Expand relative path for internal use, to make sure everything
     // still works when we change our working directory.
     if(!repoDir.has_root_path())
-
-      repoDir = absolute(repoDir, exeDir);
+      repoDir = absolute_path(repoDir, exeDir);
 
     get.setBase(repoDir);
     conf.load(repoDir.string());
