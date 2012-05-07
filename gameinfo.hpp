@@ -157,7 +157,7 @@ struct GameInfo
                   errMsg = "Downloading failed for " + entry.name + ":\n" +
                     job->getError();
                 else
-                  errMsg = "Unpacking failed for " + entry.name + ":\n" +
+                  errMsg = "Install failed for " + entry.name + ":\n" +
                     job->getError();
               }
           }

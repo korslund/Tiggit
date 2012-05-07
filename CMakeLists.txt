@@ -42,6 +42,4 @@ else( APPLE )
 
   add_executable(tigmaker tigmaker.cpp ${JSON})
   target_link_libraries(tigmaker ${LIBS})
-
-  add_executable(fix_json fix_json.cpp ${JSON})
 endif( APPLE )
