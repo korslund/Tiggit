@@ -267,12 +267,64 @@ struct GameInfo
     dlCount << e.dlCount;
     price = wxString::Format(wxT("$%3.2f"), e.tigInfo.price);
 
-    // TODO: Replace with friendlier 'ago' version.
+    timeString = ago(e.add_time);
+  }
 
-    time_t t = e.add_time;
+  // Friendly time formatting, spits out strings like "3 days ago",
+  // "May 3" and "June 2008".
+  static wxString ago(time_t when, time_t now=0)
+  {
+    if(now == 0)
+      now = time(NULL);
+
+    time_t diff = now-when;
+
+    diff /= 60;
+
+    wxString res;
+
+    if(diff < 60)
+      {
+        res = wxString::Format(wxT("%d minute"), diff);
+        if(diff > 1) res += wxT("s");
+      }
+
+    diff /= 60;
+    if(res.IsEmpty() && diff < 24)
+      {
+        res = wxString::Format(wxT("%d hour"), diff);
+        if(diff > 1) res += wxT("s");
+      }
+
+    diff /= 24;
+    if(res.IsEmpty() && diff < 7)
+      {
+        res = wxString::Format(wxT("%d day"), diff);
+        if(diff > 1) res += wxT("s");
+      }
+
+    diff /= 7;
+    if(res.IsEmpty() && diff < 5)
+      {
+        res = wxString::Format(wxT("%d week"), diff);
+        if(diff > 1) res += wxT("s");
+      }
+
+    if(!res.IsEmpty())
+      {
+        res += wxT(" ago");
+        return res;
+      }
+
+    // Anything over 4 weeks, use dates instead
     char buf[50];
-    strftime(buf,50, "%Y-%m-%d", gmtime(&t));
-    timeString = wxString(buf, wxConvUTF8);
+    diff /= 4;
+    if(diff <= 8) // 8 months or less
+      strftime(buf,50, "%b %e", gmtime(&when));
+    else
+      strftime(buf,50, "%Y-%m-%d", gmtime(&when));
+
+    return wxString(buf, wxConvUTF8);
   }
 
   static GameInfo& conv(DataList::Entry &e)

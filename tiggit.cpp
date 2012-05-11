@@ -128,22 +128,32 @@ class MyList : public wxListCtrl
   wxImageList images;
   ListKeeper &lister;
 
+  // This is sort of hacked-on but it works
+  wxListItemAttr newStyle;
+
   std::vector<ColumnHandler*> colHands;
 
   // Number of columns
   int colNum;
 
 public:
+  bool markNew;
+
   MyList(wxWindow *parent, int ID, ListKeeper &lst)
     : wxListCtrl(parent, ID, wxDefaultPosition, wxDefaultSize,
                  wxBORDER_SUNKEN | wxLC_REPORT | wxLC_VIRTUAL | wxLC_SINGLE_SEL),
-      lister(lst), colNum(0)
+      lister(lst), colNum(0), markNew(false)
   {
     green.SetBackgroundColour(wxColour(180,255,180));
     green.SetTextColour(wxColour(0,0,0));
 
     orange.SetBackgroundColour(wxColour(255,240,180));
     orange.SetTextColour(wxColour(0,0,0));
+
+    // Mark new games with bold font
+    wxFont fnt = newStyle.GetFont();
+    fnt.SetWeight(wxFONTWEIGHT_BOLD);
+    newStyle.SetFont(fnt);
 
     /* For later. Works, but doesn't look good.
     images.Create(80,50,false);
@@ -201,6 +211,14 @@ public:
       return NULL;
 
     GameInfo &g = GameInfo::conv(lister.get(item));
+
+    if(markNew)
+      {
+        if(g.entry.isNew)
+          return (wxListItemAttr*)&newStyle;
+        return NULL;
+      }
+
     if(g.isNone()) return NULL;
     if(g.isInstalled()) return NULL;
     return (wxListItemAttr*)&orange;
@@ -1154,9 +1172,11 @@ struct NewGameListTab : ListTab
     : ListTab(parent, wxT("Latest"), ListKeeper::SL_ALL, s),
       newGames(0)
   {
-    list->addColumn(wxT("Name"), 310, new TitleCol);
-    list->addColumn(wxT("Type"), 80, new TypeCol);
-    list->addColumn(wxT("Added"), 140, new AddDateCol);
+    list->addColumn(wxT("Name"), 370, new TitleCol);
+    list->addColumn(wxT("Added"), 120, new AddDateCol);
+    //list->addColumn(wxT("Type"), 67, new TypeCol);
+
+    list->markNew = true;
 
     lister.sortDate();
     listHasChanged();
@@ -1173,7 +1193,10 @@ struct NewGameListTab : ListTab
       if(data.arr[base[i]].isNew)
         newGames++;
 
-    wxString name = tabName + wxString::Format(wxT(" (%d)"), newGames);
+    wxString name = tabName;
+    if(newGames)
+      name += wxString::Format(wxT(" (%d)"), newGames);
+
     book->SetPageText(tabNum, name);
   }
 };
@@ -1184,8 +1207,8 @@ struct FreewareListTab : ListTab
   FreewareListTab(wxNotebook *parent, StatusNotify *s)
     : ListTab(parent, wxT("Browse"), ListKeeper::SL_FREEWARE, s)
   {
-    list->addColumn(wxT("Name"), 310, new TitleCol);
-    list->addColumn(wxT("Rating"), 85, new RatingCol);
+    list->addColumn(wxT("Name"), 300, new TitleCol);
+    list->addColumn(wxT("Rating"), 90, new RatingCol);
     list->addColumn(wxT("Downloads"), 75, new DownloadsCol);
 
     lister.sortRating();
@@ -1205,8 +1228,8 @@ struct DemoListTab : ListTabNonEmpty
   DemoListTab(wxNotebook *parent, StatusNotify *s)
     : ListTabNonEmpty(parent, wxT("Demos"), ListKeeper::SL_DEMOS, s)
   {
-    list->addColumn(wxT("Name"), 310, new TitleCol);
-    list->addColumn(wxT("Rating"), 85, new RatingCol);
+    list->addColumn(wxT("Name"), 300, new TitleCol);
+    list->addColumn(wxT("Rating"), 90, new RatingCol);
     list->addColumn(wxT("Downloads"), 75, new DownloadsCol);
 
     lister.sortRating();
@@ -1242,6 +1265,7 @@ struct InstalledListTab : ListTab
 #define myID_GOLEFT 31
 #define myID_GORIGHT 32
 #define myID_BOOK 33
+#define myID_DEBUG_FUNCTION 20999
 
 class MyFrame : public wxFrame, public StatusNotify
 {
@@ -1275,6 +1299,9 @@ public:
     menuList->AppendCheckItem(myID_MENU_SHOW_VOTES, wxT("Show &Vote Count"),
                               wxT("If checked will display the number of votes next to the rating in the game lists"));
     menuList->Check(myID_MENU_SHOW_VOTES, conf.voteCount);
+
+    if(conf.debug)
+      menuList->Append(myID_DEBUG_FUNCTION, wxT("Run Debug Function"));
 
     wxMenuBar *menuBar = new wxMenuBar;
     menuBar->Append(menuFile, _("&App"));
@@ -1328,6 +1355,8 @@ public:
             wxCommandEventHandler(MyFrame::onRefresh));
     Connect(myID_MENU_SHOW_VOTES, wxEVT_COMMAND_MENU_SELECTED,
             wxCommandEventHandler(MyFrame::onShowVotes));
+    Connect(myID_DEBUG_FUNCTION, wxEVT_COMMAND_MENU_SELECTED,
+            wxCommandEventHandler(MyFrame::onDebug));
     Connect(myID_MENU_REFRESH_TOTAL, wxEVT_COMMAND_MENU_SELECTED,
             wxCommandEventHandler(MyFrame::onRefresh));
 
@@ -1443,6 +1472,12 @@ public:
     freewareTab->listHasChanged(true);
     demoTab->listHasChanged(true);
     installedTab->listHasChanged(true);
+  }
+
+  void onDebug(wxCommandEvent &event)
+  {
+    data.arr[14].isNew = true;
+    onDataChanged();
   }
 
   void onShowVotes(wxCommandEvent &event)
