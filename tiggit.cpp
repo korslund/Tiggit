@@ -370,6 +370,7 @@ struct StatusCol : ColumnHandler
 struct StatusNotify
 {
   virtual void onDataChanged() = 0;
+  virtual void updateCurrent() = 0;
   virtual void switchToInstalled() = 0;
 };
 
@@ -705,6 +706,14 @@ struct ListTab : TabBase, ScreenshotCallback
     updateGameInfo();
   }
 
+  // Called whenever there is a chance that the underlying data for
+  // the selected item has changed.
+  void updateCurrentItem()
+  {
+    updateSelection();
+    list->RefreshItem(select);
+  }
+
   // Fix buttons for the current selected item (if any)
   void fixButtons()
   {
@@ -789,7 +798,7 @@ struct ListTab : TabBase, ScreenshotCallback
     listHasChanged();
   }
 
-  void updateStatus(int index)
+  void updateGameStatus(int index)
   {
     GameInfo &e = GameInfo::conv(lister.get(index));
 
@@ -840,7 +849,7 @@ struct ListTab : TabBase, ScreenshotCallback
     gi.startDownload();
 
     // Update this entry now.
-    updateStatus(index);
+    updateGameStatus(index);
 
     /* Update lists and moved to the Installed tab.
 
@@ -851,16 +860,19 @@ struct ListTab : TabBase, ScreenshotCallback
     statusChanged(true);
   }
 
-  /* Called whenever an item switches lists. Set newInst to true if we
-     should switch to the "Installed" tab. dataChange is true if the
-     lists have changed (meaning we have to update all the display
-     lists)
+  /* Called whenever an item switches lists or install status. Set
+     newInst to true if we should switch to the "Installed"
+     tab. dataChange is true if the lists have changed (meaning we
+     have to update all the display lists)
   */
   void statusChanged(bool newInst=false, bool dataChange=true)
   {
     // Notify our parent if lists have changed
     if(dataChange)
       stat->onDataChanged();
+    else
+      // Just do a single-item update on all lists
+      stat->updateCurrent();
 
     // Write install status to config file
     jinst.write(data);
@@ -1278,7 +1290,7 @@ struct InstalledListTab : ListTab
   void tick()
   {
     for(int i=0; i<lister.size(); i++)
-      updateStatus(i);
+      updateGameStatus(i);
   }
 };
 
@@ -1475,6 +1487,14 @@ public:
 
     // Update tab status and titles
     setupTabs();
+  }
+
+  void updateCurrent()
+  {
+    newTab->updateCurrentItem();
+    freewareTab->updateCurrentItem();
+    demoTab->updateCurrentItem();
+    installedTab->updateCurrentItem();
   }
 
   // Switches the selected tab to the "Installed" tab. This is a
