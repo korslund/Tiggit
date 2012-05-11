@@ -12,9 +12,10 @@
 
 struct Repository
 {
+  typedef boost::filesystem::path Path;
+
 // Quick library version compatibility fix
-  static boost::filesystem::path absolute_path(const boost::filesystem::path& p,
-                                               const boost::filesystem::path& base)
+  static Path absolute_path(const Path& p, const Path& base)
   {
     using namespace boost::filesystem;
 #if BOOST_VERSION >= 104600 && BOOST_FILESYSTEM_VERSION >= 3
@@ -23,6 +24,35 @@ struct Repository
     return complete(p, base);
 #endif
   }
+
+  /* General wx note: we should remove ALL wxWidgets influence on this
+     file, and on anything outside the interface layer. Do dialogs
+     through callbacks if necessary.
+  */
+
+  /* This stuff isn't done yet
+  struct MoveDialog : wxDialog
+  {
+    // Stuff here
+  };
+
+  static Path moveDir(const Path &oldDir, const Path &exeDir)
+  {
+    Path repoDir = result;
+
+    //::wxDirSelector();
+
+    if(repoDir != oldDir)
+      {
+        // Move files. Make a file moving job! Then update the dialog
+        // non-modally.
+
+        writePaths(exeDir.string(), repoDir.string());
+        setDir(repoDir);
+      }
+    return repoDir;
+  }
+  */
 
   // TODO: Make non-static, kill all global variables, and pass along
   // paths.
@@ -33,19 +63,11 @@ struct Repository
     using namespace Json;
     using namespace std;
 
-    /* For browsing dirs: ::wxDirSelector();
-
-       General wx note: we should remove ALL wxWidgets influence on
-       this file, and on anything outside the interface layer. Do
-       dialogs through callbacks.
-     */
-
     path exe = exePath;
     path exeDir = exe.parent_path();
     path pathfile = exeDir / "paths.json";
 
     path repoDir;
-    bool write = false; // If true, write paths.json
     bool upgrading = false; // We are upgrading from an old directory
 
     // If the paths file exists, use it
@@ -70,12 +92,13 @@ struct Repository
           {
             // Use the old location.
             repoDir = appdata;
-            write = true;
             upgrading = true;
 
             // Use portable paths if possible
             if(exeDir == repoDir / "bin")
               repoDir = "../";
+
+            writePaths(exeDir.string(), repoDir.string());
           }
       }
 
@@ -85,19 +108,27 @@ struct Repository
         /* If we get here, it means nothing was found. We assume this
            means a new installation.
 
-           Use data/ as the default directory.
+           Use data/ as the default directory for now.
         */
         repoDir = "data";
-        write = true;
+        writePaths(exeDir.string(), repoDir.string());
+        setDir(repoDir, exeDir);
+
+        // Ask the user where they want to store data
+        //moveDir(repoDir, exeDir);
       }
+    else
+      {
+        setDir(repoDir, exeDir);
 
-    // We must have set a repository directory at this point, or failed.
-    assert(!repoDir.empty());
+        // Be backwards compatible with old repositories
+        if(upgrading && is_directory(repoDir / "data"))
+          conf.setGameDir("data");
+      }
+  }
 
-    // Write repo path
-    if(write)
-      writePaths(exeDir.string(), repoDir.string());
-
+  static void setDir(Path repoDir, const Path &exeDir)
+  {
     // Expand relative path for internal use, to make sure everything
     // still works when we change our working directory.
     if(!repoDir.has_root_path())
@@ -105,10 +136,6 @@ struct Repository
 
     get.setBase(repoDir);
     conf.load(repoDir.string());
-
-    // Be backwards compatible with old repositories
-    if(upgrading && is_directory(repoDir / "data"))
-      conf.setGameDir("data");
   }
 
   // Writes dest_dir / "paths.json"
@@ -116,7 +143,7 @@ struct Repository
                          const std::string &value)
   {
     Json::Value root;
-    boost::filesystem::path pathfile = dest_dir;
+    Path pathfile = dest_dir;
     pathfile /= "paths.json";
     root["repo_dir"] = value;
     writeJson(pathfile.string(), root);

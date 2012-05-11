@@ -36,9 +36,6 @@ JsonInstalled jinst;
 TigListReader tig_reader;
 TagSorter tagSorter;
 
-// Temporary hack
-bool gHasDemos = false;
-
 // Ask the user an OK/Cancel question.
 bool ask(const wxString &question)
 {
@@ -343,7 +340,7 @@ struct StatusNotify
 
 struct ListTab : TabBase, ScreenshotCallback
 {
-  wxButton *b1, *b2, *supportButton;
+  wxButton *b1, *b2;//, *supportButton;
   MyList *list;
   wxTextCtrl *textView;
   ImageViewer *screenshot, *ad_img;
@@ -377,15 +374,22 @@ struct ListTab : TabBase, ScreenshotCallback
       sop->addSortOptions(this, sortBox);
     */
 
+    wxBoxSizer *bottomCenter = new wxBoxSizer(wxHORIZONTAL);
+
     wxBoxSizer *centerPane = new wxBoxSizer(wxVERTICAL);
     centerPane->Add(list, 1, wxGROW | wxRIGHT | wxBOTTOM, 10);
-    centerPane->Add(searchBox, 0, wxBOTTOM, 2);
+    centerPane->Add(bottomCenter, 0, wxRIGHT | wxBOTTOM, 10);
+
+    wxBoxSizer *bcLeft = new wxBoxSizer(wxVERTICAL);
+    bottomCenter->Add(bcLeft, 1, wxGROW);
+
+    bcLeft->Add(searchBox, 0, wxBOTTOM | wxLEFT, 2);
     /*
     centerPane->Add(sortBox, 0);
     centerPane->Add(new wxCheckBox(this, myID_SORT_REVERSE, wxT("Reverse order")),
                   0);
     */
-    centerPane->Add(new wxStaticText(this, wxID_ANY, wxString(wxT("Mouse: double-click to ")) +
+    bcLeft->Add(new wxStaticText(this, wxID_ANY, wxString(wxT("Mouse: double-click to ")) +
                                    ((listType == ListKeeper::SL_INSTALL)?
                                     wxT("play"):wxT("install")) +
                                    wxT("\nKeyboard: arrow keys + enter, delete")),
@@ -401,17 +405,18 @@ struct ListTab : TabBase, ScreenshotCallback
     b1 = new wxButton(this, myID_BUTTON1, wxT("No action"));
     b2 = new wxButton(this, myID_BUTTON2, wxT("No action"));
 
-    supportButton = new wxButton(this, myID_SUPPORT, wxT("Support Game (donate)"));
+    //supportButton = new wxButton(this, myID_SUPPORT, wxT("Support Game (donate)"));
 
     wxBoxSizer *buttonBar = new wxBoxSizer(wxHORIZONTAL);
     buttonBar->Add(b1, 0, wxTOP | wxBOTTOM | wxRIGHT, 3);
     buttonBar->Add(b2, 0, wxTOP | wxBOTTOM | wxRIGHT, 3);
-    buttonBar->Add(new wxButton(this, myID_GAMEPAGE, wxT("Game Website")),
-                   0, wxTOP | wxBOTTOM, 3);
+
 
     wxBoxSizer *buttonHolder = new wxBoxSizer(wxVERTICAL);
-    buttonHolder->Add(supportButton, 0, wxALIGN_RIGHT);
+    //buttonHolder->Add(supportButton, 0, wxALIGN_RIGHT);
     buttonHolder->Add(buttonBar, 0);
+    buttonHolder->Add(new wxButton(this, myID_GAMEPAGE, wxT("Game Website")),
+                   0, wxTOP | wxBOTTOM, 3);
 
     wxString choices[7];
     choices[0] = wxT("Rate this game");
@@ -443,10 +448,6 @@ struct ListTab : TabBase, ScreenshotCallback
     rightPane->Add(rateBar);
     rightPane->Add(textView, 1, wxGROW | wxTOP | wxRIGHT | wxBOTTOM, 7);
     rightPane->Add(buttonHolder);
-    /*
-    rightPane->Add(supportButton, 0, wxALIGN_RIGHT);
-    rightPane->Add(buttonBar, 0);
-    */
 
     tags = new wxListBox(this, myID_TAGS);
 
@@ -455,10 +456,15 @@ struct ListTab : TabBase, ScreenshotCallback
 
     /*
     ad_img = new ImageViewer(this, myID_SCREENSHOT, wxDefaultPosition,
-                             wxSize(100,160));
-    leftPane->Add(new wxStaticText(this, wxID_ANY, wxT("Sponsor:")), 0);
-    leftPane->Add(ad_img, 0);
-    */
+                             wxSize(100,50));
+    leftPane->Add(new wxStaticText(this, wxID_ANY, wxT("Sponsor:")));
+    leftPane->Add(ad_img);
+    wxBoxSizer *bcRight = new wxBoxSizer(wxVERTICAL);
+    bottomCenter->Add(bcRight, 0, wxTOP, 5);
+
+    bcRight->Add(new wxStaticText(this, wxID_ANY, wxT("Do you like Tiggit?")), 0, wxALIGN_RIGHT | wxBOTTOM, 5);
+    bcRight->Add(new wxButton(this, wxID_ANY, wxT("Help Us Stay Awesome!")), 0, wxALIGN_RIGHT | wxLEFT, 56);
+    //*/
 
     createTagList();
 
@@ -677,7 +683,7 @@ struct ListTab : TabBase, ScreenshotCallback
       {
         b1->Disable();
         b2->Disable();
-        supportButton->Disable();
+        //supportButton->Disable();
         b1->SetLabel(wxT("No action"));
         b2->SetLabel(wxT("No action"));
         return;
@@ -685,6 +691,7 @@ struct ListTab : TabBase, ScreenshotCallback
 
     DataList::Entry &e = lister.get(select);
 
+    /*
     if(e.tigInfo.isDemo)
       {
         supportButton->Enable();
@@ -697,6 +704,7 @@ struct ListTab : TabBase, ScreenshotCallback
       }
     else
       supportButton->Disable();
+    */
 
     b1->Enable();
     b2->Enable();
@@ -1191,11 +1199,7 @@ struct FreewareListTab : ListTab
   // Temporary development hack
   void insertMe()
   {
-    if(gHasDemos)
-      tabName = wxT("Freeware");
-    else
-      tabName = wxT("Browse");
-
+    tabName = wxT("Freeware");
     ListTab::insertMe();
   }
 };
@@ -1371,9 +1375,6 @@ public:
     // Remove all tabs
     for(int i=book->GetPageCount()-1; i >= 0; i--)
       book->RemovePage(i);
-
-    // Remember whether we have demos or not
-    gHasDemos = demoTab->lister.baseSize() != 0;
 
     // Re-add them, if they want to be re-added
     newTab->insertMe();
