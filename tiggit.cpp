@@ -1297,6 +1297,7 @@ struct InstalledListTab : ListTab
 #define myID_MENU_REFRESH 30
 #define myID_MENU_REFRESH_TOTAL 20031
 #define myID_MENU_SHOW_VOTES 20110
+#define myID_MENU_SWITCH_TABS 20111
 #define myID_GOLEFT 31
 #define myID_GORIGHT 32
 #define myID_BOOK 33
@@ -1331,16 +1332,24 @@ public:
     wxMenu *menuList = new wxMenu;
     menuList->Append(myID_MENU_REFRESH, wxT("&Reload List"));
     //menuList->Append(myID_MENU_REFRESH_TOTAL, wxT("Reload E&verything"));
-    menuList->AppendCheckItem(myID_MENU_SHOW_VOTES, wxT("Show &Vote Count"),
+
+    wxMenu *menuOpts = new wxMenu;
+    menuOpts->AppendCheckItem(myID_MENU_SHOW_VOTES, wxT("Show &Vote Count"),
                               wxT("If checked will display the number of votes next to the rating in the game lists"));
-    menuList->Check(myID_MENU_SHOW_VOTES, conf.voteCount);
+    menuOpts->AppendCheckItem(myID_MENU_SWITCH_TABS, wxT("Switch Tabs When Installing"),
+                              wxT("If checked, focus will switch to the Installed tab when you select a new game"));
+
+    // Set current options
+    menuOpts->Check(myID_MENU_SHOW_VOTES, conf.voteCount);
+    menuOpts->Check(myID_MENU_SWITCH_TABS, conf.switchTabs);
 
     if(conf.debug)
-      menuList->Append(myID_DEBUG_FUNCTION, wxT("Run Debug Function"));
+      menuOpts->Append(myID_DEBUG_FUNCTION, wxT("Run Debug Function"));
 
     wxMenuBar *menuBar = new wxMenuBar;
     menuBar->Append(menuFile, _("&App"));
     menuBar->Append(menuList, _("&List"));
+    menuBar->Append(menuOpts, _("&Options"));
 
     SetMenuBar( menuBar );
 
@@ -1388,12 +1397,15 @@ public:
             wxCommandEventHandler(MyFrame::onExit));
     Connect(myID_MENU_REFRESH, wxEVT_COMMAND_MENU_SELECTED,
             wxCommandEventHandler(MyFrame::onRefresh));
-    Connect(myID_MENU_SHOW_VOTES, wxEVT_COMMAND_MENU_SELECTED,
-            wxCommandEventHandler(MyFrame::onShowVotes));
     Connect(myID_DEBUG_FUNCTION, wxEVT_COMMAND_MENU_SELECTED,
             wxCommandEventHandler(MyFrame::onDebug));
     Connect(myID_MENU_REFRESH_TOTAL, wxEVT_COMMAND_MENU_SELECTED,
             wxCommandEventHandler(MyFrame::onRefresh));
+
+    Connect(myID_MENU_SHOW_VOTES, wxEVT_COMMAND_MENU_SELECTED,
+            wxCommandEventHandler(MyFrame::onOption));
+    Connect(myID_MENU_SWITCH_TABS, wxEVT_COMMAND_MENU_SELECTED,
+            wxCommandEventHandler(MyFrame::onOption));
 
     Connect(myID_GOLEFT, wxEVT_COMMAND_BUTTON_CLICKED,
             wxCommandEventHandler(MyFrame::onLeftRight));
@@ -1501,11 +1513,10 @@ public:
   // virtual function from StatusNotify.
   void switchToInstalled()
   {
-    // DISABLED
-    /*
-    installedTab->selectMe();
+    if(conf.switchTabs)
+      installedTab->selectMe();
+
     setTabFocus();
-    */
   }
 
   /* Called on "soft" refreshes that only requires the lists and
@@ -1526,10 +1537,17 @@ public:
     onDataChanged();
   }
 
-  void onShowVotes(wxCommandEvent &event)
+  void onOption(wxCommandEvent &event)
   {
-    conf.setVoteCount(event.IsChecked());
-    softRefresh();
+    if(event.GetId() == myID_MENU_SHOW_VOTES)
+      {
+        conf.setVoteCount(event.IsChecked());
+        softRefresh();
+      }
+    else if(event.GetId() == myID_MENU_SWITCH_TABS)
+      {
+        conf.setSwitchTabs(event.IsChecked());
+      }
   }
 
   void onRefresh(wxCommandEvent &event)

@@ -32,6 +32,9 @@ struct Config
   // Include vote count in rating column
   bool voteCount;
 
+  // Switch to "installed" tab when installing a new game
+  bool switchTabs;
+
   int64_t lastTime;
 
   Config() : updateList(false), updateTigs(false), updateCache(false),
@@ -72,6 +75,12 @@ struct Config
   bool setVoteCount(bool b)
   {
     voteCount = b;
+    write();
+  }
+
+  bool setSwitchTabs(bool b)
+  {
+    switchTabs = b;
     write();
   }
 
@@ -121,6 +130,7 @@ struct Config
                 seen_demo_msg = root["seen_demo_msg"].asBool();
                 debug = root["debug"].asBool();
                 voteCount = root["vote_count"].asBool();
+                switchTabs = root["switch_tabs"].asBool();
                 gamedir = root["gamedir"].asString();
 
                 int cache = root["cache_version"].asInt();
@@ -159,6 +169,7 @@ struct Config
     root["cache_version"] = 1;
     root["debug"] = debug;
     root["vote_count"] = voteCount;
+    root["switch_tabs"] = switchTabs;
     root["gamedir"] = gamedir;
 
     writeJson(filename, root);
