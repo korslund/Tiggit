@@ -189,7 +189,6 @@ public:
     // Let the column handler sort our list for us
     colHands[col]->sort(lister);
 
-    // Refresh. Does not seem to be needed on Linux/GTK.
     update();
   }
 
@@ -207,6 +206,9 @@ public:
 
   void setSelect(int index)
   {
+    // Clearing the state first (in case it was already selected)
+    // makes sure the appropriate signals are resent upon selection.
+    SetItemState(index, 0, wxLIST_STATE_SELECTED);
     SetItemState(index, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
   }
 
@@ -227,8 +229,8 @@ public:
       newItem = lister.size() - 1;
     setSelect(newItem);
 
-    // Doesn't seem to be needed on Linux. We could remove it there to
-    // make it a slightly less flickering experience.
+    // Doesn't seem to be needed on Linux/GTK. We could remove it
+    // there to make it a slightly less flickering experience.
     Refresh();
   }
 
