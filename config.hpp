@@ -29,11 +29,14 @@ struct Config
   // True if the user has seen the 'demo' tab message.
   bool seen_demo_msg;
 
+  // Include vote count in rating column
+  bool voteCount;
+
   int64_t lastTime;
 
   Config() : updateList(false), updateTigs(false), updateCache(false),
              first_time(false), debug(false), seen_demo_msg(false),
-             lastTime(0x7fffffffffff) {}
+             voteCount(false), lastTime(0x7fffffffffff) {}
 
   void fail(const std::string &msg)
   {
@@ -63,6 +66,12 @@ struct Config
   void setGameDir(const std::string &name)
   {
     gamedir = name;
+    write();
+  }
+
+  bool setVoteCount(bool b)
+  {
+    voteCount = b;
     write();
   }
 
@@ -111,6 +120,7 @@ struct Config
                 lastTime = root["last_time"].asInt();
                 seen_demo_msg = root["seen_demo_msg"].asBool();
                 debug = root["debug"].asBool();
+                voteCount = root["vote_count"].asBool();
                 gamedir = root["gamedir"].asString();
 
                 int cache = root["cache_version"].asInt();
@@ -148,6 +158,7 @@ struct Config
     root["seen_demo_msg"] = seen_demo_msg;
     root["cache_version"] = 1;
     root["debug"] = debug;
+    root["vote_count"] = voteCount;
     root["gamedir"] = gamedir;
 
     writeJson(filename, root);

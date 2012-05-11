@@ -28,9 +28,10 @@ struct GameInfo
   DataList::Entry &entry;
 
   /* Cached wxString versions of often used strings. TimeString is a
-     string representation of entry.add_time.
+     string representation of entry.add_time. Rating2 is the rating
+     with included vote count.
   */
-  wxString urlname, idname, name, tigurl, timeString, rating, dlCount, price;
+  wxString urlname, idname, name, tigurl, timeString, rating, rating2, dlCount, price;
 
   bool isInstalled() const { return status == 2; }
   bool isWorking() const { return status == 1 || status == 3; }
@@ -260,9 +261,7 @@ struct GameInfo
     if(e.rateCount > 0 && e.rating > 0)
       {
         rating = wxString::Format(wxT("%3.2f"), e.rating);
-
-        if(conf.debug)
-          rating += wxString::Format(wxT(" (%d)"), e.rateCount);
+        rating2 = rating + wxString::Format(wxT(" (%d)"), e.rateCount);
       }
 
     dlCount << e.dlCount;

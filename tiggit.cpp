@@ -279,7 +279,10 @@ struct RatingCol : ColumnHandler
 {
   wxString getText(GameInfo &e)
   {
-    return e.rating;
+    if(conf.voteCount)
+      return e.rating2;
+    else
+      return e.rating;
   }
 };
 
@@ -324,11 +327,6 @@ struct StatusCol : ColumnHandler
   }
 };
 
-struct SortOptions
-{
-  virtual void addSortOptions(wxWindow *parent, wxBoxSizer *pane) const = 0;
-};
-
 // Callback to update all lists when an object moves. I don't like
 // this AT ALL, and it should be done using wx events instead, but fix
 // it later.
@@ -357,7 +355,7 @@ struct ListTab : TabBase, ScreenshotCallback
   std::vector<TagSorter::Entry> taglist;
 
   ListTab(wxNotebook *parent, const wxString &name, int listType,
-          StatusNotify *s, const SortOptions *sop = NULL)
+          StatusNotify *s)
     : TabBase(parent), select(-1), last_launch(0),
       lister(data, listType), tabName(name), stat(s)
   {
@@ -367,12 +365,6 @@ struct ListTab : TabBase, ScreenshotCallback
     searchBox->Add(new wxStaticText(this, wxID_ANY, wxT("Search:")), 0);
     searchBox->Add(new wxTextCtrl(this, myID_SEARCH_BOX, wxT(""), wxDefaultPosition,
                                   wxSize(260,22)),1, wxGROW);
-
-    /*
-    wxBoxSizer *sortBox = new wxBoxSizer(wxHORIZONTAL);
-    if(sop)
-      sop->addSortOptions(this, sortBox);
-    */
 
     wxBoxSizer *bottomCenter = new wxBoxSizer(wxHORIZONTAL);
 
@@ -1131,35 +1123,18 @@ struct ListTab : TabBase, ScreenshotCallback
   }
 };
 
-/* A cludge to work around C++'s crappy handling of virtual
-   functions. This function should be virtual in ListTab, but then the
-   constructor doesn't call the right one.
- */
-struct GameSortOptions : SortOptions
-{
-  void addSortOptions(wxWindow *parent, wxBoxSizer *pane) const
-  {
-    pane->Add(new wxRadioButton(parent, myID_SORT_TITLE, wxT("Sort by title"),
-                                wxDefaultPosition, wxDefaultSize, wxRB_GROUP),
-              0, wxRIGHT, 10);
-    pane->Add(new wxRadioButton(parent, myID_SORT_DATE, wxT("Sort by date")),
-              0, wxRIGHT, 10);
-  }
-};
-
 // List tab that only displays itself when non-empty
 struct ListTabNonEmpty : ListTab
 {
   ListTabNonEmpty(wxNotebook *parent, const wxString &name, int listType,
-                  StatusNotify *s, const SortOptions *sop = NULL)
-    : ListTab(parent, name, listType, s, sop)
+                  StatusNotify *s)
+    : ListTab(parent, name, listType, s)
   {}
 
   void insertMe()
   {
     tabNum = -1;
 
-    // Only show the "New" tab if there are new games to show.
     if(lister.baseSize() > 0)
       {
         Show();
@@ -1171,13 +1146,35 @@ struct ListTabNonEmpty : ListTab
 };
 
 // Lists newly added games
-struct NewGameListTab : ListTabNonEmpty
+struct NewGameListTab : ListTab
 {
+  int newGames;
+
   NewGameListTab(wxNotebook *parent, StatusNotify *s)
-    : ListTabNonEmpty(parent, wxT("New"), ListKeeper::SL_NEW, s, new GameSortOptions)
+    : ListTab(parent, wxT("Latest"), ListKeeper::SL_ALL, s),
+      newGames(0)
   {
-    list->addColumn(wxT("Name"), 300, new TitleCol);
-    list->addColumn(wxT("Type"), 140, new TypeCol);
+    list->addColumn(wxT("Name"), 310, new TitleCol);
+    list->addColumn(wxT("Type"), 80, new TypeCol);
+    list->addColumn(wxT("Added"), 140, new AddDateCol);
+
+    lister.sortDate();
+    listHasChanged();
+  }
+
+  void insertMe()
+  {
+    TabBase::insertMe();
+
+    // Count number of new games
+    const std::vector<int> &base = lister.getBaseList();
+    newGames = 0;
+    for(int i=0; i<base.size(); i++)
+      if(data.arr[base[i]].isNew)
+        newGames++;
+
+    wxString name = tabName + wxString::Format(wxT(" (%d)"), newGames);
+    book->SetPageText(tabNum, name);
   }
 };
 
@@ -1185,12 +1182,11 @@ struct NewGameListTab : ListTabNonEmpty
 struct FreewareListTab : ListTab
 {
   FreewareListTab(wxNotebook *parent, StatusNotify *s)
-    : ListTab(parent, wxT("Browse"), ListKeeper::SL_FREEWARE, s, new GameSortOptions)
+    : ListTab(parent, wxT("Browse"), ListKeeper::SL_FREEWARE, s)
   {
-    list->addColumn(wxT("Name"), 300, new TitleCol);
-    list->addColumn(wxT("Rating"), 70, new RatingCol);
-    if(conf.debug)
-      list->addColumn(wxT("Downloads"), 70, new DownloadsCol);
+    list->addColumn(wxT("Name"), 310, new TitleCol);
+    list->addColumn(wxT("Rating"), 85, new RatingCol);
+    list->addColumn(wxT("Downloads"), 75, new DownloadsCol);
 
     lister.sortRating();
     listHasChanged();
@@ -1207,13 +1203,11 @@ struct FreewareListTab : ListTab
 struct DemoListTab : ListTabNonEmpty
 {
   DemoListTab(wxNotebook *parent, StatusNotify *s)
-    : ListTabNonEmpty(parent, wxT("Demos"), ListKeeper::SL_DEMOS, s, new GameSortOptions)
+    : ListTabNonEmpty(parent, wxT("Demos"), ListKeeper::SL_DEMOS, s)
   {
-    list->addColumn(wxT("Name"), 300, new TitleCol);
-    list->addColumn(wxT("Rating"), 70, new RatingCol);
-    if(conf.debug)
-      list->addColumn(wxT("Downloads"), 70, new DownloadsCol);
-    //list->addColumn(wxT("Price"), 70, new PriceCol);
+    list->addColumn(wxT("Name"), 310, new TitleCol);
+    list->addColumn(wxT("Rating"), 85, new RatingCol);
+    list->addColumn(wxT("Downloads"), 75, new DownloadsCol);
 
     lister.sortRating();
     listHasChanged();
@@ -1244,6 +1238,7 @@ struct InstalledListTab : ListTab
 
 #define myID_MENU_REFRESH 30
 #define myID_MENU_REFRESH_TOTAL 20031
+#define myID_MENU_SHOW_VOTES 20110
 #define myID_GOLEFT 31
 #define myID_GORIGHT 32
 #define myID_BOOK 33
@@ -1277,6 +1272,9 @@ public:
     wxMenu *menuList = new wxMenu;
     menuList->Append(myID_MENU_REFRESH, wxT("&Reload List"));
     //menuList->Append(myID_MENU_REFRESH_TOTAL, wxT("Reload E&verything"));
+    menuList->AppendCheckItem(myID_MENU_SHOW_VOTES, wxT("Show &Vote Count"),
+                              wxT("If checked will display the number of votes next to the rating in the game lists"));
+    menuList->Check(myID_MENU_SHOW_VOTES, conf.voteCount);
 
     wxMenuBar *menuBar = new wxMenuBar;
     menuBar->Append(menuFile, _("&App"));
@@ -1328,6 +1326,8 @@ public:
             wxCommandEventHandler(MyFrame::onExit));
     Connect(myID_MENU_REFRESH, wxEVT_COMMAND_MENU_SELECTED,
             wxCommandEventHandler(MyFrame::onRefresh));
+    Connect(myID_MENU_SHOW_VOTES, wxEVT_COMMAND_MENU_SELECTED,
+            wxCommandEventHandler(MyFrame::onShowVotes));
     Connect(myID_MENU_REFRESH_TOTAL, wxEVT_COMMAND_MENU_SELECTED,
             wxCommandEventHandler(MyFrame::onRefresh));
 
@@ -1336,8 +1336,8 @@ public:
     Connect(myID_GORIGHT, wxEVT_COMMAND_BUTTON_CLICKED,
             wxCommandEventHandler(MyFrame::onLeftRight));
 
-    setTabFocus();
     setupTabs();
+    setTabFocus();
   }
 
   TabBase *getTab(int i)
@@ -1389,7 +1389,7 @@ public:
         // No previously selected tab available.
 
         // Start by selecting the 'new' tab, if applicable
-        if(newTab->lister.baseSize() != 0)
+        if(newTab->newGames != 0)
           newTab->selectMe();
 
         // If not, check if there are installed games, and use that as
@@ -1431,6 +1431,24 @@ public:
   {
     installedTab->selectMe();
     setTabFocus();
+  }
+
+  /* Called on "soft" refreshes that only requires the lists and
+     displays to be updated; no data needs to be loaded or
+     recalculated.
+  */
+  void softRefresh()
+  {
+    newTab->listHasChanged(true);
+    freewareTab->listHasChanged(true);
+    demoTab->listHasChanged(true);
+    installedTab->listHasChanged(true);
+  }
+
+  void onShowVotes(wxCommandEvent &event)
+  {
+    conf.setVoteCount(event.IsChecked());
+    softRefresh();
   }
 
   void onRefresh(wxCommandEvent &event)
@@ -1544,7 +1562,6 @@ public:
           }
 
         updateData(conf.updateList || conf.updateCache);
-        //tig_reader.addTests(data);
         wxInitAllImageHandlers();
 
         MyFrame *frame = new MyFrame(wxT("Tiggit - The Indie Game Installer"),

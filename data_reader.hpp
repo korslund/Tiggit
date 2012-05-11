@@ -118,30 +118,6 @@ struct TigListReader
     return decodeTigFile(tigf, data);
   }
 
-  // Add some test data to the list
-  void addTests(DataList &data)
-  {
-    // Get and parse tigfile
-    DataList::TigInfo ti;
-
-    ti.title = "Test Title";
-    ti.desc = "Test description.";
-    ti.homepage = "http://tiggit.net/";
-    ti.buypage = "http://tiggit.net/blog/";
-    ti.isDemo = false;
-    ti.hasPaypal = true;
-
-    data.add("test1", "test1", "Test 1", "", 0, false, ti, 1.2, 11, 31);
-    data.add("test2", "test2", "Test 2", "", 0, true, ti, 3.9, 7, 19);
-
-    ti.isDemo = true;
-
-    ti.price = 3.99;
-    data.add("test3", "test3", "Test 3", "", 0, false, ti, 4.1, 193, 3431);
-    ti.price = 29.99;
-    data.add("test4", "test4", "Test 4", "", 0, true, ti, 0.9, 93, 1931);
-  }
-
   void loadData(const std::string &file, DataList &data)
   {
     using namespace Json;

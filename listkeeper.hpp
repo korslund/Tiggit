@@ -21,15 +21,18 @@ class ListKeeper
   // constructor, and cannot be changed later.
   int selection;
 
-  // Items from the base selected after searching.
+  // Items from the base selected after searching. After search
+  // selection, this list is also sorted in-place according to our
+  // current sort configuration.
   std::vector<int> searched;
 
   bool isSearched;
   bool isSorted;
 
   /* 0 - title
-     1 - date
+     1 - date (newst to oldest)
      2 - rating, then title
+     3 - downloads
    */
   int sortBy;
   bool reverse;
@@ -98,12 +101,20 @@ class ListKeeper
     }
   };
 
-  // Not in use yet!
   struct DownloadSort : SortBase
   {
     DownloadSort(DataList &d) : SortBase(d) {}
     bool isLess(DataList::Entry &a, DataList::Entry &b)
     {
+      // If counts equal, sort by rating (which also automatically
+      // sorts by name if neither are rated)
+      if(a.dlCount == b.dlCount)
+        {
+          RateSort rs(data);
+          return rs.isLess(a,b);
+        }
+
+      // Highest dl count first
       return a.dlCount > b.dlCount;
     }
   };
@@ -123,6 +134,7 @@ class ListKeeper
     DateSort(DataList &d) : SortBase(d) {}
     bool isLess(DataList::Entry &a, DataList::Entry &b)
     {
+      // Newest first
       return a.add_time > b.add_time;
     }
   };
@@ -166,14 +178,14 @@ class ListKeeper
     if(!isSorted)
       {
         // Apply current sorting
-        if(sortBy == 0)
+        if(sortBy == 0) // TITLE
           {
             if(reverse)
               sort(searched.rbegin(), searched.rend(), TitleSort(data));
             else
               sort(searched.begin(), searched.end(), TitleSort(data));
           }
-        else if(sortBy == 1)
+        else if(sortBy == 1) // DATE
           {
             // Some repeated code, thanks to C++ actually being quite a
             // sucky language.
@@ -182,12 +194,19 @@ class ListKeeper
             else
               sort(searched.begin(), searched.end(), DateSort(data));
           }
-        else if(sortBy == 2)
+        else if(sortBy == 2) // RATING
           {
             if(reverse)
               sort(searched.rbegin(), searched.rend(), RateSort(data));
             else
               sort(searched.begin(), searched.end(), RateSort(data));
+          }
+        else if(sortBy == 3) // DOWNLOADS
+          {
+            if(reverse)
+              sort(searched.rbegin(), searched.rend(), DownloadSort(data));
+            else
+              sort(searched.begin(), searched.end(), DownloadSort(data));
           }
 
         isSorted = true;
@@ -228,6 +247,7 @@ public:
   void sortTitle() { setSort(0); }
   void sortDate() { setSort(1); }
   void sortRating() { setSort(2); }
+  void sortDownloads() { setSort(3); }
 
   void setSubSelection(const std::vector<int> &sel)
   {
