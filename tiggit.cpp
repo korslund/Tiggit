@@ -120,6 +120,15 @@ void updateData(bool download)
 struct ColumnHandler
 {
   virtual wxString getText(GameInfo &e) = 0;
+  virtual bool doSort(ListKeeper &lst) = 0;
+
+  void sort(ListKeeper &lst)
+  {
+    if(doSort(lst))
+      lst.flipReverse();
+    else
+      lst.setReverse(false);
+  }
 };
 
 class MyList : public wxListCtrl
@@ -164,6 +173,24 @@ public:
     wxBitmap bmp(img);
     images.Add(bmp);
     */
+
+    Connect(wxEVT_COMMAND_LIST_COL_CLICK,
+            wxListEventHandler(MyList::onHeaderClick));
+  }
+
+  // Handle column header clicks
+  void onHeaderClick(wxListEvent& event)
+  {
+    int col = event.GetColumn();
+
+    if(col < 0 || col >= colHands.size())
+      return;
+
+    // Let the column handler sort our list for us
+    colHands[col]->sort(lister);
+
+    // Refresh. Does not seem to be needed on Linux/GTK.
+    update();
   }
 
   void addColumn(const wxString &name, int width, ColumnHandler *ch)
@@ -274,12 +301,19 @@ public:
 #define myID_REFRESH_ITEM 20012
 #define myID_TAGS 20020
 
+#define myID_COL_TITLE 20051
+#define myID_COL_STATUS 20052
+#define myID_COL_DOWNLOADS 20053
+#define myID_COL_RATING 20054
+#define myID_COL_DATE 20055
+
 struct TitleCol : ColumnHandler
 {
   bool addStatus;
 
   TitleCol(bool as = false) : addStatus(as) {}
 
+  bool doSort(ListKeeper &lst) { return lst.sortTitle(); }
   wxString getText(GameInfo &e)
   {
     if(addStatus)
@@ -296,6 +330,7 @@ struct TitleCol : ColumnHandler
 
 struct AddDateCol : ColumnHandler
 {
+  bool doSort(ListKeeper &lst) { return lst.sortDate(); }
   wxString getText(GameInfo &e)
   {
     return e.timeString;
@@ -304,6 +339,7 @@ struct AddDateCol : ColumnHandler
 
 struct TypeCol : ColumnHandler
 {
+  bool doSort(ListKeeper &lst) { return false; }
   wxString getText(GameInfo &e)
   {
     if(e.entry.tigInfo.isDemo)
@@ -314,6 +350,7 @@ struct TypeCol : ColumnHandler
 
 struct RatingCol : ColumnHandler
 {
+  bool doSort(ListKeeper &lst) { return lst.sortRating(); }
   wxString getText(GameInfo &e)
   {
     if(conf.voteCount)
@@ -325,6 +362,7 @@ struct RatingCol : ColumnHandler
 
 struct DownloadsCol : ColumnHandler
 {
+  bool doSort(ListKeeper &lst) { return lst.sortDownloads(); }
   wxString getText(GameInfo &e)
   {
     return e.dlCount;
@@ -333,6 +371,7 @@ struct DownloadsCol : ColumnHandler
 
 struct PriceCol : ColumnHandler
 {
+  bool doSort(ListKeeper &lst) { return false; }
   wxString getText(GameInfo &e)
   {
     return e.price;
@@ -343,6 +382,7 @@ struct StatusCol : ColumnHandler
 {
   wxString textNotInst, textReady;
 
+  bool doSort(ListKeeper &lst) { return false; }
   StatusCol()
   {
     textNotInst = wxT("Not installed");
@@ -1238,8 +1278,8 @@ struct FreewareListTab : ListTab
   FreewareListTab(wxNotebook *parent, StatusNotify *s)
     : ListTab(parent, wxT("Browse"), ListKeeper::SL_FREEWARE, s)
   {
-    list->addColumn(wxT("Name"), 300, new TitleCol(true));
-    list->addColumn(wxT("Rating"), 90, new RatingCol);
+    list->addColumn(wxT("Name"), 310, new TitleCol(true));
+    list->addColumn(wxT("Rating"), 95, new RatingCol);
     list->addColumn(wxT("Downloads"), 75, new DownloadsCol);
 
     list->markInstalled = true;
@@ -1261,8 +1301,8 @@ struct DemoListTab : ListTabNonEmpty
   DemoListTab(wxNotebook *parent, StatusNotify *s)
     : ListTabNonEmpty(parent, wxT("Demos"), ListKeeper::SL_DEMOS, s)
   {
-    list->addColumn(wxT("Name"), 300, new TitleCol(true));
-    list->addColumn(wxT("Rating"), 90, new RatingCol);
+    list->addColumn(wxT("Name"), 310, new TitleCol(true));
+    list->addColumn(wxT("Rating"), 95, new RatingCol);
     list->addColumn(wxT("Downloads"), 75, new DownloadsCol);
 
     list->markInstalled = true;
@@ -1277,7 +1317,7 @@ struct InstalledListTab : ListTab
   InstalledListTab(wxNotebook *parent, StatusNotify *s)
     : ListTab(parent, wxT("Installed"), ListKeeper::SL_INSTALL, s)
   {
-    list->addColumn(wxT("Name"), 300, new TitleCol);
+    list->addColumn(wxT("Name"), 310, new TitleCol);
     list->addColumn(wxT("Status"), 170, new StatusCol);
 
     // Add delete = 2nd button accelerator

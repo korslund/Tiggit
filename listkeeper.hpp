@@ -215,10 +215,15 @@ class ListKeeper
     assert(isSorted && isSearched);
   }
 
-  void setSort(int type)
+  bool setSort(int type)
   {
+    if(type == sortBy)
+      return true;
+
     sortBy = type;
     isSorted = false;
+
+    return false;
   }
 
 public:
@@ -244,10 +249,12 @@ public:
       reverse(false), data(dt)
   { reset(); }
 
-  void sortTitle() { setSort(0); }
-  void sortDate() { setSort(1); }
-  void sortRating() { setSort(2); }
-  void sortDownloads() { setSort(3); }
+  // Set sort mode. All return true if this was already the selected
+  // sort mode.
+  bool sortTitle() { return setSort(0); }
+  bool sortDate() { return setSort(1); }
+  bool sortRating() { return setSort(2); }
+  bool sortDownloads() { return setSort(3); }
 
   void setSubSelection(const std::vector<int> &sel)
   {
@@ -276,6 +283,12 @@ public:
   void setReverse(bool rev)
   {
     reverse = rev;
+    isSorted = false;
+  }
+
+  void flipReverse()
+  {
+    reverse = !reverse;
     isSorted = false;
   }
 
