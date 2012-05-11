@@ -124,12 +124,9 @@ struct ColumnHandler
 
 class MyList : public wxListCtrl
 {
-  wxListItemAttr green, orange;
+  wxListItemAttr orange, gray, bold;
   wxImageList images;
   ListKeeper &lister;
-
-  // This is sort of hacked-on but it works
-  wxListItemAttr newStyle;
 
   std::vector<ColumnHandler*> colHands;
 
@@ -137,23 +134,26 @@ class MyList : public wxListCtrl
   int colNum;
 
 public:
-  bool markNew;
+  bool markNew, markInstalled;
 
   MyList(wxWindow *parent, int ID, ListKeeper &lst)
     : wxListCtrl(parent, ID, wxDefaultPosition, wxDefaultSize,
                  wxBORDER_SUNKEN | wxLC_REPORT | wxLC_VIRTUAL | wxLC_SINGLE_SEL),
-      lister(lst), colNum(0), markNew(false)
+      lister(lst), colNum(0), markNew(false), markInstalled(false)
   {
-    green.SetBackgroundColour(wxColour(180,255,180));
-    green.SetTextColour(wxColour(0,0,0));
-
     orange.SetBackgroundColour(wxColour(255,240,180));
     orange.SetTextColour(wxColour(0,0,0));
 
     // Mark new games with bold font
-    wxFont fnt = newStyle.GetFont();
+    wxFont fnt = bold.GetFont();
     fnt.SetWeight(wxFONTWEIGHT_BOLD);
-    newStyle.SetFont(fnt);
+    bold.SetFont(fnt);
+
+    // Mark installed / working games as gray in the main lists
+    fnt = gray.GetFont();
+    fnt.SetStyle(wxFONTSTYLE_ITALIC);
+    gray.SetFont(fnt);
+    gray.SetTextColour(wxColour(128,128,128));
 
     /* For later. Works, but doesn't look good.
     images.Create(80,50,false);
@@ -214,12 +214,19 @@ public:
 
     if(markNew)
       {
+        if(!g.isNone())
+          return (wxListItemAttr*)&gray;
         if(g.entry.isNew)
-          return (wxListItemAttr*)&newStyle;
+          return (wxListItemAttr*)&bold;
         return NULL;
       }
 
     if(g.isNone()) return NULL;
+
+    if(markInstalled)
+      // Gray out installed/installing games in this list
+      return (wxListItemAttr*)&gray;
+
     if(g.isInstalled()) return NULL;
     return (wxListItemAttr*)&orange;
   }
@@ -269,8 +276,20 @@ public:
 
 struct TitleCol : ColumnHandler
 {
+  bool addStatus;
+
+  TitleCol(bool as = false) : addStatus(as) {}
+
   wxString getText(GameInfo &e)
   {
+    if(addStatus)
+      {
+        if(e.isInstalled())
+          return e.name + wxT(" [installed]");
+        else if(e.isWorking())
+          return e.name + wxT(" [installing]");
+      }
+
     return e.name;
   }
 };
@@ -1172,7 +1191,7 @@ struct NewGameListTab : ListTab
     : ListTab(parent, wxT("Latest"), ListKeeper::SL_ALL, s),
       newGames(0)
   {
-    list->addColumn(wxT("Name"), 370, new TitleCol);
+    list->addColumn(wxT("Name"), 370, new TitleCol(true));
     list->addColumn(wxT("Added"), 120, new AddDateCol);
     //list->addColumn(wxT("Type"), 67, new TypeCol);
 
@@ -1207,9 +1226,11 @@ struct FreewareListTab : ListTab
   FreewareListTab(wxNotebook *parent, StatusNotify *s)
     : ListTab(parent, wxT("Browse"), ListKeeper::SL_FREEWARE, s)
   {
-    list->addColumn(wxT("Name"), 300, new TitleCol);
+    list->addColumn(wxT("Name"), 300, new TitleCol(true));
     list->addColumn(wxT("Rating"), 90, new RatingCol);
     list->addColumn(wxT("Downloads"), 75, new DownloadsCol);
+
+    list->markInstalled = true;
 
     lister.sortRating();
     listHasChanged();
@@ -1228,9 +1249,11 @@ struct DemoListTab : ListTabNonEmpty
   DemoListTab(wxNotebook *parent, StatusNotify *s)
     : ListTabNonEmpty(parent, wxT("Demos"), ListKeeper::SL_DEMOS, s)
   {
-    list->addColumn(wxT("Name"), 300, new TitleCol);
+    list->addColumn(wxT("Name"), 300, new TitleCol(true));
     list->addColumn(wxT("Rating"), 90, new RatingCol);
     list->addColumn(wxT("Downloads"), 75, new DownloadsCol);
+
+    list->markInstalled = true;
 
     lister.sortRating();
     listHasChanged();
@@ -1458,8 +1481,11 @@ public:
   // virtual function from StatusNotify.
   void switchToInstalled()
   {
+    // DISABLED
+    /*
     installedTab->selectMe();
     setTabFocus();
+    */
   }
 
   /* Called on "soft" refreshes that only requires the lists and

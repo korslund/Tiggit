@@ -334,9 +334,13 @@ public:
                   keep = true;
               }
 
-            // Installed games may not be listed anywhere else, so
-            // skip this game.
-            else if(g.isInstalled() || g.isWorking()) continue;
+            /* Installed games may not be listed anywhere else, so
+               skip this game.
+
+               UPDATE: Disabled, we now gray these out instead of
+               removing them. We could make this configurable.
+            */
+            //else if(g.isInstalled() || g.isWorking()) continue;
 
             // Insert into each tab according to their own criteria
             if(selection == SL_NEW && e.isNew ||
