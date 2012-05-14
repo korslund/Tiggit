@@ -28,6 +28,7 @@
 #include "tag_sorter.hpp"
 #include "tabbase.hpp"
 #include "newstab.hpp"
+#include "adpicker.hpp"
 
 using namespace std;
 
@@ -309,6 +310,8 @@ public:
 #define myID_COL_RATING 20054
 #define myID_COL_DATE 20055
 
+#define myID_AD_IMG 20065
+
 struct TitleCol : ColumnHandler
 {
   bool addStatus;
@@ -526,14 +529,26 @@ struct ListTab : TabBase, ScreenshotCallback
     wxBoxSizer *leftPane = new wxBoxSizer(wxVERTICAL);
     leftPane->Add(tags, 1, wxGROW);
 
+    if(conf.debug)
+      {
+        string imgFile = adPicker.getImage();
+
+        if(imgFile != "")
+          {
+            ad_img = new ImageViewer(this, myID_AD_IMG, wxDefaultPosition,
+                                     wxSize(125,100));
+            leftPane->Add(new wxStaticText(this, wxID_ANY, wxT("Sponsor:")), 0, wxLEFT, 5);
+            leftPane->Add(ad_img, 0, wxLEFT | wxBOTTOM, 4);
+
+            ad_img->loadImage(imgFile);
+
+            ad_img->Connect(myID_AD_IMG, wxEVT_LEFT_DOWN,
+                            wxMouseEventHandler(ListTab::onAdClick));
+          }
+      }
     /*
-    ad_img = new ImageViewer(this, myID_SCREENSHOT, wxDefaultPosition,
-                             wxSize(100,50));
-    leftPane->Add(new wxStaticText(this, wxID_ANY, wxT("Sponsor:")));
-    leftPane->Add(ad_img);
     wxBoxSizer *bcRight = new wxBoxSizer(wxVERTICAL);
     bottomCenter->Add(bcRight, 0, wxTOP, 5);
-
     bcRight->Add(new wxStaticText(this, wxID_ANY, wxT("Do you like Tiggit?")), 0, wxALIGN_RIGHT | wxBOTTOM, 5);
     bcRight->Add(new wxButton(this, wxID_ANY, wxT("Help Us Stay Awesome!")), 0, wxALIGN_RIGHT | wxLEFT, 56);
     //*/
@@ -589,6 +604,11 @@ struct ListTab : TabBase, ScreenshotCallback
 
     list->update();
     takeFocus();
+  }
+
+  void onAdClick(wxMouseEvent &event)
+  {
+    wxLaunchDefaultBrowser(wxString(adPicker.getUrl().c_str(), wxConvUTF8));
   }
 
   void createTagList()
@@ -1385,8 +1405,10 @@ public:
     menuOpts->Check(myID_MENU_SHOW_VOTES, conf.voteCount);
     menuOpts->Check(myID_MENU_SWITCH_TABS, conf.switchTabs);
 
+    /*
     if(conf.debug)
       menuOpts->Append(myID_DEBUG_FUNCTION, wxT("Run Debug Function"));
+    */
 
     wxMenuBar *menuBar = new wxMenuBar;
     menuBar->Append(menuFile, _("&App"));
@@ -1704,6 +1726,8 @@ public:
 
         updateData(conf.updateList || conf.updateCache);
         wxInitAllImageHandlers();
+
+        adPicker.setup();
 
         MyFrame *frame = new MyFrame(wxT("Tiggit - The Indie Game Installer"),
                                      version);
