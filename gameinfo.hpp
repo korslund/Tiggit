@@ -279,51 +279,29 @@ struct GameInfo
 
     time_t diff = now-when;
 
-    diff /= 60;
-
     wxString res;
 
-    if(diff < 60)
+    int times[6] = {60,60,24,7,4,12};
+    wxString names[6] = {wxT("second"),wxT("minute"),wxT("hour"),wxT("day"),
+                         wxT("week"),wxT("month")};
+    for(int i=0;i<6;i++)
       {
-        res = wxString::Format(wxT("%d minute"), diff);
-        if(diff > 1) res += wxT("s");
-      }
-
-    diff /= 60;
-    if(res.IsEmpty() && diff < 24)
-      {
-        res = wxString::Format(wxT("%d hour"), diff);
-        if(diff > 1) res += wxT("s");
-      }
-
-    diff /= 24;
-    if(res.IsEmpty() && diff < 7)
-      {
-        res = wxString::Format(wxT("%d day"), diff);
-        if(diff > 1) res += wxT("s");
-      }
-
-    diff /= 7;
-    if(res.IsEmpty() && diff < 5)
-      {
-        res = wxString::Format(wxT("%d week"), diff);
-        if(diff > 1) res += wxT("s");
+        if(diff < times[i])
+          {
+            res = wxString::Format(wxT("%d ") + names[i], diff);
+            if(diff > 1) res += wxT("s");
+            res += wxT(" ago");
+            break;
+          }
+        diff /= times[i];
       }
 
     if(!res.IsEmpty())
-      {
-        res += wxT(" ago");
-        return res;
-      }
+      return res;
 
-    // Anything over 4 weeks, use dates instead
+    // Use dates instead
     char buf[50];
-    diff /= 4;
-    if(diff <= 8) // 8 months or less
-      strftime(buf,50, "%b %e", gmtime(&when));
-    else
-      strftime(buf,50, "%Y-%m-%d", gmtime(&when));
-
+    strftime(buf,50, "%Y-%m-%d", gmtime(&when));
     return wxString(buf, wxConvUTF8);
   }
 

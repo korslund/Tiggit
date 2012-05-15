@@ -35,11 +35,14 @@ struct Config
   // Switch to "installed" tab when installing a new game
   bool switchTabs;
 
+  bool showPromo;
+
   int64_t lastTime;
 
   Config() : updateList(false), updateTigs(false), updateCache(false),
              first_time(false), debug(false), seen_demo_msg(false),
-             voteCount(false), lastTime(0x7fffffffffff) {}
+             voteCount(false), showPromo(false),
+             lastTime(0x7fffffffffff) {}
 
   void fail(const std::string &msg)
   {
@@ -138,6 +141,8 @@ struct Config
                   updateCache = true;
 
                 if(lastTime < 0) lastTime = 0;
+
+                if(debug) showPromo = true;
               }
             catch(...)
               {

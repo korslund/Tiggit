@@ -18,8 +18,13 @@ struct AdPicker
 
     try
       {
-        Value root = readJson(get.getTo("http://tiggit.net/client/promo.json",
-                                        "promo.json"));
+        path pf = get.getPath("promo.json");
+
+        if(!exists(pf) || difftime(time(0),last_write_time(pf)) > 60*60*24)
+          pf = get.getTo("http://tiggit.net/client/promo.json",
+                         "promo.json");
+
+        Value root = readJson(pf.string());
 
         vector<int> choices;
 
@@ -35,14 +40,15 @@ struct AdPicker
 
         srand(time(NULL));
         int ch = rand() % choices.size();
-
         Value v = root[choices[ch]];
-
         code = v["code"].asString();
 
-        // Next, dl the image if we don't already have it.
-        imgFile = get.getTo("http://tiggit.net/client/promo/" + code + ".png",
-                            "cache/ads/" + code);
+        imgFile = get.getPath("cache/ads/" + code);
+
+        // Dl the image if we don't already have it.
+        if(!exists(imgFile))
+          imgFile = get.getTo("http://tiggit.net/client/promo/" + code + ".png",
+                              "cache/ads/" + code);
       }
     catch(...)
       {

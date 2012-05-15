@@ -529,7 +529,7 @@ struct ListTab : TabBase, ScreenshotCallback
     wxBoxSizer *leftPane = new wxBoxSizer(wxVERTICAL);
     leftPane->Add(tags, 1, wxGROW);
 
-    if(conf.debug)
+    if(conf.showPromo)
       {
         string imgFile = adPicker.getImage();
 
@@ -1688,7 +1688,7 @@ class MyApp : public wxApp
 public:
   virtual bool OnInit()
   {
-    if (!wxApp::OnInit())
+    if(!wxApp::OnInit())
       return false;
 
     SetAppName(wxT("tiggit"));
@@ -1714,10 +1714,7 @@ public:
         auth.load();
         ratings.read();
 
-        // Download cached data if this is the first time we run. This
-        // is much faster and more server-friendly than spawning a
-        // gazillion connections to get all the tigfiles and images
-        // individually.
+        // Download cached data if this is the first time we run.
         if(conf.updateCache)
           {
             CacheFetcher cf(this);
@@ -1727,7 +1724,8 @@ public:
         updateData(conf.updateList || conf.updateCache);
         wxInitAllImageHandlers();
 
-        adPicker.setup();
+        if(conf.showPromo)
+          adPicker.setup();
 
         MyFrame *frame = new MyFrame(wxT("Tiggit - The Indie Game Installer"),
                                      version);
