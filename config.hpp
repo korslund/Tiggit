@@ -23,9 +23,6 @@ struct Config
   // Set to true the first time we run only
   bool first_time;
 
-  // Show debug / untested data
-  bool debug;
-
   // True if the user has seen the 'demo' tab message.
   bool seen_demo_msg;
 
@@ -35,13 +32,13 @@ struct Config
   // Switch to "installed" tab when installing a new game
   bool switchTabs;
 
-  bool showPromo;
+  bool showPromo, offline;
 
   int64_t lastTime;
 
   Config() : updateList(false), updateTigs(false), updateCache(false),
-             first_time(false), debug(false), seen_demo_msg(false),
-             voteCount(false), showPromo(false),
+             first_time(false), seen_demo_msg(false), voteCount(false),
+             showPromo(false), offline(false),
              lastTime(0x7fffffffffff) {}
 
   void fail(const std::string &msg)
@@ -131,7 +128,6 @@ struct Config
                 //lastTime = root["last_time"].asInt64();
                 lastTime = root["last_time"].asInt();
                 seen_demo_msg = root["seen_demo_msg"].asBool();
-                debug = root["debug"].asBool();
                 voteCount = root["vote_count"].asBool();
                 switchTabs = root["switch_tabs"].asBool();
                 gamedir = root["gamedir"].asString();
@@ -141,8 +137,6 @@ struct Config
                   updateCache = true;
 
                 if(lastTime < 0) lastTime = 0;
-
-                if(debug) showPromo = true;
               }
             catch(...)
               {
@@ -172,7 +166,6 @@ struct Config
     root["last_time"] = (int)lastTime;
     root["seen_demo_msg"] = seen_demo_msg;
     root["cache_version"] = 1;
-    root["debug"] = debug;
     root["vote_count"] = voteCount;
     root["switch_tabs"] = switchTabs;
     root["gamedir"] = gamedir;

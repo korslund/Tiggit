@@ -44,11 +44,11 @@ struct Updater : ProgressHolder
 {
   // Current program version.
   std::string version;
-
+  bool offline;
   FileGetter gett;
 
   Updater(wxApp *_app)
-    : ProgressHolder(_app), version("unknown")
+    : ProgressHolder(_app), version("unknown"), offline(false)
   {}
 
   // Check if a given version is current. Returns true if no update is
@@ -57,15 +57,57 @@ struct Updater : ProgressHolder
                     DataList::TigInfo &ti,
                     const std::string &ver)
   {
-    setMsg("Checking for updates");
-    wxBusyCursor busy;
+    setMsg("Checking for updates\n\nPress 'Cancel' to run Tiggit in offline mode.");
+    std::string file = gett.tmp->get("ver.tmp");
+    DownloadJob getter(url, file);
+    getter.run();
+
+    // Poll-loop until it's done
+    while(true)
+      {
+        yield();
+        wxMilliSleep(40);
+
+        bool res;
+        if(getter.total != 0)
+          {
+            // Calculate progress
+            int prog = (int)(getter.current*100.0/getter.total);
+            // Avoid auto-closing the window
+            if(prog >= 100) prog=99;
+            res = update(prog);
+          }
+        else
+          res = pulse();
+
+        // Did the user click 'Cancel'?
+        if(!res)
+          {
+            // Abort download thread
+            getter.abort();
+
+            // Notify the rest of the app that we are most likely
+            // having connection problems.
+            offline = true;
+          }
+
+        // Did we finish, one way or another?
+        if(getter.isFinished())
+          break;
+      }
+
+    // If something went wrong, just assume there is nothing to
+    // update.
+    if(getter.isNonSuccess())
+      return true;
+
+    // Offline mode will also trigger isNonSuccess(), and should never
+    // get here.
+    assert(!offline);
 
     try
       {
-        // Fetch the latest client information
-        std::string tig = gett.getFile(url);
-
-        if(!TigListReader::decodeTigFile(tig, ti))
+        if(!TigListReader::decodeTigFile(file, ti))
           return true;
       }
     // Ignore errors and just keep existing version
@@ -75,6 +117,7 @@ struct Updater : ProgressHolder
     if(ver == ti.version)
       return true;
 
+    // False means our version is non-current, and we should update.
     return false;
   }
 

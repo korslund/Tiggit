@@ -75,7 +75,7 @@ void updateData(bool download)
     // If the file didn't exist, download it.
     download = true;
 
-  if(download)
+  if(download && !conf.offline)
     {
       try
         {
@@ -99,8 +99,9 @@ void updateData(bool download)
     }
   catch(std::exception &e)
     {
-      // Did we already try downloading?
-      if(download)
+      // Did we already try downloading, or are we running in offline
+      // mode?
+      if(download || conf.offline)
         {
           // Then fail, nothing more to do
           wxString msg(e.what(), wxConvUTF8);
@@ -1410,7 +1411,7 @@ public:
     menuOpts->Check(myID_MENU_SWITCH_TABS, conf.switchTabs);
 
     /*
-    if(conf.debug)
+    if(auth.isAdmin())
       menuOpts->Append(myID_DEBUG_FUNCTION, wxT("Run Debug Function"));
     */
 
@@ -1714,6 +1715,7 @@ public:
             return false;
 
           version = upd.version;
+          conf.offline = upd.offline;
         }
 
         // Then find and load the repository
@@ -1721,8 +1723,11 @@ public:
         auth.load();
         ratings.read();
 
+        if(auth.isAdmin())
+          conf.showPromo = true;
+
         // Download cached data if this is the first time we run.
-        if(conf.updateCache)
+        if(conf.updateCache && !conf.offline)
           {
             CacheFetcher cf(this);
             cf.goDoItAlready();
@@ -1731,7 +1736,7 @@ public:
         updateData(conf.updateList || conf.updateCache);
         wxInitAllImageHandlers();
 
-        if(conf.showPromo)
+        if(conf.showPromo && !conf.offline)
           adPicker.setup();
 
         MyFrame *frame = new MyFrame(wxT("Tiggit - The Indie Game Installer"),
