@@ -414,8 +414,7 @@ struct StatusCol : ColumnHandler
 // it later.
 struct StatusNotify
 {
-  virtual void onDataChanged() = 0;
-  virtual void updateCurrent() = 0;
+  virtual void singleStatusChanged() = 0;
   virtual void switchToInstalled() = 0;
 };
 
@@ -873,7 +872,7 @@ struct ListTab : TabBase, ScreenshotCallback
         int i = e.updateStatus();
 
         if(i>0)
-          statusChanged(false, i == 2);
+          statusChanged(false);
       }
     catch(std::exception &e)
       {
@@ -927,14 +926,10 @@ struct ListTab : TabBase, ScreenshotCallback
      tab. dataChange is true if the lists have changed (meaning we
      have to update all the display lists)
   */
-  void statusChanged(bool newInst=false, bool dataChange=true)
+  void statusChanged(bool newInst=false)
   {
-    // Notify our parent if lists have changed
-    if(dataChange)
-      stat->onDataChanged();
-    else
-      // Just do a single-item update on all lists
-      stat->updateCurrent();
+    // Notify parent that the status of a single item has changed
+    stat->singleStatusChanged();
 
     // Write install status to config file
     jinst.write(data);
@@ -1550,9 +1545,19 @@ public:
     setTabFocus();
   }
 
-  // "Event" created internally when a list element moves from one
-  // list to another. This is called as a virtual function from
-  // StatusNotify.
+  // Called when one item has changed status
+  void singleStatusChanged()
+  {
+    // The install tab's data is status-sensitive, so do a full update
+    installedTab->dataChanged();
+
+    // On the rest, just refresh the view
+    newTab->Refresh();
+    freewareTab->Refresh();
+    demoTab->Refresh();
+  }
+
+  // Update all lists after a data refresh
   void onDataChanged()
   {
     // Notify all tabs that data has changed
