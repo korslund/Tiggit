@@ -133,12 +133,13 @@ class NewsList : public wxListCtrl
 {
   wxListItemAttr unreadStyle, readStyle;
   NewsHolder *news;
+  KeyAccel *keys;
 
 public:
-  NewsList(wxWindow *parent, int ID)
+  NewsList(wxWindow *parent, int ID, KeyAccel *k)
     : wxListCtrl(parent, ID, wxDefaultPosition, wxDefaultSize,
                  wxBORDER_SUNKEN | wxLC_REPORT | wxLC_VIRTUAL | wxLC_SINGLE_SEL),
-      news(NULL)
+      news(NULL), keys(k)
   {
     wxFont fnt = unreadStyle.GetFont();
     fnt.SetWeight(wxFONTWEIGHT_BOLD);
@@ -155,6 +156,15 @@ public:
     col.SetText(wxT("Subject"));
     col.SetWidth(400);
     InsertColumn(1, col);
+
+    Connect(wxEVT_KEY_DOWN,
+            wxKeyEventHandler(NewsList::onKeyDown));
+  }
+
+  void onKeyDown(wxKeyEvent &evt)
+  {
+    assert(keys);
+    keys->onKeyDown(evt);
   }
 
   void setData(NewsHolder &n)
@@ -223,10 +233,10 @@ struct NewsTab : TabBase
   wxTextCtrl *textView;
   NewsHolder data;
 
-  NewsTab(wxNotebook *parent)
+  NewsTab(wxNotebook *parent, KeyAccel *keys)
     : TabBase(parent)
   {
-    list = new NewsList(this, myID_NEWSLIST);
+    list = new NewsList(this, myID_NEWSLIST, keys);
 
     textView = new wxTextCtrl
       (this, myID_NEWSVIEW, wxT(""), wxDefaultPosition, wxDefaultSize,
@@ -353,7 +363,9 @@ struct NewsTab : TabBase
   }
 
   void takeFocus()
-  {}
+  {
+    list->SetFocus();
+  }
 
   void dataChanged() {}
 

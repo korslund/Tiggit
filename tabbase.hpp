@@ -4,6 +4,12 @@
 #include <wx/wx.h>
 #include <wx/notebook.h>
 
+// Used for responding to shared keyboard shortcuts
+struct KeyAccel
+{
+  virtual void onKeyDown(wxKeyEvent &evt) = 0;
+};
+
 struct TabBase : wxPanel
 {
   wxNotebook *book;

@@ -2,7 +2,6 @@
 
 #include <wx/wx.h>
 #include <wx/listctrl.h>
-#include <wx/accel.h>
 #include <wx/imaglist.h>
 #include <wx/notebook.h>
 #include <wx/stdpaths.h>
@@ -143,13 +142,15 @@ class MyList : public wxListCtrl
   // Number of columns
   int colNum;
 
+  KeyAccel *keys;
+
 public:
   bool markNew, markInstalled;
 
-  MyList(wxWindow *parent, int ID, ListKeeper &lst)
+  MyList(wxWindow *parent, int ID, ListKeeper &lst, KeyAccel *k)
     : wxListCtrl(parent, ID, wxDefaultPosition, wxDefaultSize,
                  wxBORDER_SUNKEN | wxLC_REPORT | wxLC_VIRTUAL | wxLC_SINGLE_SEL),
-      lister(lst), colNum(0), markNew(false), markInstalled(false)
+      lister(lst), colNum(0), keys(k), markNew(false), markInstalled(false)
   {
     orange.SetBackgroundColour(wxColour(255,240,180));
     orange.SetTextColour(wxColour(0,0,0));
@@ -177,6 +178,16 @@ public:
 
     Connect(wxEVT_COMMAND_LIST_COL_CLICK,
             wxListEventHandler(MyList::onHeaderClick));
+
+    Connect(wxEVT_KEY_DOWN,
+            wxKeyEventHandler(MyList::onKeyDown));
+  }
+
+  // Filter key clicks
+  void onKeyDown(wxKeyEvent &evt)
+  {
+    assert(keys);
+    keys->onKeyDown(evt);
   }
 
   // Handle column header clicks
@@ -412,13 +423,13 @@ struct StatusCol : ColumnHandler
 // Callback to update all lists when an object moves. I don't like
 // this AT ALL, and it should be done using wx events instead, but fix
 // it later.
-struct StatusNotify
+struct StatusNotify : KeyAccel
 {
   virtual void singleStatusChanged() = 0;
   virtual void switchToInstalled() = 0;
 };
 
-struct ListTab : TabBase, ScreenshotCallback
+struct ListTab : TabBase, ScreenshotCallback, KeyAccel
 {
   wxButton *b1, *b2;//, *supportButton;
   MyList *list;
@@ -441,7 +452,7 @@ struct ListTab : TabBase, ScreenshotCallback
     : TabBase(parent), select(-1), last_launch(0),
       lister(data, listType), tabName(name), stat(s)
   {
-    list = new MyList(this, myID_LIST, lister);
+    list = new MyList(this, myID_LIST, lister, this);
 
     wxBoxSizer *searchBox = new wxBoxSizer(wxHORIZONTAL);
     searchBox->Add(new wxStaticText(this, wxID_ANY, wxT("Search:")), 0);
@@ -561,6 +572,11 @@ struct ListTab : TabBase, ScreenshotCallback
 
     SetSizer(panes);
 
+    /*
+    list->Connect(wxEVT_KEY_DOWN,
+                  wxKeyEventHandler(TabBase::onKeyDown));
+    */
+
     Connect(myID_TEXTVIEW, wxEVT_COMMAND_TEXT_URL,
             wxTextUrlEventHandler(ListTab::onUrlEvent));
 
@@ -603,6 +619,18 @@ struct ListTab : TabBase, ScreenshotCallback
 
     list->update();
     takeFocus();
+  }
+
+  // Filter key clicks from the list view
+  void onKeyDown(wxKeyEvent &evt)
+  {
+    // Convert 'delete' key into button2 (abort or uninstall)
+    if(evt.GetKeyCode() == WXK_DELETE)
+      doAction(select, 2);
+
+    // Anything else is passed on
+    else
+      stat->onKeyDown(evt);
   }
 
   void onAdClick(wxMouseEvent &event)
@@ -945,17 +973,6 @@ struct ListTab : TabBase, ScreenshotCallback
 
     GameInfo &e = GameInfo::conv(lister.get(index));
 
-    // True called as an 'activate' command, meaning that the list
-    // told us the item was activated (it was double clicked or we
-    // pressed 'enter'.)
-    bool activate = false;
-
-    if(b == 3)
-      {
-        activate = true;
-        b = 1;
-      }
-
     if(e.isNone() && b == 1)
       {
         startDownload(index);
@@ -1218,7 +1235,7 @@ struct ListTab : TabBase, ScreenshotCallback
 
   void onListActivate(wxListEvent &event)
   {
-    doAction(event.GetIndex(), 3);
+    doAction(event.GetIndex(), 1);
   }
 
   void dataChanged()
@@ -1336,12 +1353,6 @@ struct InstalledListTab : ListTab
   {
     list->addColumn(wxT("Name"), 310, new TitleCol);
     list->addColumn(wxT("Status"), 170, new StatusCol);
-
-    // Add delete = 2nd button accelerator
-    wxAcceleratorEntry entries[1];
-    entries[0].Set(wxACCEL_NORMAL, WXK_DELETE, myID_BUTTON2);
-    wxAcceleratorTable accel(1, entries);
-    SetAcceleratorTable(accel);
   }
 
   void tick()
@@ -1355,8 +1366,6 @@ struct InstalledListTab : ListTab
 #define myID_MENU_REFRESH_TOTAL 20031
 #define myID_MENU_SHOW_VOTES 20110
 #define myID_MENU_SWITCH_TABS 20111
-#define myID_GOLEFT 31
-#define myID_GORIGHT 32
 #define myID_BOOK 33
 #define myID_DEBUG_FUNCTION 20999
 
@@ -1427,28 +1436,12 @@ public:
     freewareTab = new FreewareListTab(book, this);
     demoTab = new DemoListTab(book, this);
     installedTab = new InstalledListTab(book, this);
-    newsTab = new NewsTab(book);
+    newsTab = new NewsTab(book, this);
 
     wxBoxSizer *mainSizer = new wxBoxSizer(wxVERTICAL);
     mainSizer->Add(book, 1, wxGROW | wxALL, 10);
 
     panel->SetSizer(mainSizer);
-
-    /* Add left/right => control tabs
-
-       This works on Linux but unfortunately not on Windows, and I
-       don't know why.
-     */
-
-    /*
-      DISABLED for now since they messes up the search text box.
-
-    wxAcceleratorEntry entries[2];
-    entries[0].Set(wxACCEL_NORMAL, WXK_LEFT, myID_GOLEFT);
-    entries[1].Set(wxACCEL_NORMAL, WXK_RIGHT, myID_GORIGHT);
-    wxAcceleratorTable accel(2, entries);
-    SetAcceleratorTable(accel);
-    */
 
     Connect(wxID_ABOUT, wxEVT_COMMAND_MENU_SELECTED,
             wxCommandEventHandler(MyFrame::onAbout));
@@ -1465,11 +1458,6 @@ public:
             wxCommandEventHandler(MyFrame::onOption));
     Connect(myID_MENU_SWITCH_TABS, wxEVT_COMMAND_MENU_SELECTED,
             wxCommandEventHandler(MyFrame::onOption));
-
-    Connect(myID_GOLEFT, wxEVT_COMMAND_BUTTON_CLICKED,
-            wxCommandEventHandler(MyFrame::onLeftRight));
-    Connect(myID_GORIGHT, wxEVT_COMMAND_BUTTON_CLICKED,
-            wxCommandEventHandler(MyFrame::onLeftRight));
 
     setupTabs();
     setTabFocus();
@@ -1494,6 +1482,26 @@ public:
     int sel = book->GetSelection();
     if(sel >= 0) return getTab(sel);
     return NULL;
+  }
+
+  // This is passed on from the list controls
+  void onKeyDown(wxKeyEvent &evt)
+  {
+    // Capture left and right arrow keys
+    if(evt.GetKeyCode() == WXK_LEFT)
+      {
+        book->AdvanceSelection(false);
+        setTabFocus();
+      }
+    else if(evt.GetKeyCode() == WXK_RIGHT)
+      {
+        book->AdvanceSelection(true);
+        setTabFocus();
+      }
+
+    // Otherwise, let the list handle the key itself.
+    else
+      evt.Skip();
   }
 
   void setTabFocus()
@@ -1537,12 +1545,6 @@ public:
         else
           freewareTab->selectMe();
       }
-  }
-
-  void onLeftRight(wxCommandEvent &event)
-  {
-    book->AdvanceSelection(event.GetId() == myID_GORIGHT);
-    setTabFocus();
   }
 
   // Called when one item has changed status
