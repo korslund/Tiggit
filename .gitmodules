@@ -1,0 +1,3 @@
+[submodule "libs/mangle"]
+	path = libs/mangle
+	url = git://github.com/korslund/mangle
