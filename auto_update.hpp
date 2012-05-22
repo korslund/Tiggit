@@ -89,6 +89,10 @@ struct Updater : ProgressHolder
             // Notify the rest of the app that we are most likely
             // having connection problems.
             offline = true;
+
+            // Break here, because if the download thread has truly
+            // hanged, the isFinished() state will never be reached.
+            break;
           }
 
         // Did we finish, one way or another?
@@ -96,13 +100,17 @@ struct Updater : ProgressHolder
           break;
       }
 
-    // If something went wrong, just assume there is nothing to
-    // update.
-    if(getter.isNonSuccess())
+    /* If something went wrong, just assume there is nothing to
+       update.
+
+       Due to race conditions, we have to check explicitly for offline
+       mode here as well. It's possible that the user requested this
+       just as the download succeeded. In that case we should honor
+       the users click, regardless of download status.
+    */
+    if(!getter.isSuccess() || offline)
       return true;
 
-    // Offline mode will also trigger isNonSuccess(), and should never
-    // get here.
     assert(!offline);
 
     try

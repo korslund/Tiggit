@@ -77,6 +77,12 @@ struct NewsHolder
     // new data fetching architecture.
     try
       {
+        if(conf.offline)
+          {
+            addItem(0, time(NULL), "Error loading news", "Could not load news in offline mode", true);
+            return;
+          }
+
         Value root = readJson(get.getTo("http://tiggit.net/api/news.json", "news.json"));
 
         if(!root.isObject())
