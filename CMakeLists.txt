@@ -6,7 +6,7 @@ find_package(wxWidgets COMPONENTS core base REQUIRED)
 find_package(CURL REQUIRED)
 find_package(Boost COMPONENTS filesystem system REQUIRED)
 
-include_directories("libs/jsoncpp/include/")
+include_directories("libs/jsoncpp/include/" ${Boost_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS})
 
 set(JS libs/jsoncpp/src)
 set(JSON ${JS}/json_reader.cpp ${JS}/json_writer.cpp ${JS}/json_value.cpp)
