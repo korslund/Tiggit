@@ -31,9 +31,13 @@ int main()
     cout << "Standard path NOT acceptible: ";
   cout << out << (fnd.isWritable(out)?" (ok)":" (not ok)") << endl;
 
-  setTest("/");
-  setTest(out);
   setTest("/blah");
+  setTest(out);
+#ifdef _WIN32
+  setTest("c:\\windows\\system\\");
+#else
+  setTest("/");
+#endif
 
   if(fnd.getStoredPath(out))  
     cout << "Current stored path: " << out << endl;
