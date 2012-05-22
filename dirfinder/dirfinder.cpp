@@ -36,11 +36,14 @@ bool Finder::getStandardPath(std::string &dir)
 
 bool openRegKey(const std::string &vname, const std::string &aname, HKEY &hkey)
 {
-  LPCTSTR sk = ("Software\\" + vname + "\\" + aname).c_str();;
+  std::string where = "Software\\" + vname + "\\" + aname;
+  LPCTSTR sk = where.c_str();
 
   LONG openRes = RegCreateKeyEx(HKEY_CURRENT_USER,
                                 sk,
-                                0,NULL,0,0,NULL,
+                                0,NULL,
+				REG_OPTION_NON_VOLATILE,
+				KEY_ALL_ACCESS,NULL,
                                 &hkey,
                                 NULL);
 
@@ -59,9 +62,9 @@ static bool os_setStoredPath(const std::string &dir,
 
   DWORD dwSize = dir.size();
   if(RegSetValueEx(hkey, dname.c_str(), 0, REG_SZ,
-                   dir.c_str(), dwSize) != ERROR_SUCCESS)
+                   (const BYTE*)dir.c_str(), dwSize) != ERROR_SUCCESS)
     return false;
- 
+
   RegCloseKey(hkey);
   return true;
 }
@@ -72,17 +75,17 @@ static std::string os_getStoredPath(const std::string &vname,
 {
   HKEY hkey;
   if(!openRegKey(vname,aname,hkey))
-    return false;
+    return "";
 
   DWORD dwType = REG_SZ;
   DWORD dwSize = MAX_PATH;
   if(RegQueryValueEx(hkey, dname.c_str(), 0, &dwType, 
-                     pathbuf, &dwSize) != ERROR_SUCCESS)
+                     (BYTE*)pathbuf, &dwSize) != ERROR_SUCCESS)
     return "";
 
   RegCloseKey(hkey);
 
-  return string(pathbuf, dwSize);
+  return std::string(pathbuf);
 }
 
 #else
@@ -169,15 +172,15 @@ bool Finder::isWritable(const std::string &dir)
       // Do write check
       path p = dir;
       p /= "xyz.tmp";
-      const char *file = p.string().c_str();
+      std::string file = p.string();
       {
-        std::ofstream out(file);
+        std::ofstream out(file.c_str());
         if(!out) return false;
         out << "abc";
         if(!out) return false;
       }
       {
-        std::ifstream inp(file);
+        std::ifstream inp(file.c_str());
         if(!inp) return false;
         std::string tmp;
         inp >> tmp;
@@ -188,6 +191,6 @@ bool Finder::isWritable(const std::string &dir)
       remove(p);
     }
   // All errors means the dir is not writable
-  catch(...){ return false; }
+  catch(...) { return false; }
   return true;
 }

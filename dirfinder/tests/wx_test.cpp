@@ -1,4 +1,6 @@
 #include "dirfinder.hpp"
+
+#define wxUSE_UNICODE 1
 #include <wx/stdpaths.h>
 #include <wx/wx.h>
 
