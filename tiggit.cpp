@@ -544,10 +544,10 @@ struct ListTab : TabBase, ScreenshotCallback, KeyAccel
       {
         string imgFile = adPicker.getImage();
 
-        if(imgFile != "")
+        if(imgFile != "" && adPicker.width && adPicker.height)
           {
             ad_img = new ImageViewer(this, myID_AD_IMG, wxDefaultPosition,
-                                     wxSize(125,100));
+                                     wxSize(adPicker.width,adPicker.height));
             leftPane->Add(new wxStaticText(this, wxID_ANY, wxT("Sponsor:")), 0, wxLEFT, 5);
             leftPane->Add(ad_img, 0, wxLEFT | wxBOTTOM, 4);
 
@@ -714,6 +714,11 @@ struct ListTab : TabBase, ScreenshotCallback, KeyAccel
   void insertMe()
   {
     TabBase::insertMe();
+    updateCount();
+  }
+
+  void updateCount()
+  {
     wxString name = tabName + wxString::Format(wxT(" (%d)"), lister.baseSize());
     book->SetPageText(tabNum, name);
   }
@@ -918,8 +923,9 @@ struct ListTab : TabBase, ScreenshotCallback, KeyAccel
     DataList::Entry &e = lister.get(index);
     GameInfo &gi = GameInfo::conv(e);
 
+    // Update the .tig info first, but skip in offline mode.
+    if(!conf.offline)
     {
-      // Update the .tig info first
       DataList::TigInfo ti;
 
       // TODO: In future versions, this will be outsourced to a worker
@@ -1533,7 +1539,7 @@ public:
         // No previously selected tab available.
 
         // Start by selecting the 'new' tab, if applicable
-        if(newTab->newGames != 0)
+        if(newTab->newGames != 0 && false) // DISABLED
           newTab->selectMe();
 
         // If not, check if there are installed games, and use that as
@@ -1553,6 +1559,9 @@ public:
   {
     // The install tab's data is status-sensitive, so do a full update
     installedTab->dataChanged();
+
+    // Also update the tab name count
+    installedTab->updateCount();
 
     // On the rest, just refresh the view
     newTab->Refresh();

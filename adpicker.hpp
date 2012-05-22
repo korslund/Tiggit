@@ -9,6 +9,7 @@
 struct AdPicker
 {
   std::string code, imgFile;
+  int height, width;
 
   void setup()
   {
@@ -42,6 +43,8 @@ struct AdPicker
         int ch = rand() % choices.size();
         Value v = root[choices[ch]];
         code = v["code"].asString();
+        height = v["height"].asInt();
+        width = v["width"].asInt();
 
         imgFile = get.getPath("cache/ads/" + code);
 
