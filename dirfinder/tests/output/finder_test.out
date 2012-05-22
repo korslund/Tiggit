@@ -1,0 +1,6 @@
+Found stored path: /home/mortennk/.tiggit/
+Standard path acceptible: /home/mortennk/.tiggit/
+Attempting to set standard path to '/blah': FAILURE
+Attempting to set standard path to '/home/mortennk/.tiggit/': SUCCESS
+Attempting to set standard path to '/': FAILURE
+Current stored path: /home/mortennk/.tiggit/
