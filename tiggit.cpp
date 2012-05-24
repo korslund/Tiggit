@@ -1038,9 +1038,6 @@ struct ListTab : TabBase, ScreenshotCallback, KeyAccel
             // Program to launch
             boost::filesystem::path program = dir / e.entry.tigInfo.launch;
 
-            if((wxGetOsVersion() & wxOS_WINDOWS) == 0)
-              errorBox(wxT("WARNING: Launching will probably not work on your platform.\n"));
-
             // Change the working directory before running. Since none
             // of our own code uses relative paths, this should not
             // affect our own operation.
@@ -1058,9 +1055,14 @@ struct ListTab : TabBase, ScreenshotCallback, KeyAccel
 
             wxString command = wxString(program.string().c_str(), wxConvUTF8);
 
-            int res = wxExecute(command);
-            if(res == -1)
-              errorBox(wxT("Failed to launch ") + command);
+            if((wxGetOsVersion() & wxOS_WINDOWS) == 0)
+              wxShell(wxT("wine \"") + command + wxT("\""));
+            else
+              {
+                int res = wxExecute(command);
+                if(res == -1)
+                  errorBox(wxT("Failed to launch ") + command);
+              }
 
             // Update the last launch time
             last_launch = now;
