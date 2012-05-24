@@ -28,6 +28,7 @@
 #include "tabbase.hpp"
 #include "newstab.hpp"
 #include "adpicker.hpp"
+#include "dialogs.hpp"
 
 using namespace std;
 
@@ -462,10 +463,6 @@ struct ListTab : TabBase, ScreenshotCallback, KeyAccel
 
     wxBoxSizer *bottomCenter = new wxBoxSizer(wxHORIZONTAL);
 
-    wxBoxSizer *centerPane = new wxBoxSizer(wxVERTICAL);
-    centerPane->Add(list, 1, wxGROW | wxRIGHT | wxBOTTOM, 10);
-    centerPane->Add(bottomCenter, 0, wxRIGHT | wxBOTTOM, 10);
-
     wxBoxSizer *bcLeft = new wxBoxSizer(wxVERTICAL);
     bottomCenter->Add(bcLeft, 1, wxGROW);
 
@@ -529,16 +526,9 @@ struct ListTab : TabBase, ScreenshotCallback, KeyAccel
     rateBar->Add(rateBox, 0, wxRIGHT, 5);
     rateBar->Add(rateText, 0, wxTOP | wxLEFT, 6);
 
-    wxBoxSizer *rightPane = new wxBoxSizer(wxVERTICAL);
-    rightPane->Add(screenshot, 0, wxTOP, 5);
-    rightPane->Add(rateBar);
-    rightPane->Add(textView, 1, wxGROW | wxTOP | wxRIGHT | wxBOTTOM, 7);
-    rightPane->Add(buttonHolder);
-
     tags = new wxListBox(this, myID_TAGS);
 
-    wxBoxSizer *leftPane = new wxBoxSizer(wxVERTICAL);
-    leftPane->Add(tags, 1, wxGROW);
+    wxBoxSizer *bottomLeft = new wxBoxSizer(wxVERTICAL);
 
     if(conf.showPromo)
       {
@@ -548,8 +538,8 @@ struct ListTab : TabBase, ScreenshotCallback, KeyAccel
           {
             ad_img = new ImageViewer(this, myID_AD_IMG, wxDefaultPosition,
                                      wxSize(adPicker.width,adPicker.height));
-            leftPane->Add(new wxStaticText(this, wxID_ANY, wxT("Sponsor:")), 0, wxLEFT, 5);
-            leftPane->Add(ad_img, 0, wxLEFT | wxBOTTOM, 4);
+            bottomLeft->Add(new wxStaticText(this, wxID_ANY, wxT("Sponsor:")), 0, wxLEFT, 5);
+            bottomLeft->Add(ad_img, 0, wxLEFT | wxBOTTOM, 4);
 
             ad_img->loadImage(imgFile);
 
@@ -564,19 +554,49 @@ struct ListTab : TabBase, ScreenshotCallback, KeyAccel
     bcRight->Add(new wxButton(this, wxID_ANY, wxT("Help Us Stay Awesome!")), 0, wxALIGN_RIGHT | wxLEFT, 56);
     //*/
 
-    createTagList();
+    /* Old layout
+    wxBoxSizer *centerPane = new wxBoxSizer(wxVERTICAL);
+    centerPane->Add(list, 1, wxGROW | wxRIGHT | wxBOTTOM, 10);
+    centerPane->Add(bottomCenter, 0, wxRIGHT | wxBOTTOM, 10);
+
+    wxBoxSizer *leftPane = new wxBoxSizer(wxVERTICAL);
+    leftPane->Add(tags, 1, wxGROW);
+    leftPane->Add(bottomLeft, 0);
+
+    wxBoxSizer *rightPane = new wxBoxSizer(wxVERTICAL);
+    rightPane->Add(screenshot, 0, wxTOP, 5);
+    rightPane->Add(rateBar);
+    rightPane->Add(textView, 1, wxGROW | wxTOP | wxRIGHT | wxBOTTOM, 7);
+    rightPane->Add(buttonHolder);
 
     wxBoxSizer *panes = new wxBoxSizer(wxHORIZONTAL);
     panes->Add(leftPane, 30, wxGROW);
     panes->Add(centerPane, 100, wxGROW);
     panes->Add(rightPane, 60, wxGROW);
-
-    SetSizer(panes);
-
-    /*
-    list->Connect(wxEVT_KEY_DOWN,
-                  wxKeyEventHandler(TabBase::onKeyDown));
     */
+
+    wxBoxSizer *rightPane = new wxBoxSizer(wxVERTICAL);
+    rightPane->Add(screenshot, 0, wxTOP, 5);
+    rightPane->Add(rateBar);
+    rightPane->Add(textView, 1, wxGROW | wxTOP | wxRIGHT, 7);
+
+    wxBoxSizer *topPart = new wxBoxSizer(wxHORIZONTAL);
+    topPart->Add(tags, 30, wxGROW);
+    topPart->Add(list, 100, wxGROW | wxRIGHT, 10);
+    topPart->Add(rightPane, 60, wxGROW | wxBOTTOM, 2);
+
+    wxBoxSizer *bottomPart = new wxBoxSizer(wxHORIZONTAL);
+    bottomPart->Add(bottomLeft, 30, wxGROW);
+    bottomPart->Add(bottomCenter, 100, wxGROW | wxTOP, 5);
+    bottomPart->Add(buttonHolder, 60, wxGROW | wxTOP, 5);
+
+    wxBoxSizer *parts = new wxBoxSizer(wxVERTICAL);
+    parts->Add(topPart, 1, wxGROW);
+    parts->Add(bottomPart, 0, wxGROW | wxTOP, 1);
+
+    SetSizer(parts);
+
+    createTagList();
 
     Connect(myID_TEXTVIEW, wxEVT_COMMAND_TEXT_URL,
             wxTextUrlEventHandler(ListTab::onUrlEvent));
@@ -1373,6 +1393,12 @@ struct InstalledListTab : ListTab
 #define myID_MENU_REFRESH_TOTAL 20031
 #define myID_MENU_SHOW_VOTES 20110
 #define myID_MENU_SWITCH_TABS 20111
+
+#define myID_MENU_SETDIR 20120
+#define myID_MENU_IMPORT 20121
+#define myID_MENU_EXPORT 20122
+#define myID_MENU_EXTERNAL 20123
+
 #define myID_BOOK 33
 #define myID_DEBUG_FUNCTION 20999
 
@@ -1402,28 +1428,39 @@ public:
     */
     menuFile->Append(wxID_EXIT, _("E&xit"));
 
+    /*
     wxMenu *menuList = new wxMenu;
     menuList->Append(myID_MENU_REFRESH, wxT("&Reload List"));
     //menuList->Append(myID_MENU_REFRESH_TOTAL, wxT("Reload E&verything"));
+    */
 
     wxMenu *menuOpts = new wxMenu;
+    //menuOpts->Append(myID_MENU_SETDIR, _("Set &Data Directory..."));
     menuOpts->AppendCheckItem(myID_MENU_SHOW_VOTES, wxT("Show &Vote Count"),
                               wxT("If checked will display the number of votes next to the rating in the game lists"));
-    menuOpts->AppendCheckItem(myID_MENU_SWITCH_TABS, wxT("Switch Tabs When Installing"),
+    menuOpts->AppendCheckItem(myID_MENU_SWITCH_TABS, wxT("&Switch Tabs When Installing"),
                               wxT("If checked, focus will switch to the Installed tab when you select a new game"));
 
     // Set current options
     menuOpts->Check(myID_MENU_SHOW_VOTES, conf.voteCount);
     menuOpts->Check(myID_MENU_SWITCH_TABS, conf.switchTabs);
-
     /*
     if(auth.isAdmin())
       menuOpts->Append(myID_DEBUG_FUNCTION, wxT("Run Debug Function"));
     */
 
+    /*
+    wxMenu *menuData = new wxMenu;
+    menuData->Append(myID_MENU_SETDIR, _("Select &Output Directory..."));
+    menuData->Append(myID_MENU_EXPORT, _("&Export Data"));
+    menuData->Append(myID_MENU_IMPORT, _("Add/&Import Data"));
+    menuData->Append(myID_MENU_EXTERNAL, _("External &Games"));
+    */
+
     wxMenuBar *menuBar = new wxMenuBar;
     menuBar->Append(menuFile, _("&App"));
-    menuBar->Append(menuList, _("&List"));
+    //menuBar->Append(menuList, _("&List"));
+    //menuBar->Append(menuData, _("&Data"));
     menuBar->Append(menuOpts, _("&Options"));
 
     SetMenuBar( menuBar );
@@ -1466,8 +1503,54 @@ public:
     Connect(myID_MENU_SWITCH_TABS, wxEVT_COMMAND_MENU_SELECTED,
             wxCommandEventHandler(MyFrame::onOption));
 
+    Connect(myID_MENU_SETDIR, wxEVT_COMMAND_MENU_SELECTED,
+            wxCommandEventHandler(MyFrame::onDataMenu));
+    Connect(myID_MENU_IMPORT, wxEVT_COMMAND_MENU_SELECTED,
+            wxCommandEventHandler(MyFrame::onDataMenu));
+    Connect(myID_MENU_EXPORT, wxEVT_COMMAND_MENU_SELECTED,
+            wxCommandEventHandler(MyFrame::onDataMenu));
+    Connect(myID_MENU_EXTERNAL, wxEVT_COMMAND_MENU_SELECTED,
+            wxCommandEventHandler(MyFrame::onDataMenu));
+
     setupTabs();
     setTabFocus();
+  }
+
+  void onDataMenu(wxCommandEvent &event)
+  {
+    if(event.GetId() == myID_MENU_SETDIR)
+      {
+        OutputDirDialog dlg(this, get.base.string());
+        cout << "SetDir: " << dlg.ok << " " << dlg.move << " "
+             << dlg.changed << " " << dlg.path << endl;
+      }
+    else if(event.GetId() == myID_MENU_IMPORT)
+      {
+        /*
+        ImportDialog dlg(this, get.base.string());
+        cout << "Import: " << dlg.ok << " " << dlg.copy << " "
+             << dlg.source << endl;
+        */
+      }
+    else if(event.GetId() == myID_MENU_EXPORT)
+      {
+        /*
+        vector<string> games;
+        games.push_back("Test1");
+        games.push_back("Test2");
+        ExportDialog dlg(this, games);
+        cout << "Export: " << dlg.ok << " " << dlg.launcher << " "
+             << dlg.selected.size() << " " << dlg.output << endl;
+        */
+      }
+    else if(event.GetId() == myID_MENU_EXTERNAL)
+      {
+        /*
+        AddExternalDialog dlg(this);
+        cout << "External: " << dlg.ok << " " << dlg.name << " "
+             << dlg.exe << endl;
+        */
+      }
   }
 
   TabBase *getTab(int i)

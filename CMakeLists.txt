@@ -16,6 +16,8 @@ set(ZZip_LIBRARIES zzip)
 set(MLIBS ${CURL_LIBRARIES} ${wxWidgets_LIBRARIES})
 set(LIBS ${MLIBS} ${Boost_LIBRARIES} ${ZZip_LIBRARIES})
 
+set(CPP tiggit.cpp dialogs.cpp ${JSON})
+
 # This automagically sets up everything for us
 include( ${wxWidgets_USE_FILE} )
 
@@ -27,7 +29,7 @@ if( APPLE )
   set( CMAKE_OSX_ARCHITECTURES i386 ) # i386 only.
 
   set( PROGNAME Tiggit )
-  add_executable( ${PROGNAME} MACOSX_BUNDLE tiggit.cpp ${JSON})
+  add_executable( ${PROGNAME} MACOSX_BUNDLE ${CPP})
   add_custom_command( TARGET ${PROGNAME} POST_BUILD
       COMMAND mkdir 
       ARGS    ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${PROGNAME}.app/Contents/Resources
@@ -37,7 +39,7 @@ if( APPLE )
   )
   target_link_libraries(${PROGNAME} ${LIBS})
 else( APPLE )
-  add_executable(tiggit tiggit.cpp ${JSON})
+  add_executable(tiggit ${CPP})
   target_link_libraries(tiggit ${LIBS})
 
   add_executable(tigmaker tigmaker.cpp ${JSON})

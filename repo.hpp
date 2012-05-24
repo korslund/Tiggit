@@ -25,35 +25,6 @@ struct Repository
 #endif
   }
 
-  /* General wx note: we should remove ALL wxWidgets influence on this
-     file, and on anything outside the interface layer. Do dialogs
-     through callbacks if necessary.
-  */
-
-  /* This stuff isn't done yet
-  struct MoveDialog : wxDialog
-  {
-    // Stuff here
-  };
-
-  static Path moveDir(const Path &oldDir, const Path &exeDir)
-  {
-    Path repoDir = result;
-
-    //::wxDirSelector();
-
-    if(repoDir != oldDir)
-      {
-        // Move files. Make a file moving job! Then update the dialog
-        // non-modally.
-
-        writePaths(exeDir.string(), repoDir.string());
-        setDir(repoDir);
-      }
-    return repoDir;
-  }
-  */
-
   // TODO: Make non-static, kill all global variables, and pass along
   // paths.
   static void setupPaths(const std::string &exePath,
