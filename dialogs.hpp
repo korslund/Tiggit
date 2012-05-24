@@ -1,6 +1,10 @@
 #ifndef __TIGGIT_DIALOGS_HPP_
 #define __TIGGIT_DIALOGS_HPP_
 
+#ifndef wxUSE_UNICODE
+#define wxUSE_UNICODE 1
+#endif
+
 #include <wx/wx.h>
 #include <string>
 #include <vector>
