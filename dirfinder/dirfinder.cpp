@@ -132,7 +132,9 @@ static bool os_setStoredPath(const std::string &dir,
                              const std::string &aname,
                              const std::string &dname)
 {
-  std::ofstream out(getPathFile(aname,dname).c_str());
+  std::string file = getPathFile(aname,dname);
+  create_directories(path(file).parent_path());
+  std::ofstream out(file.c_str());
   if(out)
     {
       out << dir;

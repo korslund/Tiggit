@@ -37,6 +37,7 @@ struct Auth
   }
 
   bool isAdmin() { return type == UT_Admin; }
+  bool isModerator() { return type == UT_Moderator || isAdmin(); }
 };
 
 Auth auth;

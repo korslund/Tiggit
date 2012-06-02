@@ -4,14 +4,15 @@
 #include <string>
 
 /*
-  This class find an appropriate writable data path for the
+  This class finds an appropriate writable data path for the
   application.
 
   It can propose platform-dependent standard paths, or accept a
   user-provided value. It will remember settings between sessions.
 
   We only accept directories that are writable, and we test dirs for
-  writability.
+  writability. However note that on Windows platforms the reliability
+  of such tests may be questionable.
 
   You can have multiple data directories and store independent
   settings for each, if you provide different names to the

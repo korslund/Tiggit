@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 
 project( Tiggit )
 
-find_package(wxWidgets COMPONENTS core base REQUIRED)
+find_package(wxWidgets COMPONENTS core base adv REQUIRED)
 find_package(CURL REQUIRED)
 find_package(Boost COMPONENTS filesystem system REQUIRED)
 
@@ -16,7 +16,7 @@ set(ZZip_LIBRARIES zzip)
 set(MLIBS ${CURL_LIBRARIES} ${wxWidgets_LIBRARIES})
 set(LIBS ${MLIBS} ${Boost_LIBRARIES} ${ZZip_LIBRARIES})
 
-set(CPP tiggit.cpp dialogs.cpp ${JSON})
+set(CPP tiggit.cpp dialogs.cpp dirfinder/dirfinder.cpp ${JSON})
 
 # This automagically sets up everything for us
 include( ${wxWidgets_USE_FILE} )

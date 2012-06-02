@@ -115,7 +115,7 @@ struct Config
 
   // Default values for some fields
     defDevname,
-    defPaypal,
+  //defPaypal,
 
   // Authentication values for server interaction
     user,
@@ -160,7 +160,7 @@ struct Config
     if(!defs.isNull())
       {
         defDevname = defs["devname"].asString();
-        defPaypal = defs["paypal"].asString();
+        //defPaypal = defs["paypal"].asString();
       }
 
     user = root["user"].asString();
@@ -194,8 +194,8 @@ enum MyIDs
     myID_HOMEPAGE,
     myID_DEVNAME,
     myID_SHOT,
-    myID_PAYPAL,
-    myID_BUYPAGE,
+    //myID_PAYPAL,
+    //myID_BUYPAGE,
     myID_TYPE,
     myID_TAGS,
 
@@ -207,7 +207,8 @@ enum MyIDs
 struct TheFrame : public wxFrame
 {
   wxTextCtrl *title, *urlname, *url, *launch, *version,
-    *desc, *homepage, *devname, *shot, *paypal, *buypage, *type, *tags;
+    *desc, *homepage, *devname, *shot,// *paypal, *buypage,
+    *type, *tags;
   wxPanel *panel;
   wxBoxSizer *sizer;
 
@@ -249,7 +250,7 @@ struct TheFrame : public wxFrame
   }
 
   TheFrame()
-    : wxFrame(NULL, wxID_ANY, wxT("Register games"), wxDefaultPosition, wxSize(480, 730)),
+    : wxFrame(NULL, wxID_ANY, wxT("Register games"), wxDefaultPosition, wxSize(480, 700)),
       urlChanged(false)
   {
     panel = new wxPanel(this);
@@ -275,16 +276,16 @@ struct TheFrame : public wxFrame
     homepage = addText("Homepage",  myID_HOMEPAGE, 40);
     shot = addText("Screenshot", myID_SHOT);
     devname = addText("Developer", myID_DEVNAME);
-    paypal = addText("Paypal", myID_PAYPAL);
-    buypage = addText("Buypage", myID_BUYPAGE);
+    //paypal = addText("Paypal", myID_PAYPAL);
+    //buypage = addText("Buypage", myID_BUYPAGE);
     type = addText("Type", myID_TYPE);
     tags = addText("Tags", myID_TAGS);
-    sizer->Add(new wxStaticText(panel, wxID_ANY, wxT("Suggested tags: arcade action cards casual fps fighter puzzle platform strategy music simulation racing role-playing single-player multi-player"), wxDefaultPosition, wxSize(400,55)), 0, wxTOP, 4);
+    sizer->Add(new wxStaticText(panel, wxID_ANY, wxT("Suggested tags: arcade action cards casual fps fighter puzzle platform roguelike strategy music simulation racing rpg shooter single-player multi-player"), wxDefaultPosition, wxSize(400,55)), 0, wxTOP, 10);
 
     // Buttons at the bottom (of the sea)
     //sizer->AddStretchSpacer();
     wxBoxSizer *buttons = new wxBoxSizer(wxHORIZONTAL);
-    sizer->Add(buttons, 0, wxTOP, 10);
+    sizer->Add(buttons, 0, wxTOP, 12);
     buttons->Add(new wxButton(panel, myID_SAVE, wxT("Save!")));
     buttons->Add(new wxButton(panel, myID_CLEAR, wxT("Clear")));
     buttons->Add(new wxButton(panel, myID_WEBSITE, wxT("Goto Website")));
@@ -432,8 +433,8 @@ struct TheFrame : public wxFrame
     set(tig, "desc", desc);
     set(tig, "homepage", homepage);
     set(tig, "devname", devname);
-    set(tig, "paypal", paypal);
-    set(tig, "buypage", buypage);
+    //set(tig, "paypal", paypal);
+    //set(tig, "buypage", buypage);
     set(tig, "shot", shot);
     set(tig, "type", type);
     set(tig, "tags", tags);
@@ -518,8 +519,8 @@ struct TheFrame : public wxFrame
     homepage->Clear();
     devname->Clear();
     shot->Clear();
-    paypal->Clear();
-    buypage->Clear();
+    //paypal->Clear();
+    //buypage->Clear();
     type->Clear();
     tags->Clear();
 
@@ -528,7 +529,7 @@ struct TheFrame : public wxFrame
 
     // Set default values
     devname->ChangeValue(wxString(conf.defDevname.c_str(), wxConvUTF8));
-    paypal->ChangeValue(wxString(conf.defPaypal.c_str(), wxConvUTF8));
+    //paypal->ChangeValue(wxString(conf.defPaypal.c_str(), wxConvUTF8));
 
     title->SetFocus();
   }

@@ -8,10 +8,10 @@
 
 struct AdPicker
 {
-  std::string code, imgFile;
+  std::string code, imgFile, text, link, image;
   int height, width;
 
-  void setup()
+  void setup(bool isTest)
   {
     using namespace Json;
     using namespace std;
@@ -21,7 +21,7 @@ struct AdPicker
       {
         path pf = get.getPath("promo.json");
 
-        if(!exists(pf) || difftime(time(0),last_write_time(pf)) > 60*60*24)
+        if(!exists(pf) || difftime(time(0),last_write_time(pf)) > 60*10)
           pf = get.getTo("http://tiggit.net/client/promo.json",
                          "promo.json");
 
@@ -31,7 +31,20 @@ struct AdPicker
 
         for(int i=0; i<root.size(); i++)
           {
-            if(root[i]["disabled"].asBool())
+            if(root[i]["test"].asBool())
+              if(isTest)
+                {
+                  // In a test run, only pick the test candidate, and
+                  // ignore everything else.
+                  choices.resize(1);
+                  choices[0] = i;
+                  break;
+                }
+              else
+                // In a non-test run, ignore test subjects
+                continue;
+
+            if(root[i]["disable"].asBool())
               continue;
 
             choices.push_back(i);
@@ -45,13 +58,18 @@ struct AdPicker
         code = v["code"].asString();
         height = v["height"].asInt();
         width = v["width"].asInt();
+        text = v["text"].asString();
+        link = v["link"].asString();
+        image = v["image"].asString();
+        if(image == "")
+          image = code;
 
-        imgFile = get.getPath("cache/ads/" + code);
+        imgFile = get.getPath("cache/ads/" + image);
 
         // Dl the image if we don't already have it.
         if(!exists(imgFile))
-          imgFile = get.getTo("http://tiggit.net/client/promo/" + code + ".png",
-                              "cache/ads/" + code);
+          imgFile = get.getTo("http://tiggit.net/client/promo/" + image + ".png",
+                              "cache/ads/" + image);
       }
     catch(...)
       {

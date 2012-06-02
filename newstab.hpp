@@ -232,7 +232,7 @@ public:
 #define myID_TIGFORUM 10061
 #define myID_TIGBLOG  10062
 
-// The "Latest News" tab
+// The "News" tab
 struct NewsTab : TabBase
 {
   NewsList *list;
@@ -348,7 +348,7 @@ struct NewsTab : TabBase
       if(!data.items[i].read)
         unread++;
 
-    wxString name = wxT("Latest News");
+    wxString name = wxT("News");
     if(unread) name += wxString::Format(wxT(" (%d)"), unread);
     book->SetPageText(tabNum, name);
   }

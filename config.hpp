@@ -32,13 +32,14 @@ struct Config
   // Switch to "installed" tab when installing a new game
   bool switchTabs;
 
-  bool showPromo, offline;
+  bool hideAds, offline;
 
   int64_t lastTime;
 
-  Config() : updateList(false), updateTigs(false), updateCache(false),
+  Config() : gamedir("games"),
+             updateList(false), updateTigs(false), updateCache(false),
              first_time(false), seen_demo_msg(false), voteCount(false),
-             showPromo(false), offline(false),
+             hideAds(false), offline(false),
              lastTime(0x7fffffffffff) {}
 
   void fail(const std::string &msg)
@@ -69,7 +70,6 @@ struct Config
   void setGameDir(const std::string &name)
   {
     gamedir = name;
-    write();
   }
 
   bool setVoteCount(bool b)
@@ -128,9 +128,9 @@ struct Config
                 //lastTime = root["last_time"].asInt64();
                 lastTime = root["last_time"].asInt();
                 seen_demo_msg = root["seen_demo_msg"].asBool();
+                hideAds = root["hide_ads"].asBool();
                 voteCount = root["vote_count"].asBool();
                 switchTabs = root["switch_tabs"].asBool();
-                gamedir = root["gamedir"].asString();
 
                 int cache = root["cache_version"].asInt();
                 if(cache < LAST_CACHE_VERSION)
@@ -145,9 +145,6 @@ struct Config
               }
           }
       }
-
-    if(gamedir == "")
-      gamedir = "games";
 
     if(error)
       {
@@ -165,10 +162,10 @@ struct Config
     // TODO: Subject to 2038-bug
     root["last_time"] = (int)lastTime;
     root["seen_demo_msg"] = seen_demo_msg;
+    root["hide_ads"] = hideAds;
     root["cache_version"] = 1;
     root["vote_count"] = voteCount;
     root["switch_tabs"] = switchTabs;
-    root["gamedir"] = gamedir;
 
     writeJson(filename, root);
   }

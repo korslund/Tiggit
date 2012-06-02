@@ -2,6 +2,7 @@
 
 #include <wx/wx.h>
 #include <wx/listctrl.h>
+#include <wx/hyperlink.h>
 #include <wx/imaglist.h>
 #include <wx/notebook.h>
 #include <wx/stdpaths.h>
@@ -530,7 +531,7 @@ struct ListTab : TabBase, ScreenshotCallback, KeyAccel
 
     wxBoxSizer *bottomLeft = new wxBoxSizer(wxVERTICAL);
 
-    if(conf.showPromo)
+    if(!conf.hideAds)
       {
         string imgFile = adPicker.getImage();
 
@@ -538,11 +539,28 @@ struct ListTab : TabBase, ScreenshotCallback, KeyAccel
           {
             ad_img = new ImageViewer(this, myID_AD_IMG, wxDefaultPosition,
                                      wxSize(adPicker.width,adPicker.height));
-            bottomLeft->Add(new wxStaticText(this, wxID_ANY, wxT("Sponsor:")), 0, wxLEFT, 5);
-            bottomLeft->Add(ad_img, 0, wxLEFT | wxBOTTOM, 4);
+            if(adPicker.text != "")
+              {
+                wxString txt(adPicker.text.c_str(), wxConvUTF8);
+                bottomLeft->Add(new wxStaticText(this, wxID_ANY, txt), 0, wxLEFT, 5);
+              }
+            wxBoxSizer *adsizer = new wxBoxSizer(wxHORIZONTAL);
+            adsizer->Add(ad_img);
+
+            if(adPicker.link != "")
+              {
+                wxString txt(adPicker.link.c_str(), wxConvUTF8);
+                wxString url(adPicker.getUrl().c_str(), wxConvUTF8);
+                wxHyperlinkCtrl *link = new wxHyperlinkCtrl(this, wxID_ANY, txt, url);
+                wxFont fnt = link->GetFont();
+                fnt.SetPointSize((int)(fnt.GetPointSize()*0.8));
+                link->SetFont(fnt);
+                adsizer->Add(link, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, 10);
+              }
+
+            bottomLeft->Add(adsizer, 0, wxLEFT, 4);
 
             ad_img->loadImage(imgFile);
-
             ad_img->Connect(myID_AD_IMG, wxEVT_LEFT_DOWN,
                             wxMouseEventHandler(ListTab::onAdClick));
           }
@@ -1817,9 +1835,6 @@ public:
         auth.load();
         ratings.read();
 
-        if(auth.isAdmin())
-          conf.showPromo = true;
-
         // Download cached data if this is the first time we run.
         if(conf.updateCache && !conf.offline)
           {
@@ -1830,8 +1845,8 @@ public:
         updateData(conf.updateList || conf.updateCache);
         wxInitAllImageHandlers();
 
-        if(conf.showPromo && !conf.offline)
-          adPicker.setup();
+        if(!conf.hideAds && !conf.offline)
+          adPicker.setup(auth.isAdmin());
 
         MyFrame *frame = new MyFrame(wxT("Tiggit - The Indie Game Installer"),
                                      version);
