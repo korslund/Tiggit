@@ -1,62 +1,60 @@
 #ifndef __TIGGIT_DIALOGS_HPP_
 #define __TIGGIT_DIALOGS_HPP_
 
-#ifndef wxUSE_UNICODE
-#define wxUSE_UNICODE 1
-#endif
-
-#include <wx/wx.h>
-#include <string>
+#include "wxcommon.hpp"
 #include <vector>
 
-struct BrowseDialog : wxDialog
+namespace wxTiggit
 {
-  BrowseDialog(wxWindow *parent, const wxString &title,
-               int width, int height, bool file=false);
+  struct BrowseDialog : wxDialog
+  {
+    BrowseDialog(wxWindow *parent, const wxString &title,
+                 int width, int height, bool file=false);
 
-protected:
-  void addTo(wxSizer *sizer, const wxString &value=wxT(""));
+  protected:
+    void addTo(wxSizer *sizer, const wxString &value=wxT(""));
 
-  wxTextCtrl *edit;
+    wxTextCtrl *edit;
 
-private:
-  bool browseFile; // Find file or directory. Default is directory.
-  void onBrowse(wxCommandEvent &event);
-};
+  private:
+    bool browseFile; // Find file or directory. Default is directory.
+    void onBrowse(wxCommandEvent &event);
+  };
 
-struct OutputDirDialog : BrowseDialog
-{
-  OutputDirDialog(wxWindow *parent, const std::string &old_dir,
-                  bool writeFailed=false, bool freshInstall=false);
+  struct OutputDirDialog : BrowseDialog
+  {
+    OutputDirDialog(wxWindow *parent, const std::string &old_dir,
+                    bool writeFailed=false, bool freshInstall=false);
 
-  bool ok, move, changed;
-  std::string path;
-};
+    bool ok, move, changed;
+    std::string path;
+  };
 
-/*
-struct ImportDialog : BrowseDialog
-{
-  ImportDialog(wxWindow *parent, const std::string &maindir);
+  /*
+  struct ImportDialog : BrowseDialog
+  {
+    ImportDialog(wxWindow *parent, const std::string &maindir);
 
-  bool ok, copy;
-  std::string source;
-};
+    bool ok, copy;
+    std::string source;
+  };
 
-struct ExportDialog : BrowseDialog
-{
-  ExportDialog(wxWindow *parent, const std::vector<std::string> &games);
+  struct ExportDialog : BrowseDialog
+  {
+    ExportDialog(wxWindow *parent, const std::vector<std::string> &games);
 
-  bool ok, launcher;
-  std::string output;
-  std::vector<int> selected;
-};
+    bool ok, launcher;
+    std::string output;
+    std::vector<int> selected;
+  };
 
-struct AddExternalDialog : BrowseDialog
-{
-  AddExternalDialog(wxWindow *parent);
+  struct AddExternalDialog : BrowseDialog
+  {
+    AddExternalDialog(wxWindow *parent);
 
-  bool ok;
-  std::string name, exe;
-};
-*/
+    bool ok;
+    std::string name, exe;
+  };
+  */
+}
 #endif

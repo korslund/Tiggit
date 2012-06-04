@@ -1,10 +1,10 @@
 #ifndef __TIGDATA_JSON_HPP_
 #define __TIGDATA_JSON_HPP_
 
-#include <tigdata/tiglist.hpp>
+#include "tiglist.hpp"
 #include <json/json.h>
 
-namespace Serial
+namespace TigData
 {
   void fromJson(TigData::TigInfo& out, const Json::Value &v);
   void fromJson(TigData::TigEntry& out, const Json::Value &v);

@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 2.6)
 
 include_directories("../")
-include_directories("../../../libs/")
-include_directories("../../../libs/jsoncpp/include/")
+include_directories("../../libs/")
+include_directories("../../libs/jsoncpp/include/")
 
-set(LIBDIR ../../../libs)
+set(LIBDIR ../../libs)
 set(MDIR ${LIBDIR}/mangle)
 
 set(MANGLE ${MDIR}/stream/clients/io_stream.cpp)

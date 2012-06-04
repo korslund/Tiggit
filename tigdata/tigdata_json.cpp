@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdexcept>
 
-using namespace Serial;
+using namespace TigData;
 
 void fromJson(TigData::TigInfo& out, const Json::Value &v)
 {

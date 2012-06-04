@@ -2,6 +2,7 @@
 #define _AUTH_HPP_
 
 #include "readjson.hpp"
+#include "filegetter.hpp"
 
 struct Auth
 {

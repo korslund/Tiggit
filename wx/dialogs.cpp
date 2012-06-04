@@ -1,5 +1,7 @@
 #include "dialogs.hpp"
 
+using namespace wxTiggit;
+
 #define myID_BROWSE 12345
 
 BrowseDialog::BrowseDialog(wxWindow *parent, const wxString &title,
@@ -69,6 +71,10 @@ OutputDirDialog::OutputDirDialog(wxWindow *parent, const std::string &old_dir,
   wxBoxSizer *main = new wxBoxSizer(wxVERTICAL);
   main->Add(vbox, 0, wxALL, 15);
   SetSizer(main);
+
+  // This dialog is kinda dynamic in content, so better to ask it to
+  // resize itself depending on contained elements.
+  Fit();
 
   Centre();
 

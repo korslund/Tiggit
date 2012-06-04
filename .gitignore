@@ -10,8 +10,7 @@ response.txt
 *.dll
 *.exe
 *~
-icon.res
+resources.res
 override
 fix_json
-ads
 */tests/*_test

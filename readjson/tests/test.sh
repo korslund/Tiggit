@@ -1,5 +1,13 @@
 #!/bin/bash
 
+if [ "$1" == "clean" ]; then
+    make clean
+    rm -rf CMakeFiles/ CMakeCache.txt cmake_install.cmake Makefile
+    exit
+fi
+
+test -f Makefile || test -f CMakeLists.txt && cmake . || exit
+
 make || exit
 
 mkdir -p output
