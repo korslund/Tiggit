@@ -26,7 +26,8 @@ private:
 
 struct OutputDirDialog : BrowseDialog
 {
-  OutputDirDialog(wxWindow *parent, const std::string &old_dir);
+  OutputDirDialog(wxWindow *parent, const std::string &old_dir,
+                  bool writeFailed=false, bool freshInstall=false);
 
   bool ok, move, changed;
   std::string path;

@@ -2,7 +2,7 @@
 
 #include <wx/wx.h>
 #include <wx/listctrl.h>
-#include <wx/hyperlink.h>
+//#include <wx/hyperlink.h>
 #include <wx/imaglist.h>
 #include <wx/notebook.h>
 #include <wx/stdpaths.h>
@@ -29,7 +29,7 @@
 #include "tabbase.hpp"
 #include "newstab.hpp"
 #include "adpicker.hpp"
-#include "dialogs.hpp"
+#include "wx/dialogs.hpp"
 
 using namespace std;
 
@@ -547,6 +547,7 @@ struct ListTab : TabBase, ScreenshotCallback, KeyAccel
             wxBoxSizer *adsizer = new wxBoxSizer(wxHORIZONTAL);
             adsizer->Add(ad_img);
 
+            /*
             if(adPicker.link != "")
               {
                 wxString txt(adPicker.link.c_str(), wxConvUTF8);
@@ -557,6 +558,7 @@ struct ListTab : TabBase, ScreenshotCallback, KeyAccel
                 link->SetFont(fnt);
                 adsizer->Add(link, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, 10);
               }
+            */
 
             bottomLeft->Add(adsizer, 0, wxLEFT, 4);
 
@@ -1831,7 +1833,9 @@ public:
         }
 
         // Then find and load the repository
-        Repository::setupPaths(exe, appData);
+        if(!Repository::setupPaths(exe, appData))
+          return false;
+
         auth.load();
         ratings.read();
 

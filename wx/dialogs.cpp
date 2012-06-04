@@ -31,19 +31,32 @@ void BrowseDialog::onBrowse(wxCommandEvent &event)
     edit->ChangeValue(dir);
 }
 
-OutputDirDialog::OutputDirDialog(wxWindow *parent, const std::string &old_dir)
-  : BrowseDialog(parent, wxT("Set Data Directory"), 450, 280)
+OutputDirDialog::OutputDirDialog(wxWindow *parent, const std::string &old_dir,
+                                 bool writeFailed, bool freshInstall)
+  : BrowseDialog(parent, wxT("Set Data Directory"), 430, 256)
 {
   wxString old(old_dir.c_str(), wxConvUTF8);
 
   wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
 
-  vbox->Add(new wxStaticText(this, -1, wxT("Instructions over several lines. Blah blah blah blah.\nAnd more blah blah blah blah. Did I say\nblah?")),
-            0, wxBOTTOM, 30);
+  wxString text = wxT("Please specify data directory. All games will be installed into this\npath, and Tiggit itself will store images and config data here.");
+
+  vbox->Add(new wxStaticText(this, -1, text), 0, wxBOTTOM, 30);
 
   vbox->Add(new wxStaticText(this, -1, wxT("New data directory:")));
   addTo(vbox,old);
-  vbox->Add(new wxStaticText(this, -1, wxT("Installed games and data will be MOVED to this directory")),0, wxTOP, 12);
+  if(writeFailed)
+    {
+      wxStaticText *t = new wxStaticText(this, -1, wxT("The path you specified is not writable!"));
+      t->SetForegroundColour(wxColour(255,0,0));
+      vbox->Add(t);
+    }
+
+  if(freshInstall)
+    text = wxT("The directory will be created if it does not exist.\nPress Cancel to exit.");
+  else
+    text = wxT("Already installed games and data will be MOVED to this directory");
+  vbox->Add(new wxStaticText(this, -1, text),0, wxTOP, 12);
 
   /*
   wxRadioButton *moverb = new wxRadioButton(this, -1, wxT("Move game files"),
@@ -51,7 +64,7 @@ OutputDirDialog::OutputDirDialog(wxWindow *parent, const std::string &old_dir)
   vbox->Add(moverb, 0, wxTOP, 15);
   vbox->Add(new wxRadioButton(this, -1, wxT("Keep games in ") + old));
   */
-  vbox->Add(CreateButtonSizer(wxOK | wxCANCEL), 0, wxALIGN_CENTER | wxTOP, 40);
+  vbox->Add(CreateButtonSizer(wxOK | wxCANCEL), 0, wxALIGN_CENTER | wxTOP, 25);
 
   wxBoxSizer *main = new wxBoxSizer(wxVERTICAL);
   main->Add(vbox, 0, wxALL, 15);

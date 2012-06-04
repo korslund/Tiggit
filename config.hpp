@@ -11,7 +11,7 @@
    removed soon, once we apply the upcoming game updater system to the
    cache as well.
  */
-#define LAST_CACHE_VERSION 1
+#define LAST_CACHE_VERSION 2
 
 struct Config
 {
@@ -163,7 +163,7 @@ struct Config
     root["last_time"] = (int)lastTime;
     root["seen_demo_msg"] = seen_demo_msg;
     root["hide_ads"] = hideAds;
-    root["cache_version"] = 1;
+    root["cache_version"] = LAST_CACHE_VERSION;
     root["vote_count"] = voteCount;
     root["switch_tabs"] = switchTabs;
 

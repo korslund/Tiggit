@@ -15,10 +15,15 @@ using namespace boost::filesystem;
 
 TCHAR pathbuf[MAX_PATH];
 
-path getPathCSIDL(int csidl)
+std::string getPathCSIDL(int csidl)
 {
   SHGetFolderPath(NULL, csidl, NULL, 0, pathbuf);
-  return path(pathbuf);
+  return std::string(pathbuf);
+}
+
+std::string Finder::getAppData()
+{
+  return getPathCSIDL(CSIDL_LOCAL_APPDATA);
 }
 
 std::string getDataDir(int csidl, const std::string &vname, const std::string &aname)
@@ -30,7 +35,7 @@ std::string getDataDir(int csidl, const std::string &vname, const std::string &a
 
 bool Finder::getStandardPath(std::string &dir)
 {
-  dir = getDataDir(CSIDL_APPDATA, vname, aname);
+  dir = getDataDir(CSIDL_LOCAL_APPDATA, vname, aname);
   return isWritable(dir);
 }
 
@@ -101,6 +106,8 @@ static std::string getPathFile(const std::string &aname,
 {
   return getHome(aname) + dname + ".conf";
 }
+
+std::string Finder::getAppData() { return ""; }
 
 bool Finder::getStandardPath(std::string &dir)
 {

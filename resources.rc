@@ -1,2 +1,9 @@
-1 RT_MANIFEST "tiggit.exe.manifest"
+/* The manifest is disabled until we're done with the new updater
+   architecture. Changing our access rights to asInvoker will disable
+   UAC virtualization, which will cause tiggit to stop working on some
+   systems because the UAC will no longer grant us access to the
+   repository directory. Don't do this until we've set up a working
+   alternative.
+*/
+//1 RT_MANIFEST "tiggit.exe.manifest"
 id ICON "icon.ico"

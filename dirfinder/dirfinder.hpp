@@ -11,12 +11,20 @@
   user-provided value. It will remember settings between sessions.
 
   We only accept directories that are writable, and we test dirs for
-  writability. However note that on Windows platforms the reliability
-  of such tests may be questionable.
+  writability.
 
   You can have multiple data directories and store independent
   settings for each, if you provide different names to the
   constructor. The default name is 'default'.
+
+  NOTE: On Windows Vista and newer, UAC virtualization will render
+  write tests useless for determining access rights. It's highly
+  recommended to disable virtualization by including a manifest file
+  with your application, and specifing your privileges as "asInvoker"
+  or similar.
+  More info:
+      http://msdn.microsoft.com/en-us/library/bb756960.aspx
+      http://msdn.microsoft.com/en-us/library/bb756929.aspx
 
   Usage:
 
@@ -57,6 +65,11 @@ namespace DirFinder
        this path.
      */
     bool getStandardPath(std::string &path);
+
+    /* Windows only. Returns CSIDL_LOCAL_APPDATA folder. Returns an
+       empty string on other platforms.
+     */
+    static std::string getAppData();
 
     /* Set stored path. Will return true if the path was accepted,
        ie. it was writable, and we were able to store the information
