@@ -14,3 +14,4 @@ resources.res
 override
 fix_json
 */tests/*_test
+*/tests/_*
