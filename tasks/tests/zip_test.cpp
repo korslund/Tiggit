@@ -1,17 +1,17 @@
-#include "../download.hpp"
+#include "../unpack.hpp"
 
 #include <iostream>
 using namespace std;
 
 int main()
 {
-  string url = "http://tiggit.net/client/latest.tig";
-  cout << "Downloading " << url << "...\n";
+  string zip = "../../unpack/tests/archives/test.zip";
+  cout << "Unpacking " << zip << "...\n";
 
   Jobify::JobInfoPtr info(new Jobify::JobInfo);
-  Tasks::DownloadTask dlj(url, "_output.txt", info);
+  Tasks::UnpackTask unp(zip, "_outdir1", info);
 
-  dlj.run();
+  unp.run();
 
   if(info->isSuccess())
     cout << "Success!\n";

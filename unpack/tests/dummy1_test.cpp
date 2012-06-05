@@ -1,4 +1,4 @@
-#include "unpack_base.hpp"
+#include "base.hpp"
 #include <iostream>
 #include <assert.h>
 
@@ -10,6 +10,7 @@ struct DummyUnpack : UnpackBase
 {
   void unpack(const std::string &file,
               Mangle::VFS::StreamFactoryPtr out,
+              Progress *prog = NULL,
               const FileList &list = FileList())
   {
     Mangle::Stream::StreamPtr s;

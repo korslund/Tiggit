@@ -7,7 +7,7 @@
 using namespace boost::filesystem;
 using namespace Mangle::Stream;
 
-void fail(const std::string &where, const std::string &msg)
+static void fail(const std::string &where, const std::string &msg)
 {
   throw std::runtime_error("Error writing to " + where + ": " + msg);
 }
@@ -21,7 +21,8 @@ StreamPtr Unpack::DirWriter::open(const std::string &name)
   file /= name;
 
   // Is this a directory?
-  if(name[name.size()-1] == '/')
+  char last = name[name.size()-1];
+  if(last == '/' || last == '\\')
     {
       // If so, just create it and exit
       create_directories(file);

@@ -1,0 +1,6 @@
+Unpacking test.sh:
+  Error unpacking test.sh: Not a known archive type
+Unpacking doesn't exist:
+  Error unpacking doesn't exist: Cannot open file
+Unpacking archives/test.zip:
+  OK
