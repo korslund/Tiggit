@@ -6,14 +6,14 @@
 
 #include <iostream>
 using namespace std;
-using namespace DirFinder;
+using namespace Misc;
 
-Finder fnd("tiggit.net", "tiggit", "finder-test");
+DirFinder fnd("tiggit.net", "tiggit", "finder-test");
 
 void testWrite(const std::string &path)
 {
   cout << path << ": ";
-  if(Finder::isWritable(path))
+  if(DirFinder::isWritable(path))
     cout << "GOOD\n";
   else
     cout << "BAD\n";

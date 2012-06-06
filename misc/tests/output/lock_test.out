@@ -1,0 +1,18 @@
+Locking B:
+YES
+NO
+Checking:
+NO
+YES
+Aquiring A normally:
+NO
+YES
+Checking:
+YES
+NO
+Aquiring B by force:
+NO
+YES
+Checking:
+YES
+YES

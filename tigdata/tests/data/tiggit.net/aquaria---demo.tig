@@ -1,0 +1,14 @@
+
+{
+	"desc" : "A massive ocean world, teeming with life and filled with ancient secrets. Join Naija, a lone underwater dweller in search of her family, as she explores the depths of Aquaria. She'll travel from hidden caves, shrouded in darkness, to beautiful, sunlit oases, all lovingly handcrafted by its two creators.\n\nAquaria is an award-winning adventure game with unique game mechanics.",
+	"devname" : "BitBlot",
+	"homepage" : "http://www.bit-blot.com/aquaria/buy.html",
+	"launch" : "aquaria.exe",
+	"location" : "http://tiggit.net/local/aquaria---demo.tig",
+	"shot" : "http://www.bit-blot.com/aquaria/images/turtle-screen.jpg",
+	"tags" : "adventure action single-player",
+	"title" : "Aquaria - DEMO",
+	"type" : "demo",
+	"shot300x260":"http://tiggit.net/pics/300x260/aquaria---demo.png",
+        "url" : "http://tiggit.net/dl/aquaria---demo"
+}

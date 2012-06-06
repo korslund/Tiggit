@@ -1,0 +1,16 @@
+
+{
+	"desc" : "Dwarf Fortress is a single-player strategy game, set in a huge, randomly generated persistent world. You control a dwarven outpost and must fight to survive and defend your settlement against a harsh environment, full of goblins, thieves and wild beasts. And sometimes dwarves delve too deep...",
+	"devname" : "Bay 12 Games",
+	"homepage" : "http://www.bay12games.com/dwarves/",
+	"launch" : "Dwarf Fortress.exe",
+	"location" : "http://tiggit.net/local/dwarf-fortress.tig",
+	"shot" : "http://www.bay12games.com/dwarves/screens/dwf6.png",
+	"shot" : "http://tiggit.net/pics/dwarf-fortress.png",
+	"title" : "Dwarf Fortress",
+	"shot300x260":"http://tiggit.net/pics/300x260/dwarf-fortress.png",
+        "url" : "http://www.bay12games.com/dwarves/df_34_05_win.zip",
+        "tags" : "strategy ascii procedural fantasy sandbox real-time single-player",
+        "paypal" : "tarn.adams@gmail.com",
+	"version" : "0.34.05 SDL"
+}

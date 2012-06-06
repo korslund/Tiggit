@@ -1,0 +1,15 @@
+
+{
+	"desc" : "Cave Story (洞窟物語, Dōkutsu Monogatari) is a freeware videogame released in 2004 for PC, designed and created over five years. The game is a traditional action-adventure game, reminiscent of the Castlevania and Metroid games. It has been fan-translated to English by Aeon Genesis.",
+	"devname" : "Daisuke \"Pixel\" Amaya",
+	"homepage" : "http://www.cavestory.org/",
+	"launch" : "Cavestory.exe",
+	"location" : "http://tiggit.net/local/cave-story.tig",
+	"shot" : "http://j.imagehost.org/0130/cavestory.gif",
+	"shot80x50" : "http://tiggit.net/pics/cave.png",
+	"title" : "Cave Story",
+        "tags":"single-player platform adventure action",
+	"shot300x260":"http://tiggit.net/pics/300x260/cave-story.png",
+       "url" : "http://tiggit.net/dl/cave-story",
+	"version" : "1.0.0.6, translation V1.03"
+}

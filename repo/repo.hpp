@@ -123,7 +123,8 @@ struct Repository
   }
 
   // Set up all paths. Returns true if OK, false if the program should
-  // exit.
+  // exit. TODO: Kill the appData parameter here, preferably both. We
+  // can't have any wx dependencies here.
   static bool setupPaths(const std::string &exePath,
                          const std::string &appData)
   {

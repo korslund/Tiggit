@@ -4,7 +4,7 @@ using namespace std;
 
 #include "dirfinder.hpp"
 
-DirFinder::Finder fnd("tiggit.net", "tiggit", "finder-test");
+Misc::DirFinder fnd("tiggit.net", "tiggit", "finder-test");
 
 void setTest(const string &dir)
 {

@@ -1,10 +1,10 @@
-#include "tigdata_json.hpp"
+#include "json_tigdata.hpp"
 #include <stdlib.h>
 #include <stdexcept>
 
 using namespace TigData;
 
-void fromJson(TigData::TigInfo& out, const Json::Value &v)
+void TigData::fromJson(TigData::TigInfo& out, const Json::Value &v)
 {
   out.url = v["url"].asString();
   out.launch = v["launch"].asString();
@@ -18,13 +18,13 @@ void fromJson(TigData::TigInfo& out, const Json::Value &v)
 
   // Check whether the tigfile has a valid "paypal" entry. We don't
   // need the actual value.
-  t.hasPaypal = (root["paypal"].asString() != "");
+  out.hasPaypal = (v["paypal"].asString() != "");
 
   // The game is a demo if it has "type":"demo" in the tigfile.
-  t.isDemo = (root["type"].asString() == "demo");
+  out.isDemo = (v["type"].asString() == "demo");
 }
 
-void fromJson(TigData::TigEntry& out, const Json::Value &game)
+void TigData::fromJson(TigData::TigEntry& out, const Json::Value &game)
 {
   out.addTime = atoll(game["add_time"].asString().c_str());
 
@@ -41,8 +41,8 @@ static void fail(const std::string &msg)
   throw std::runtime_error(msg);
 }
 
-void fromJson(TigData::TigList &out, const Json::Value &root,
-              FetchTig &fetch)
+void TigData::fromJson(TigData::TigList &out, const Json::Value &root,
+                       FetchTig &fetch)
 {
   using namespace Json;
 
@@ -54,12 +54,12 @@ void fromJson(TigData::TigList &out, const Json::Value &root,
   out.homepage = root["homepage"].asString();
 
   // This must be present, the others are optional
-  if(channel == "") fail("Missing or invalid channel name");
+  if(out.channel == "") fail("Missing or invalid channel name");
 
   // Traverse the list
   Value list = root["list"];
 
-  Value::Members keys = root.getMemberNames();
+  Value::Members keys = list.getMemberNames();
   Value::Members::iterator it;
   for(it = keys.begin(); it != keys.end(); it++)
     {
@@ -70,7 +70,7 @@ void fromJson(TigData::TigList &out, const Json::Value &root,
       fromJson(e, list[key]);
 
       e.urlname = key;
-      e.idname = channel + "/" + key;
+      e.idname = out.channel + "/" + key;
 
       // Get tigfile data
       Value tig = fetch.fetchTig(e.idname, e.tigurl);
@@ -83,7 +83,7 @@ void fromJson(TigData::TigList &out, const Json::Value &root,
       fromJson(e.tigInfo, tig);
 
       // Skip  if not enough info was found
-      if(e.tigInfo.launch == "" || ti.tigInfo.title == "" ||
+      if(e.tigInfo.launch == "" || e.tigInfo.title == "" ||
          e.tigInfo.url == "")
         continue;
 
@@ -91,4 +91,3 @@ void fromJson(TigData::TigList &out, const Json::Value &root,
       out.list.push_back(e);
     }
 }
-#endif

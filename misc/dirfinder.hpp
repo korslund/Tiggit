@@ -36,17 +36,17 @@
   setStoredPath().
  */
 
-namespace DirFinder
+namespace Misc
 {
-  struct Finder
+  struct DirFinder
   {
     /* The vendor_name, app_name and dirname should be filesystem and
        windows registry compatible names. Preferably short, lower-case
        and without spaces.
      */
-    Finder(const std::string &vendor_name,
-           const std::string &app_name,
-           const std::string &dirname = "default")
+    DirFinder(const std::string &vendor_name,
+              const std::string &app_name,
+              const std::string &dirname = "default")
       : vname(vendor_name), aname(app_name), dname("path-" + dirname) {}
 
     /* Get stored path. Returns true if found and writable, false

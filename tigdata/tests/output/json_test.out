@@ -1,0 +1,33 @@
+
+Loading data:
+Fetching tiggit.net/aquaria---demo from url=http://tiggit.net/local/aquaria---demo.tig
+   Using cache in data/tiggit.net/aquaria---demo.tig
+Fetching tiggit.net/cave-story from url=http://tiggit.net/local/cave-story.tig
+   Using cache in data/tiggit.net/cave-story.tig
+Fetching tiggit.net/dwarf-fortress from url=http://tiggit.net/local/dwarf-fortress.tig
+   Using cache in data/tiggit.net/dwarf-fortress.tig
+
+Channel: tiggit.net
+Description: FREE Independent Games for Windows, Mac and Linux
+Homepage: http://tiggit.net/
+
+aquaria---demo:
+  Title: Aquaria - DEMO
+  Homepage: http://www.bit-blot.com/aquaria/buy.html
+  Tags: adventure action single-player
+  Rating: 4.37037 (27 votes)
+  Demo: yes
+
+cave-story:
+  Title: Cave Story
+  Homepage: http://www.cavestory.org/
+  Tags: single-player platform adventure action
+  Rating: 4.62585 (394 votes)
+  Demo: no
+
+dwarf-fortress:
+  Title: Dwarf Fortress
+  Homepage: http://www.bay12games.com/dwarves/
+  Tags: strategy ascii procedural fantasy sandbox real-time single-player
+  Rating: 4.52705 (227 votes)
+  Demo: no

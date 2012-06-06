@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <fstream>
 
-using namespace DirFinder;
+using namespace Misc;
 using namespace boost::filesystem;
 
 #ifdef _WIN32
@@ -21,7 +21,7 @@ std::string getPathCSIDL(int csidl)
   return std::string(pathbuf);
 }
 
-std::string Finder::getAppData()
+std::string DirFinder::getAppData()
 {
   return getPathCSIDL(CSIDL_LOCAL_APPDATA);
 }
@@ -33,7 +33,7 @@ std::string getDataDir(int csidl, const std::string &vname, const std::string &a
   return (p / aname).string();
 }
 
-bool Finder::getStandardPath(std::string &dir)
+bool DirFinder::getStandardPath(std::string &dir)
 {
   dir = getDataDir(CSIDL_LOCAL_APPDATA, vname, aname);
   return isWritable(dir);
@@ -107,9 +107,9 @@ static std::string getPathFile(const std::string &aname,
   return getHome(aname) + dname + ".conf";
 }
 
-std::string Finder::getAppData() { return ""; }
+std::string DirFinder::getAppData() { return ""; }
 
-bool Finder::getStandardPath(std::string &dir)
+bool DirFinder::getStandardPath(std::string &dir)
 {
   dir = getHome(aname);
   return isWritable(dir);
@@ -157,18 +157,18 @@ static bool os_setStoredPath(const std::string &dir,
 #endif
 #endif
 
-bool Finder::getStoredPath(std::string &dir)
+bool DirFinder::getStoredPath(std::string &dir)
 {
   dir = os_getStoredPath(vname,aname,dname);
   return isWritable(dir);
 }
 
-bool Finder::setStoredPath(const std::string &dir)
+bool DirFinder::setStoredPath(const std::string &dir)
 {
   return isWritable(dir) && os_setStoredPath(dir,vname,aname,dname);
 }
 
-bool Finder::isWritable(const std::string &dir)
+bool DirFinder::isWritable(const std::string &dir)
 {
   if(dir == "")
     return false;
