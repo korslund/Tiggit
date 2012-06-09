@@ -7,6 +7,29 @@
 #include <fstream>
 #include <time.h>
 
+/* We will recreate this module into a generic tool for updating the
+   running executable. The process here will be wildly different on
+   Windows and Linux.
+
+   On Windows, we need to:
+   - check if our exe is in a non-writable location (ie. we need admin
+     rights)
+   - run an external program to copy files in place
+   - be aware of rights, manifests, and so on
+   - make sure we update dlls as well as the main exe
+
+   On Linux, we need to:
+   - write all updates to ~/.somedir/
+   - check if that dir holds a newer version than us, and if so, run
+     that instead
+   - be aware of different distros and library setups, and provide
+     separate streams for various common setups
+
+     For example, we can provide a basic Ubuntu .deb file, which sets
+     up all the dependencies on the user's system. All updates after
+     that will then come from the ubuntu_deb stream of updates.
+ */
+
 struct UpdateLog
 {
   std::ofstream logfile;
