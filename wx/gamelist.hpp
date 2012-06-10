@@ -1,11 +1,10 @@
 #ifndef __WX_GAMELISTVIEW_HPP_
 #define __WX_GAMELISTVIEW_HPP_
 
-#include "wxcommon.hpp"
-#include <wx/listctrl.h>
+#include "listbase.hpp"
 #include <vector>
 
-#include "wxgamelist.hpp"
+#include "wxgamedata.hpp"
 
 namespace wxTiggit
 {
@@ -17,7 +16,7 @@ namespace wxTiggit
     void sort(wxGameList &list);
   };
 
-  class GameListView : public wxListCtrl, public wxGameListener
+  class GameListView : public ListBase, public wxGameListener
   {
     wxListItemAttr orange, gray, bold;
     wxGameList &lister;
@@ -38,14 +37,11 @@ namespace wxTiggit
     void gameListReloaded();
 
   private:
-    void onKeyDown(wxKeyEvent &evt);
     void onHeaderClick(wxListEvent& event);
     void updateSize();
 
     // Inherited functions used for fetching the list data
     wxListItemAttr *OnGetItemAttr(long item) const;
-    int OnGetItemImage(long item) const;
-    int OnGetColumnImage(long item, long column) const;
     wxString OnGetItemText(long item, long column) const;
   };
 }

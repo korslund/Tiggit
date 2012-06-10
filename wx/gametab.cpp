@@ -1,12 +1,13 @@
 #include "gametab.hpp"
-
 #include "image_viewer.hpp"
 
 using namespace wxTiggit;
 
-GameTab::GameTab(wxNotebook *parent, const wxString &name, int listType)
-  : TabBase(parent), tabName(name)
+GameTab::GameTab(wxNotebook *parent, const wxString &name, wxGameList &lst)
+  : TabBase(parent, name), lister(lst), select(0)
 {
+  list = new GameListView(this, myID_LIST, lister);
+
   wxBoxSizer *searchBox = new wxBoxSizer(wxHORIZONTAL);
   searchBox->Add(new wxStaticText(this, wxID_ANY, wxT("Search:")), 0);
   searchBox->Add(new wxTextCtrl(this, myID_SEARCH_BOX, wxT(""), wxDefaultPosition,
@@ -14,10 +15,8 @@ GameTab::GameTab(wxNotebook *parent, const wxString &name, int listType)
 
   wxBoxSizer *bcLeft = new wxBoxSizer(wxVERTICAL);
   bcLeft->Add(searchBox, 0, wxBOTTOM | wxLEFT, 2);
-  bcLeft->Add(new wxStaticText(this, wxID_ANY, wxString(wxT("Mouse: double-click to ")) +
-                               (/*(listType == ListKeeper::SL_INSTALL)*/false?
-                                wxT("play"):wxT("install")) +
-                               wxT("\nKeyboard: arrow keys + enter, delete")),
+  bcLeft->Add(new wxStaticText(this, wxID_ANY,
+                               wxT("Mouse: double-click to play / install\nKeyboard: arrow keys + enter, delete")),
               0, wxLEFT | wxBOTTOM, 4);
 
   wxBoxSizer *bottomCenter = new wxBoxSizer(wxHORIZONTAL);
@@ -78,8 +77,7 @@ GameTab::GameTab(wxNotebook *parent, const wxString &name, int listType)
 
   wxBoxSizer *topPart = new wxBoxSizer(wxHORIZONTAL);
   topPart->Add(tags, 30, wxGROW);
-  //topPart->Add(list, 100, wxGROW | wxRIGHT, 10);
-  topPart->Add(new wxListBox(this, -1), 100, wxGROW | wxRIGHT, 10);
+  topPart->Add(list, 100, wxGROW | wxRIGHT, 10);
   topPart->Add(rightPane, 60, wxGROW | wxBOTTOM, 2);
 
   wxBoxSizer *bottomPart = new wxBoxSizer(wxHORIZONTAL);
@@ -92,13 +90,357 @@ GameTab::GameTab(wxNotebook *parent, const wxString &name, int listType)
   parts->Add(bottomPart, 0, wxGROW | wxTOP, 1);
 
   SetSizer(parts);
+
+  Connect(myID_TEXTVIEW, wxEVT_COMMAND_TEXT_URL,
+          wxTextUrlEventHandler(GameTab::onUrlEvent));
+
+  Connect(myID_TAGS, wxEVT_COMMAND_LISTBOX_SELECTED,
+          wxCommandEventHandler(GameTab::onTagSelect));
+  Connect(myID_GAMEPAGE, wxEVT_COMMAND_BUTTON_CLICKED,
+          wxCommandEventHandler(GameTab::onGamePage));
+
+  Connect(myID_BUTTON1, wxEVT_COMMAND_BUTTON_CLICKED,
+          wxCommandEventHandler(GameTab::onButton));
+  Connect(myID_BUTTON2, wxEVT_COMMAND_BUTTON_CLICKED,
+          wxCommandEventHandler(GameTab::onButton));
+
+  Connect(myID_LIST, wxEVT_COMMAND_LIST_ITEM_SELECTED,
+          wxListEventHandler(GameTab::onListSelect));
+  Connect(myID_LIST, wxEVT_COMMAND_LIST_ITEM_DESELECTED,
+          wxListEventHandler(GameTab::onListDeselect));
+
+  Connect(myID_LIST, wxEVT_COMMAND_LIST_ITEM_RIGHT_CLICK,
+          wxListEventHandler(GameTab::onListRightClick));
+  Connect(myID_LIST, wxEVT_COMMAND_LIST_ITEM_ACTIVATED,
+          wxListEventHandler(GameTab::onListActivate));
+
+  Connect(myID_RATE, wxEVT_COMMAND_CHOICE_SELECTED,
+          wxCommandEventHandler(GameTab::onRating));
+  Connect(myID_SEARCH_BOX, wxEVT_COMMAND_TEXT_UPDATED,
+          wxCommandEventHandler(GameTab::onSearch));
+
+  Connect(myID_SPECIAL_KEY, wxEVT_COMMAND_BUTTON_CLICKED,
+          wxCommandEventHandler(GameTab::onSpecialKey));
+
+  lister.addListener(this);
+  gameListReloaded();
+}
+
+void GameTab::onSpecialKey(wxCommandEvent &event)
+{
+  if(event.GetInt() == WXK_DELETE)
+    doAction2(select);
+  else
+    event.Skip();
 }
 
 void GameTab::gotFocus()
 {
+  list->SetFocus();
+  updateSelection();
 }
 
-wxString GameTab::getTitle()
+int GameTab::getTitleNumber()
 {
-  return tabName + wxT(" (10)");
+  return lister.size();
+}
+
+// Respond to clickable URLs in the game description
+void GameTab::onUrlEvent(wxTextUrlEvent &event)
+{
+  if(!event.GetMouseEvent().ButtonDown(wxMOUSE_BTN_LEFT))
+    return;
+
+  wxString url = textView->GetRange(event.GetURLStart(), event.GetURLEnd());
+  wxLaunchDefaultBrowser(url);
+}
+
+void GameTab::onRating(wxCommandEvent &event)
+{
+  int rate = event.GetInt();
+
+  // The first choice is just "Rate this game"
+  if(rate == 0) return;
+  rate = 6 - rate; // The rest are in reverse order
+  assert(rate >= 0 && rate <= 5);
+
+  if(select < 0 || select >= lister.size())
+    return;
+
+  lister.edit(select).rateGame(rate);
+
+  gotFocus();
+}
+
+void GameTab::onTagSelect(wxCommandEvent &event)
+{
+  int sel = event.GetSelection();
+
+  /* TODO
+  // Deselections are equivalent to selecting "All"
+  if(sel <= 0 || !event.IsSelection() || sel > taglist.size())
+    lister.clearTags();
+  else
+    {
+      sel--;
+      assert(sel >= 0 && sel < tagList.size());
+      lister.setTags(tagList[sel]);
+    }
+  */
+}
+
+void GameTab::onSearch(wxCommandEvent &event)
+{
+  lister.setSearch(wxToStr(event.GetString()));
+}
+
+void GameTab::onGamePage(wxCommandEvent &event)
+{
+  if(select < 0 || select >= lister.size())
+    return;
+
+  const wxGameInfo &e = lister.get(select);
+
+  wxString url;
+
+  /* If the user selected Tiggit page from the context menu, or if
+     they pressed the Game Website page but the homepage link is
+     missing, then visit the Tiggit page.
+  */
+  if(event.GetId() == myID_TIGGIT_PAGE ||
+     e.getHomepage() == "")
+    url = strToWx(e.getTiggitPage());
+
+  // Otherwise, go to the game's homepage
+  else
+    url = strToWx(e.getHomepage());
+
+  wxLaunchDefaultBrowser(url);
+}
+
+void GameTab::onButton(wxCommandEvent &event)
+{
+  if(event.GetId() == myID_BUTTON1)
+    doAction1(select);
+  else if(event.GetId() == myID_BUTTON2)
+    doAction2(select);
+  gotFocus();
+}
+
+void GameTab::onListActivate(wxListEvent &event)
+{
+  doAction1(event.GetIndex());
+}
+
+void GameTab::onListDeselect(wxListEvent &event)
+{
+  select = -1;
+  updateSelection();
+}
+
+void GameTab::onListSelect(wxListEvent &event)
+{
+  select = event.GetIndex();
+  updateSelection();
+}
+
+void GameTab::gameStatusChanged() { fixButtons(); }
+void GameTab::gameInfoChanged() { updateSelection(); }
+void GameTab::gameListChanged()
+{
+  // TODO: Fix tag list
+  updateSelection();
+}
+void GameTab::gameListReloaded() { gameListChanged(); }
+
+void GameTab::onListRightClick(wxListEvent &event)
+{
+  if(select < 0 || select >= lister.size())
+    return;
+
+  const wxGameInfo &e = lister.get(select);
+
+  // Set up context menu
+  wxMenu menu;
+
+  // Set up custom event handler for the menu
+  menu.Connect(wxEVT_COMMAND_MENU_SELECTED,
+               (wxObjectEventFunction)&GameTab::onContextClick, NULL, this);
+
+  // State-dependent actions
+  if(e.isUninstalled())
+    menu.Append(myID_BUTTON1, wxT("Install"));
+  else if(e.isWorking())
+    menu.Append(myID_BUTTON2, wxT("Abort"));
+  else if(e.isInstalled())
+    {
+      menu.Append(myID_BUTTON1, wxT("Play"));
+      menu.Append(myID_BUTTON2, wxT("Uninstall"));
+    }
+
+  // Common actions
+  menu.AppendSeparator();
+  menu.Append(myID_GAMEPAGE, wxT("Visit Website"));
+  menu.Append(myID_TIGGIT_PAGE, wxT("Visit Tiggit.net Page"));
+
+  // Currently only supported in Windows
+  if((wxGetOsVersion() & wxOS_WINDOWS) != 0)
+    if(e.isInstalled())
+      menu.Append(myID_OPEN_LOCATION, wxT("Open Location"));
+
+  PopupMenu(&menu);
+}
+
+// Handle events from the context menu
+void GameTab::onContextClick(wxCommandEvent &evt)
+{
+  if(select < 0 || select >= lister.size())
+    return;
+
+  const wxGameInfo &e = lister.get(select);
+
+  int id = evt.GetId();
+  if(id == myID_BUTTON1 || id == myID_BUTTON2)
+    onButton(evt);
+
+  else if(id == myID_GAMEPAGE || id == myID_TIGGIT_PAGE)
+    onGamePage(evt);
+
+  else if(id == myID_OPEN_LOCATION)
+    {
+      if((wxGetOsVersion() & wxOS_WINDOWS) != 0)
+        {
+          std::string cmd = "explorer \"" + e.getDir() + "\"";
+          int res = wxExecute(strToWx(cmd));
+          /*
+          if(res == -1)
+            errorBox(wxT("Failed to launch ") + command);
+          */
+        }
+    }
+}
+
+/*
+  Called whenever there is a chance that a new game has been
+  selected. This updates the available action buttons as well as the
+  displayed game info to match the current selection.
+*/
+void GameTab::updateSelection()
+{
+  fixButtons();
+  updateGameInfo();
+}
+
+// Fix buttons for the current selected item (if any)
+void GameTab::fixButtons()
+{
+  if(select < 0 || select >= lister.size())
+    {
+      b1->Disable();
+      b2->Disable();
+      b1->SetLabel(wxT("No action"));
+      b2->SetLabel(wxT("No action"));
+      return;
+    }
+
+  const wxGameInfo &e = lister.get(select);
+
+  b1->Enable();
+  b2->Enable();
+
+  if(e.isUninstalled())
+    {
+      b1->SetLabel(wxT("Install"));
+      b2->SetLabel(wxT("No action"));
+      b2->Disable();
+    }
+  else if(e.isWorking())
+    {
+      b1->SetLabel(wxT("Pause"));
+      b2->SetLabel(wxT("Abort"));
+
+      // Pausing is not implemented
+      b1->Disable();
+    }
+  else if(e.isInstalled())
+    {
+      b1->SetLabel(wxT("Play Now"));
+      b2->SetLabel(wxT("Uninstall"));
+    }
+}
+
+void GameTab::updateGameInfo()
+{
+  screenshot->clear();
+  if(select < 0 || select >= lister.size())
+    {
+      textView->Clear();
+      rateText->SetLabel(rateString[0]);
+      rateBox->Disable();
+      return;
+    }
+
+  wxGameInfo &e = lister.edit(select);
+
+  // Update the text view
+  textView->ChangeValue(strToWx(e.getDesc()));
+
+  // Request a screenshot update. May result in shotIsReady() being
+  // called immediately, or at a later time.
+  e.requestShot(this);
+
+  // Revert rating box
+  rateBox->SetSelection(0);
+
+  // Have we already rated this game?
+  int rating = e.myRating();
+
+  if(rating == -1)
+    {
+      // Nope. Enable rating dropdown.
+      rateBox->Enable();
+      rateText->SetLabel(rateString[0]);
+    }
+  else
+    {
+      // Yup. Update textbox to reflect our previous rating.
+      rateBox->Disable();
+      assert(rating >= 0 && rating <= 5);
+      rateText->SetLabel(rateString[rating+1]);
+    }
+}
+
+// Called whenever a screenshot is ready
+void GameTab::shotIsReady(const std::string &idname, const wxImage &shot)
+{
+  // Check if the shot belongs to the selected game
+  if(select < 0 || select >= lister.size())
+    return;
+  if(lister.get(select).getIdName() != idname)
+    return;
+
+  // We have a match. Set the screenshot.
+  screenshot->loadImage(shot);
+}
+
+void GameTab::doAction1(int index)
+{
+  if(index < 0 || index >= lister.size())
+    return;
+
+  wxGameInfo &e = lister.edit(index);
+
+  if(e.isUninstalled()) e.installGame();
+  else if(e.isInstalled()) e.launchGame();
+}
+
+void GameTab::doAction2(int index)
+{
+  if(index < 0 || index >= lister.size())
+    return;
+
+  wxGameInfo &e = lister.edit(index);
+
+  if(e.isWorking()) e.abortJob();
+  else if(e.isInstalled()) e.uninstallGame();
 }

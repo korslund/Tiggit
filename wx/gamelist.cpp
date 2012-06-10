@@ -1,4 +1,4 @@
-#include "gamelistview.hpp"
+#include "gamelist.hpp"
 
 using namespace wxTiggit;
 
@@ -11,9 +11,7 @@ void ColumnHandler::sort(wxGameList &lst)
 }
 
 GameListView::GameListView(wxWindow *parent, int id, wxGameList &lst)
-  : wxListCtrl(parent, id, wxDefaultPosition, wxDefaultSize,
-               wxBORDER_SUNKEN | wxLC_REPORT | wxLC_VIRTUAL | wxLC_SINGLE_SEL),
-    lister(lst), markNew(false), markInstalled(false)
+  : ListBase(parent, id), lister(lst), markNew(false), markInstalled(false)
 {
   orange.SetBackgroundColour(wxColour(255,240,180));
   orange.SetTextColour(wxColour(0,0,0));
@@ -29,27 +27,12 @@ GameListView::GameListView(wxWindow *parent, int id, wxGameList &lst)
 
   Connect(wxEVT_COMMAND_LIST_COL_CLICK,
           wxListEventHandler(GameListView::onHeaderClick));
-  Connect(wxEVT_KEY_DOWN,
-          wxKeyEventHandler(GameListView::onKeyDown));
 
   // Get updates when the list changes
   lister.addListener(this);
 
   // Do a complete data refresh
   gameListReloaded();
-}
-
-void GameListView::onKeyDown(wxKeyEvent &evt)
-{
-  // Capture special keys
-  if(evt.GetKeyCode() == WXK_LEFT)
-    {}
-  else if(evt.GetKeyCode() == WXK_RIGHT)
-    {}
-  else if(evt.GetKeyCode() == WXK_DELETE)
-    {}
-  else
-    evt.Skip();
 }
 
 // Handle column header clicks
@@ -112,16 +95,6 @@ wxListItemAttr *GameListView::OnGetItemAttr(long item) const
 
   if(g.isInstalled()) return NULL;
   return (wxListItemAttr*)&orange;
-}
-
-int GameListView::OnGetItemImage(long item) const
-{
-  return -1;
-}
-
-int GameListView::OnGetColumnImage(long item, long column) const
-{
-  return -1;
 }
 
 wxString GameListView::OnGetItemText(long item, long column) const

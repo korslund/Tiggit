@@ -1,11 +1,165 @@
 #include "frame.hpp"
 
+#include <iostream>
+
 using namespace std;
 using namespace wxTiggit;
 
+struct TestInfo : wxGameInfo
+{
+  wxString name;
+
+  TestInfo(const string &n) : name(strToWx(n)) {}
+
+  bool isNew() const { return false; }
+  bool isInstalled() const { return false; }
+  bool isUninstalled() const { return true; }
+  bool isWorking() const { return false; }
+  bool isDemo() const { return false; }
+
+  wxString getTitle(bool includeStatus=false) const
+  {
+    return name;
+  }
+  wxString timeString() const
+  {
+    return wxT("Parallel universe");
+  }
+  wxString rateString() const
+  {
+    return wxT("OVER 9000!");
+  }
+  wxString dlString() const
+  {
+    return wxT("1234.5");
+  }
+  wxString statusString() const
+  {
+    return wxT("Ah, not bad.");
+  }
+
+  std::string getHomepage() const { return "http://tiggit.net/"; }
+  std::string getTiggitPage() const { return "http://tiggit.net/"; }
+  std::string getIdName() const { return "tiggit.net/mayor-poo"; }
+  std::string getDesc() const { return "Description!"; }
+  std::string getDir() const { return "/"; }
+  int myRating() const { return 4; }
+
+  void requestShot(wxScreenshotCallback*)
+  {
+    cout << "Requesting screenshot\n";
+  }
+  void rateGame(int i)
+  {
+    cout << "Rating to " << i << endl;
+  }
+
+  void installGame() { cout << "Install\n"; }
+  void uninstallGame() { cout << "Uninstall\n"; }
+  void launchGame() { cout << "Launch\n"; }
+  void abortJob() { cout << "Abort\n"; }
+};
+
+TestInfo game1("Game 1"), game2("Game 2!!"), game3("Another game");
+
+struct TestList : wxGameList
+{
+  void addListener(wxGameListener*) {}
+  void removeListener(wxGameListener*) {}
+
+  void flipReverse() {}
+  void setReverse(bool) {}
+
+  bool sortTitle() { cout << "Title!\n"; return false; }
+  bool sortDate() { cout << "Date!\n"; return false; }
+  bool sortRating() { cout << "Rating!\n"; return false; }
+  bool sortDownloads() { cout << "Downloads!\n"; return false; }
+
+  void clearTags() {}
+  void setTags(const std::string &) {}
+  void setSearch(const std::string &str)
+  { cout << "Setting search: " << str << endl; }
+
+  int size() const { return 4; }
+  const wxGameInfo& get(int i) { return edit(i); }
+  wxGameInfo& edit(int i)
+  {
+    if(i == 0) return game1;
+    if(i == 1) return game2;
+    return game3;
+  }
+};
+
+TestList testList;
+
+struct TestConf : wxGameConf
+{
+  virtual bool getShowVotes() { return false; }
+  virtual void setShowVotes(bool b)
+  {
+    cout << "Setting option: " << (b?"TRUE":"FALSE") << endl;
+  }
+};
+
+TestConf testConf;
+
+struct TestNews : wxGameNews
+{
+  wxGameNewsItem it1, it2;
+
+  TestNews()
+  {
+    it1.id = 1;
+    it1.dateNum = 1;
+    it1.date = wxT("long ago");
+    it1.subject = wxT("Some subject");
+    it1.body = wxT("Some body");
+    it1.read = true;
+
+    it2.id = 2;
+    it2.dateNum = 2;
+    it2.date = wxT("in a galaxy far away");
+    it2.subject = wxT("Help!");
+    it2.body = wxT("I'm trapped in this little text box!");
+    it2.read = false;
+  }
+
+  const wxGameNewsItem &get(int i) const
+  {
+    if(i == 0) return it1;
+    return it2;
+  }
+
+  int size() const { return 2; }
+  void reload() {}
+
+  void markAsRead(int i)
+  {
+    if(i==0) it1.read = true;
+    it2.read = true;
+  }
+
+  void markAllAsRead()
+  {
+    markAsRead(0);
+    markAsRead(1);
+  }
+};
+
+TestNews testNews;
+
+struct TestData : wxGameData
+{
+  wxGameList &getAllList() { return testList; }
+  wxGameNews &getNews() { return testNews; }
+  wxGameConf &conf() { return testConf; }
+};
+
+TestData testData;
+
 struct TigApp : wxApp
 {
-  virtual bool OnInit()
+  bool OnInit()
   {
     if(!wxApp::OnInit())
       return false;
@@ -13,7 +167,7 @@ struct TigApp : wxApp
     SetAppName(wxT("Test App"));
     wxInitAllImageHandlers();
 
-    TigFrame *frame = new TigFrame(wxT("Test App"), "1");
+    TigFrame *frame = new TigFrame(wxT("Test App"), "1", testData);
     frame->Show(true);
     return true;
   }

@@ -18,7 +18,7 @@ set(WDIR ../../wx)
 #set(BASE ${UDIR}/dirwriter.cpp ${UDIR}/base.cpp)
 #set(ZIP ${BASE} ${UDIR}/unpack_zip.cpp)
 #set(AUTO ${UDIR}/auto.cpp ${ZIP})
-set(WX ${WDIR}/frame.cpp ${WDIR}/tabbase.cpp ${WDIR}/gametab.cpp ${WDIR}/image_viewer.cpp ${WDIR}/gamelistview.cpp)
+set(WX ${WDIR}/frame.cpp ${WDIR}/tabbase.cpp ${WDIR}/gametab.cpp ${WDIR}/image_viewer.cpp ${WDIR}/gamelist.cpp ${WDIR}/listbase.cpp ${WDIR}/newstab.cpp)
 
 #set(BLIBS ${Boost_LIBRARIES})
 #set(LIBS ${BLIBS} ${ZZip_LIBRARIES})

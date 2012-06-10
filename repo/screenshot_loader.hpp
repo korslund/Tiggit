@@ -6,14 +6,6 @@
 #include <wx/image.h>
 #include <string>
 
-// Interface used to notify a caller that a screenshot is ready.
-struct ScreenshotCallback
-{
-  // Called with finished screenshot data. The id is passed from
-  // handleRequest and describes what game this image belongs to.
-  virtual void shotIsReady(const std::string &id, const wxImage &shot) = 0;
-};
-
 class ScreenshotLoader : public ThreadJob
 {
   struct Invoker : StatusJob

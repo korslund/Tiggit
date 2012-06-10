@@ -8,7 +8,7 @@ namespace wxTiggit
 {
   struct TabBase : wxPanel
   {
-    TabBase(wxNotebook *parent);
+    TabBase(wxNotebook *parent, const wxString &name);
 
     // Refresh tab title
     void updateTitle();
@@ -17,12 +17,19 @@ namespace wxTiggit
     virtual void gotFocus() {}
 
   protected:
-    // Override to return tab title
-    virtual wxString getTitle() = 0;
+    // Override to return tab title. Will by default display "tabName
+    // (number)".
+    virtual wxString getTitle();
+
+    // Produce the number seen in the tab title. Returning zero will
+    // show no number.
+    virtual int getTitleNumber() = 0;
 
   private:
     wxNotebook *book;
+    wxString tabName;
     int tabNum; // Current tab placement
+    void onFocus(wxFocusEvent &evt) { gotFocus(); }
   };
 }
 #endif

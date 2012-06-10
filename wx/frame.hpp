@@ -3,21 +3,29 @@
 
 #include "wxcommon.hpp"
 #include "tabbase.hpp"
+#include "wxgamedata.hpp"
 
 namespace wxTiggit
 {
   class TigFrame : public wxFrame
   {
     wxNotebook *book;
-    TabBase *allTab;
+    TabBase *allTab, *newGamesTab, *freewareTab, *demoTab, *installedTab, *newsTab;
+    wxGameData &data;
 
   public:
-    TigFrame(const wxString& title, const std::string &ver);
+    TigFrame(const wxString& title, const std::string &ver,
+             wxGameData &data);
 
   private:
     void updateTabNames();
-    void onExit(wxCommandEvent &event) { Close(); }
     void focusTab();
+
+    // Event handling
+    void onExit(wxCommandEvent &event) { Close(); }
+    void onSpecialKey(wxCommandEvent &event);
+    void onOption(wxCommandEvent &event);
+    void onDataMenu(wxCommandEvent &event);
   };
 }
 #endif
