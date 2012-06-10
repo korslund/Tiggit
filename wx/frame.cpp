@@ -1,5 +1,6 @@
 #include "frame.hpp"
 #include "gametab.hpp"
+#include "myids.hpp"
 
 using namespace wxTiggit;
 

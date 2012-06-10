@@ -1,5 +1,6 @@
 #include "gametab.hpp"
 #include "image_viewer.hpp"
+#include "myids.hpp"
 
 using namespace wxTiggit;
 

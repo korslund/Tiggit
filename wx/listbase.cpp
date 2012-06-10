@@ -1,4 +1,5 @@
 #include "listbase.hpp"
+#include "myids.hpp"
 
 using namespace wxTiggit;
 
