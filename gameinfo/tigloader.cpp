@@ -1,7 +1,7 @@
 #include "tigloader.hpp"
 
-#include "tigdata/json_tigdata.hpp"
-#include "tigdata/binary_tigdata.hpp"
+#include "json_tigdata.hpp"
+#include "binary_tigdata.hpp"
 #include "readjson/readjson.hpp"
 #include <boost/filesystem.hpp>
 #include <stdexcept>

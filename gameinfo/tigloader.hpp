@@ -1,7 +1,7 @@
 #ifndef __GI_TIGLOADER_HPP_
 #define __GI_TIGLOADER_HPP_
 
-#include "tigdata/tiglist.hpp"
+#include "tiglist.hpp"
 #include <map>
 #include <vector>
 
