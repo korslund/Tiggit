@@ -41,6 +41,8 @@ void AutoUnpack::unpack(const std::string &file, Mangle::VFS::StreamFactoryPtr o
     ifs.read((char*)&magic, 4);
 
     if(magic == 0x04034b50) unp = new UnpackZip;
+    else if(magic == 0x21726152)
+      fail("RAR not implemented yet", file);
     else if((magic & 0xffff) == 0x5a4d) // "MZ"
       fail("Cannot open EXE files yet", file);
   }

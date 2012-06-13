@@ -1,0 +1,14 @@
+
+{
+	"desc" : "BrainSplode is a game about rockets and busting some alien brains!\n\nThey came to suck the life out of the planet, but they didn't expect to be BrainSploded! As the game progresses, more stages are added to your rocket allowing for complex and exciting manouvers! Then, choose your own configuration to burst the brains.\n\nPhysics, rockets, exploding brains and cute graphics - what more can you ask?",
+	"devname" : "Rust Red Games",
+	"homepage" : "http://www.richmakegame.com",
+	"launch" : "BrainSplode!_1.1.exe",
+	"location" : "http://tiggit.net/local/brainsplode.tig",
+	"shot" : "http://www.redprodukt.com/blog/wp-content/uploads/2010/10/32.jpg",
+        "tags":"single-player shooter turn-based puzzle physics",
+	"title" : "BrainSplode!",
+	"shot300x260":"http://tiggit.net/pics/300x260/brainsplode.png",
+       "url" : "http://tiggit.net/dl/brainsplode",
+	"version" : "1.1"
+}

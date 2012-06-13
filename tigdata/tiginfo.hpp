@@ -7,10 +7,8 @@ namespace TigData
 {
   struct TigInfo
   {
-    std::string url, launch, version, title, desc,
-      shot300x260, devname, homepage, tags;
-
-    bool isDemo, hasPaypal;
+    std::string url, launch, version, title, desc, devname, homepage, tags;
+    bool isDemo;
   };
 }
 #endif

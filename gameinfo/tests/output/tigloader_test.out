@@ -1,15 +1,27 @@
 
-Loading data:
-Fetching tiggit.net/aquaria---demo from url=http://tiggit.net/local/aquaria---demo.tig
-   Using cache in data/tiggit.net/aquaria---demo.tig
-Fetching tiggit.net/cave-story from url=http://tiggit.net/local/cave-story.tig
-   Using cache in data/tiggit.net/cave-story.tig
-Fetching tiggit.net/dwarf-fortress from url=http://tiggit.net/local/dwarf-fortress.tig
-   Using cache in data/tiggit.net/dwarf-fortress.tig
+brainsplode:
+  Title: BrainSplode!
+  Homepage: http://www.richmakegame.com
+  Tags: single-player shooter turn-based puzzle physics
+  Channel: test_channel
+  Rating: -1 (0 votes)
+  Demo: no
 
-Channel: tiggit.net
-Description: FREE Independent Games for Windows, Mac and Linux
-Homepage: http://tiggit.net/
+brogue:
+  Title: Brogue
+  Homepage: https://sites.google.com/site/broguegame/home
+  Tags: single-player roguelike role-playing adventure
+  Channel: test_channel
+  Rating: -1 (0 votes)
+  Demo: no
+
+moon-invaders:
+  Title: Moon Invaders
+  Homepage: http://hamumu.com/game.php?game=MOON
+  Tags: single-player space-invaders strategy retro
+  Channel: test_channel
+  Rating: -1 (0 votes)
+  Demo: no
 
 aquaria---demo:
   Title: Aquaria - DEMO

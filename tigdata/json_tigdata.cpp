@@ -11,14 +11,9 @@ void TigData::fromJson(TigData::TigInfo& out, const Json::Value &v)
   out.version = v["version"].asString();
   out.title = v["title"].asString();
   out.desc = v["desc"].asString();
-  out.shot300x260 = v["shot300x260"].asString();
   out.devname = v["devname"].asString();
   out.homepage = v["homepage"].asString();
   out.tags = v["tags"].asString();
-
-  // Check whether the tigfile has a valid "paypal" entry. We don't
-  // need the actual value.
-  out.hasPaypal = (v["paypal"].asString() != "");
 
   // The game is a demo if it has "type":"demo" in the tigfile.
   out.isDemo = (v["type"].asString() == "demo");
@@ -53,6 +48,9 @@ void TigData::fromJson(TigData::TigList &out, const Json::Value &root,
   out.desc = root["desc"].asString();
   out.homepage = root["homepage"].asString();
 
+  if(out.channel.find('/') != std::string::npos)
+    fail("Channel names may not contain slashes: " + out.channel);
+
   // This must be present, the others are optional
   if(out.channel == "") fail("Missing or invalid channel name");
 
@@ -61,6 +59,7 @@ void TigData::fromJson(TigData::TigList &out, const Json::Value &root,
 
   Value::Members keys = list.getMemberNames();
   Value::Members::iterator it;
+  out.list.reserve(keys.size());
   for(it = keys.begin(); it != keys.end(); it++)
     {
       const std::string &key = *it;
@@ -70,6 +69,7 @@ void TigData::fromJson(TigData::TigList &out, const Json::Value &root,
       fromJson(e, list[key]);
 
       e.urlname = key;
+      e.channel = out.channel;
       e.idname = out.channel + "/" + key;
 
       // Get tigfile data
@@ -82,9 +82,8 @@ void TigData::fromJson(TigData::TigList &out, const Json::Value &root,
       // Decode JSON data
       fromJson(e.tigInfo, tig);
 
-      // Skip  if not enough info was found
-      if(e.tigInfo.launch == "" || e.tigInfo.title == "" ||
-         e.tigInfo.url == "")
+      // Skip if not enough info was found
+      if(e.tigInfo.launch == "" || e.tigInfo.title == "")
         continue;
 
       // Entry accepted, add it

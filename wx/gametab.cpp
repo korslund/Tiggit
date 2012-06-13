@@ -384,7 +384,7 @@ void GameTab::updateGameInfo()
   wxGameInfo &e = lister.edit(select);
 
   // Update the text view
-  textView->ChangeValue(strToWx(e.getDesc()));
+  textView->ChangeValue(e.getDesc());
 
   // Request a screenshot update. May result in shotIsReady() being
   // called immediately, or at a later time.

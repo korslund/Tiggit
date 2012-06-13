@@ -19,7 +19,7 @@ namespace TigData
     int rateCount, dlCount;
 
     // Idname = channel/urlname
-    std::string urlname, idname, tigurl;
+    std::string urlname, channel, idname, tigurl;
   };
 }
 #endif

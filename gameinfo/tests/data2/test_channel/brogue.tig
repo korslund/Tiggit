@@ -1,0 +1,14 @@
+
+{
+	"desc" : "Brogue is a Roguelike game by Brian Walker.\n\nBrogue is a unique roguelike in that it has a simplified game mechanics, an easy learning curve, and beautiful visuals, without losing any of the depth of gameplay.",
+	"devname" : "Brian Walker",
+	"homepage" : "https://sites.google.com/site/broguegame/home",
+	"launch" : "Brogue v1.6/brogue.exe",
+        "tags":"single-player roguelike role-playing adventure",
+	"location" : "http://tiggit.net/local/brogue.tig",
+	"title" : "Brogue",
+        "shot" : "http://tiggit.net/pics/brogue.png",
+        "shot300x260" : "http://tiggit.net/pics/300x260/brogue.png",
+	"url" : "http://sites.google.com/site/broguegame/BrogueWindowsv1.6.zip",
+	"version" : "1.6"
+}

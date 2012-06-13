@@ -1,0 +1,11 @@
+{
+    "type":"tiglist 1.2",
+    "channel":"test_channel",
+    "desc":"This is a test channel",
+    "list":
+    {
+        "brainsplode":{},
+        "brogue":{},
+        "moon-invaders":{}
+    }
+}

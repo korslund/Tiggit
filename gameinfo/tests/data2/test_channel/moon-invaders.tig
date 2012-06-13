@@ -1,0 +1,14 @@
+{
+    "shot300x260":"http://tiggit.net/pics/300x260/moon-invaders.png",
+       "url":"http://tiggit.net/dl/moon-invaders",
+    "launch":"Moon Invaders/mooninvaders.exe",
+
+    "title":"Moon Invaders",
+    "desc":"Moon Invaders is a small but very unique and creative game. It is a mix between tower defense and space invaders. It playes like normal space invaders, with waves of enemies flying in from above. But instead of moving a gunship at the bottom, you build stationary towers of various kinds.\n\nThere are 6 kinds of towers, each with several upgrade options. There are also 6 'global' upgrades that help all your towers. This is complicated a bit by the fact that the game contains NO text what-so-ever, and no explanations of anything. So discovering how the game works is part of the journey.",
+    "shot":"http://hamumu.com/images/screens/MOON_scr2.gif",
+        "tags":"single-player space-invaders strategy retro",
+    "homepage":"http://hamumu.com/game.php?game=MOON",
+    "devname":"Hamumu / Mike Hommel",
+    "location":"http://tiggit.net/local/moon-invaders.tig"
+}
+
