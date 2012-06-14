@@ -3,6 +3,10 @@
 
 #include <set>
 
+#ifndef NULL
+#define NULL 0
+#endif
+
 namespace List
 {
   class ParentBase
@@ -12,21 +16,8 @@ namespace List
     std::set<ParentBase*> children;
 
   public:
-    ParentBase(ParentBase *_parent=NULL)
-      : parent(_parent)
-    { if(parent) parent->addChild(this); }
-    virtual ~ParentBase()
-    {
-      // Remove all references to ourselves
-      if(parent)
-        parent->remChild(this);
-      if(children.size())
-        {
-          std::set<ParentBase*>::iterator it;
-          for(it = children.begin(); it != children.end(); it++)
-            (*it)->parent = NULL;
-        }
-    }
+    ParentBase(ParentBase *_parent=NULL);
+    virtual ~ParentBase();
 
   private:
     void addChild(ParentBase *b) { children.insert(b); }

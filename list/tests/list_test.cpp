@@ -17,7 +17,7 @@ void *vp(int i)
 
 void print(const ListBase &l)
 {
-  const ListBase::PtrList &lst = l.getList();
+  const PtrList &lst = l.getList();
   for(int i=0; i<lst.size(); i++)
     cout << " " << ii(lst[i]);
   cout << endl;
@@ -94,7 +94,7 @@ int main()
 
   cout << "\nFilling in main list:\n";
 
-  ListBase::PtrList &lst = ml.fillList();
+  PtrList &lst = ml.fillList();
   for(int i=1;i<=10;i++)
     {
       lst.push_back(vp(i));

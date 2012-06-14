@@ -6,11 +6,11 @@
 
 namespace List
 {
+  typedef std::vector<void*> PtrList;
+
   class ListBase : public ParentBase
   {
   public:
-    typedef std::vector<void*> PtrList;
-
     ListBase(ListBase *par=NULL)
       : ParentBase(par) {}
 
@@ -24,17 +24,7 @@ namespace List
      */
     virtual void updateList() = 0;
 
-    void updateChildren()
-    {
-      updateList();
-      std::set<ParentBase*>::iterator it;
-      for(it = children.begin(); it != children.end(); it++)
-        {
-          ListBase *b = dynamic_cast<ListBase*>(*it);
-          if(b)
-            b->updateChildren();
-        }
-    }
+    void updateChildren();
   };
 }
 #endif

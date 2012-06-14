@@ -1,25 +1,24 @@
-#include "gameinfo/tigloader.hpp"
 #include "misc/dirfinder.hpp"
 #include "misc/lockfile.hpp"
 #include "tasks/unpack.hpp"
 #include "tasks/download.hpp"
+#include "tiglib/gamedata.hpp"
+#include "tiglib/gamelister.hpp"
 
 #include <boost/filesystem.hpp>
 #include <iostream>
 #include <stdexcept>
 #include <time.h>
+#include <iomanip>
+
 using namespace std;
+using namespace TigData;
 
 /* 
    GOAL: Do ALL the things covered by wxGameInfo, but without any wx
    dependency.
 
    Full list (in any order):
-
-   - list sorting / listkeeper
-
-     - move over the old listkeeper and adjust it to the current
-       situation. Figure out how to get status into it.
 
    - game install status
      - isInstalled() etc
@@ -96,22 +95,30 @@ bool fetchIfOlder(const std::string &url,
 }
 
 struct MyFetch : GameInfo::URLManager
-  {
-    void getUrl(const std::string &url, const std::string &outfile)
-    { fetchFile(url, outfile); }
-  };
+{
+  void getUrl(const std::string &url, const std::string &outfile)
+  { fetchFile(url, outfile); }
+};
+
+struct TopPick : TigLib::GamePicker
+{
+  bool include(const TigEntry *ent)
+  { return ent->rating >= 4.0; }
+} topPick;
 
 class Repo
 {
   Misc::LockFile lock;
   std::string dir;
-  GameInfo::TigLoader data;
+
+  TigLib::GameData data;
+  TigLib::GameLister lister;
 
   std::string listFile, tigDir;
 
 public:
   Repo(const std::string &where="")
-    : dir(where)
+    : dir(where), lister(data.allList)
   {
     if(dir == "")
       dir = getHomeDir();
@@ -145,8 +152,44 @@ public:
   void loadData()
   {
     MyFetch fetch;
-    data.addChannel(listFile, tigDir, &fetch);
-    cout << "Loaded " << data.getList().size() << " games\n";
+    data.data.addChannel(listFile, tigDir, &fetch);
+    data.copyList();
+    cout << "Loaded " << lister.getList().size() << " games\n";
+  }
+
+  static const TigEntry* tt(const void*p)
+  { return (const TigEntry*)p; }
+
+  void print()
+  {
+    //lister.setPick(&topPick);
+    lister.sortRating();
+    //lister.setSearch("ab");
+    //lister.setReverse(true);
+
+    cout << "\n  " << setw(40) << left << "Title"
+         << "   " << setw(10) << "Rating"
+         << "   " << setw(10) << "Downloads\n\n";
+
+    const List::PtrList &games = lister.getList();
+    for(int i=0; i<games.size(); i++)
+      {
+        const TigEntry *ent = tt(games[i]);
+        std::string title = ent->tigInfo.title;
+        if(title.size() > 35)
+          title = title.substr(0,35) + "...";
+
+        cout << "  " << setw(40) << left << title
+             << "   " << setw(10) << ent->rating
+             << "   " << setw(10) << ent->dlCount
+             << endl;
+
+        if(i > 30)
+          {
+            cout << "...\n";
+            break;
+          }
+      }
   }
 };
 
@@ -155,5 +198,6 @@ int main()
   Repo rep;
   rep.fetchFiles();
   rep.loadData();
+  rep.print();
   return 0;
 }
