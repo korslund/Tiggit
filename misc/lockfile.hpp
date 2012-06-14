@@ -25,6 +25,8 @@ namespace Misc
      */
     bool lock(bool force=false);
     void unlock();
+    bool lock(const std::string &file, bool force=false)
+    { setFile(file); return lock(force); }
 
     void setFile(const std::string &_file)
     { unlock(); file = _file; }

@@ -1,5 +1,6 @@
 #include "download.hpp"
 #include "curl.hpp"
+#include <boost/filesystem.hpp>
 
 using namespace Tasks;
 
@@ -34,8 +35,18 @@ void DownloadTask::doJob()
     }
   else
     {
-      setBusy("Downloading " + url + " to " + file);
-      cURL::get(url, file, userAgent, &prog);
+      // Use a temporary output file to avoid potentially overwriting
+      // existing data with a botched download, and also to signal
+      // that this is not the completed file.
+      const std::string tmp = file + ".part";
+
+      setBusy("Downloading " + url + " to " + tmp);
+      cURL::get(url, tmp, userAgent, &prog);
+
+      // Move the completed file into place
+      using namespace boost::filesystem;
+      remove(file);
+      rename(tmp, file);
     }
 
   // All error handling is done through exceptions. If we get here,

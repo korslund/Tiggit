@@ -1,0 +1,45 @@
+Initial values:
+Main:
+Picker:
+Sorter:
+
+Filling in main list:
+Sort list was updated
+Pick list was updated
+Main list was updated
+Main: 1 2 3 4 5 6 7 8 9 10
+Picker: 2 4 6 8 10
+Sorter: 2 4 6 8 10
+
+Reversing sort:
+Sort list was updated
+Main: 1 2 3 4 5 6 7 8 9 10
+Picker: 2 4 6 8 10
+Sorter: 10 8 6 4 2
+
+Adding some new elements:
+Sort list was updated
+Pick list was updated
+Main list was updated
+Main: 1 2 3 4 5 6 13 8 9 10 111 200
+Picker: 2 4 6 8 10 200
+Sorter: 200 10 8 6 4 2
+
+Changing sorter:
+Sort list was updated
+Main: 1 2 3 4 5 6 13 8 9 10 111 200
+Picker: 2 4 6 8 10 200
+Sorter: 8 2 4 6 10 200
+
+Changing picker:
+Sort list was updated
+Pick list was updated
+Main: 1 2 3 4 5 6 13 8 9 10 111 200
+Picker: 6 13 8 9 10 111 200
+Sorter: 8 6 9 10 111 200 13
+
+Reversing sort again:
+Sort list was updated
+Main: 1 2 3 4 5 6 13 8 9 10 111 200
+Picker: 6 13 8 9 10 111 200
+Sorter: 13 200 111 10 9 6 8

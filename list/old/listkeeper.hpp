@@ -1,11 +1,10 @@
-#ifndef _LISTKEEPER_HPP_
-#define _LISTKEEPER_HPP_
+#ifndef __LISTKEEPER_HPP_
+#define __LISTKEEPER_HPP_
 
 #include <vector>
 #include <boost/algorithm/string.hpp>
 #include <algorithm>
-#include "datalist.hpp"
-#include "gameinfo.hpp"
+#include <string>
 
 class ListKeeper
 {
