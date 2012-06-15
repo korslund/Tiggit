@@ -29,10 +29,8 @@ namespace wxTiggit
     wxString rateString[7];
 
     // wxGameListener functions
-    void gameStatusChanged();
     void gameInfoChanged();
     void gameListChanged();
-    void gameListReloaded();
 
     // TabBase functions
     void gotFocus();

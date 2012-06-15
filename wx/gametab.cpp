@@ -124,7 +124,7 @@ GameTab::GameTab(wxNotebook *parent, const wxString &name, wxGameList &lst)
           wxCommandEventHandler(GameTab::onSpecialKey));
 
   lister.addListener(this);
-  gameListReloaded();
+  gameListChanged();
 }
 
 void GameTab::onSpecialKey(wxCommandEvent &event)
@@ -245,14 +245,12 @@ void GameTab::onListSelect(wxListEvent &event)
   updateSelection();
 }
 
-void GameTab::gameStatusChanged() { fixButtons(); }
 void GameTab::gameInfoChanged() { updateSelection(); }
 void GameTab::gameListChanged()
 {
   // TODO: Fix tag list
   updateSelection();
 }
-void GameTab::gameListReloaded() { gameListChanged(); }
 
 void GameTab::onListRightClick(wxListEvent &event)
 {

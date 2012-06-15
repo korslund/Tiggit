@@ -16,6 +16,12 @@ namespace wxTiggit
     // Called when the tab is selected
     virtual void gotFocus() {}
 
+    void select()
+    {
+      book->SetSelection(tabNum);
+      gotFocus();
+    }
+
   protected:
     // Override to return tab title. Will by default display "tabName
     // (number)".

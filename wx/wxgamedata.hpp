@@ -96,10 +96,10 @@ namespace wxTiggit
 
   struct wxGameData
   {
-    virtual wxGameList &getAllList() = 0;
-
-    void addListener(wxGameListener *p) { getAllList().addListener(p); }
-    void removeListener(wxGameListener *p) { getAllList().removeListener(p); }
+    virtual wxGameList &getLatest() = 0;
+    virtual wxGameList &getFreeware() = 0;
+    virtual wxGameList &getDemos() = 0;
+    virtual wxGameList &getInstalled() = 0;
 
     virtual wxGameConf &conf() = 0;
     virtual wxGameNews &getNews() = 0;
@@ -116,10 +116,13 @@ namespace wxTiggit
     }
     wxGameList *list;
 
-    virtual void gameStatusChanged() = 0;
+    // Called when game info or status has changed, but the list
+    // itself has not.
     virtual void gameInfoChanged() = 0;
+
+    // Called when the list itself has changed in size, content or
+    // ordering.
     virtual void gameListChanged() = 0;
-    virtual void gameListReloaded() = 0;
   };
 }
 

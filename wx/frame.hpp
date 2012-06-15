@@ -10,7 +10,7 @@ namespace wxTiggit
   class TigFrame : public wxFrame
   {
     wxNotebook *book;
-    TabBase *allTab, *newGamesTab, *freewareTab, *demoTab, *installedTab, *newsTab;
+    TabBase *newGamesTab, *freewareTab, *demosTab, *installedTab, *newsTab;
     wxGameData &data;
 
   public:

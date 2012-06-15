@@ -15,6 +15,7 @@ namespace List
       : ParentBase(par) {}
 
     const PtrList &getList() const { return list; }
+    void refresh() { updateChildren(); }
 
   protected:
     PtrList list;

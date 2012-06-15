@@ -2,11 +2,15 @@
 #define __WXAPP_WXGAMEDATA_HPP_
 
 #include "wx/wxgamedata.hpp"
+#include "gameinfo/tigentry.hpp"
+#include "tiglib/gamelister.hpp"
+#include "list/haschanged.hpp"
+#include <set>
 
 /*
   This is our backend implementation of the wx/wxgamedata.hpp abstract
   interface. The implementation uses pretty much all the other modules
-  in the tiggit source set to provide the necessary functionality.
+  in the tiggit source set.
  */
 
 // This header is not included in a lot of places, so this is OK.
@@ -14,16 +18,21 @@ using namespace wxTiggit;
 
 namespace wxTigApp
 {
-  struct GameInfo : wxGameInfo
+  struct GameInf : wxGameInfo
   {
-  private:
-    wxString title, titleStatus, timeStr, rateStr, dlStr, statusStr, desc;
+    GameInf(const TigData::TigEntry *e)
+      : ent(e) { updateAll(); }
 
     bool isInstalled() const;
     bool isUninstalled() const;
     bool isWorking() const;
     bool isDemo() const;
     bool isNew() const;
+
+  private:
+    const TigData::TigEntry *ent;
+
+    wxString title, titleStatus, timeStr, rateStr, rateStr2, dlStr, statusStr, desc;
 
     // Used to update cached wxStrings from source data
     void updateStatus();
@@ -56,10 +65,47 @@ namespace wxTigApp
     void abortJob();
   };
 
+  struct GameList;
+  struct Notifier : List::HasChanged
+  {
+    GameList *lst;
+    Notifier(List::ListBase &list, GameList *l)
+      : List::HasChanged(&list), lst(l) {}
+
+    void notify();
+  };
+
   struct GameList : wxGameList
   {
-    void addListener(wxGameListener*);
-    void removeListener(wxGameListener*);
+    TigLib::GameLister lister;
+    Notifier notif;
+
+    enum SortStatus
+      {
+        SS_NONE, SS_TITLE, SS_DATE, SS_RATING, SS_DOWNLOADS
+      };
+    int sortStatus;
+    bool setStat(int i)
+    {
+      int old = sortStatus;
+      sortStatus = i;
+      return i == old;
+    }
+
+    std::set<wxGameListener*> listeners;
+
+    GameList(List::ListBase &list, TigLib::GamePicker *pick)
+      : lister(list, pick), notif(lister.topList(), this),
+        sortStatus(SS_NONE) {}
+
+    void addListener(wxGameListener *p);
+    void removeListener(wxGameListener *p);
+
+    // Invoke gameListChanged() on our listeners
+    void notifyListChange();
+
+    // Invoke gameInfoChanged() on our listeners
+    void notifyInfoChange();
 
     void flipReverse();
     void setReverse(bool);
@@ -74,7 +120,7 @@ namespace wxTigApp
     bool sortDownloads();
 
     int size() const;
-    const wxGameInfo& get(int);
+    const wxGameInfo& get(int i) { return edit(i); }
     wxGameInfo& edit(int);
   };
 
@@ -95,10 +141,30 @@ namespace wxTigApp
 
   struct GameData : wxGameData
   {
+    GameList latest, freeware, demos, installed;
+
     GameConf config;
     GameNews news;
 
-    wxGameList &getAllList();
+    GameData();
+
+    wxGameList &getLatest() { return latest; }
+    wxGameList &getFreeware() { return freeware; }
+    wxGameList &getDemos() { return demos; }
+    wxGameList &getInstalled() { return installed; }
+
+    void installStatusChanged()
+    {
+      // Notify main lists that their views should be updated
+      latest.notifyInfoChange();
+      freeware.notifyInfoChange();
+      demos.notifyInfoChange();
+
+      // Refresh the installed list. Notifications will happen
+      // automatically.
+      installed.lister.refresh();
+    }
+
     wxGameConf &conf() { return config; }
     wxGameNews &getNews() { return news; }
   };

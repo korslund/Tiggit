@@ -83,6 +83,7 @@ struct StatusCol : ColumnHandler
   }
 };
 
+/*
 struct AllGamesTab : GameTab
 {
   AllGamesTab(wxNotebook *parent, wxGameData &data)
@@ -92,6 +93,7 @@ struct AllGamesTab : GameTab
     list->addColumn("Status", 170, new StatusCol);
   }
 };
+*/
 
 // Lists newly added games
 struct NewGamesTab : GameTab
@@ -99,7 +101,7 @@ struct NewGamesTab : GameTab
   int newGames;
 
   NewGamesTab(wxNotebook *parent, wxGameData &data)
-    : GameTab(parent, wxT("Latest"), data.getAllList()),
+    : GameTab(parent, wxT("Latest"), data.getLatest()),
       newGames(0)
   {
     list->addColumn("Name", 370, new TitleCol(true));
@@ -123,61 +125,47 @@ struct NewGamesTab : GameTab
   }
 };
 
-/*
 // Lists freeware games
 struct FreewareTab : GameTab
 {
-  FreewareTab(wxNotebook *parent, StatusNotify *s)
-    : GameTab(parent, wxT("Browse"), ListKeeper::SL_FREEWARE, s)
+  FreewareTab(wxNotebook *parent, wxGameData &data)
+    : GameTab(parent, wxT("Freeware"), data.getFreeware())
   {
-    list->addColumn(wxT("Name"), 310, new TitleCol(true));
-    list->addColumn(wxT("Rating"), 95, new RatingCol);
-    list->addColumn(wxT("Downloads"), 75, new DownloadsCol);
+    list->addColumn("Name", 310, new TitleCol(true));
+    list->addColumn("Rating", 95, new RatingCol);
+    list->addColumn("Downloads", 75, new DownloadsCol);
 
     list->markInstalled = true;
 
     lister.sortRating();
-    listHasChanged();
-  }
-
-  // Temporary development hack
-  void insertMe()
-  {
-    tabName = wxT("Freeware");
-    GameTab::insertMe();
   }
 };
 
+// Lists demos
 struct DemoTab : GameTab
 {
-  DemoTab(wxNotebook *parent, StatusNotify *s)
-    : GameTab(parent, wxT("Demos"), ListKeeper::SL_DEMOS, s)
+  DemoTab(wxNotebook *parent, wxGameData &data)
+    : GameTab(parent, wxT("Demos"), data.getDemos())
   {
-    list->addColumn(wxT("Name"), 310, new TitleCol(true));
-    list->addColumn(wxT("Rating"), 95, new RatingCol);
-    list->addColumn(wxT("Downloads"), 75, new DownloadsCol);
+    list->addColumn("Name", 310, new TitleCol(true));
+    list->addColumn("Rating", 95, new RatingCol);
+    list->addColumn("Downloads", 75, new DownloadsCol);
 
     list->markInstalled = true;
 
     lister.sortRating();
-    listHasChanged();
   }
 };
 
+// Installed or installing games
 struct InstalledTab : GameTab
 {
-  InstalledTab(wxNotebook *parent, StatusNotify *s)
-    : GameTab(parent, wxT("Installed"), ListKeeper::SL_INSTALL, s)
+  InstalledTab(wxNotebook *parent, wxGameData &data)
+    : GameTab(parent, wxT("Installed"), data.getInstalled())
   {
-    list->addColumn(wxT("Name"), 310, new TitleCol);
-    list->addColumn(wxT("Status"), 170, new StatusCol);
-  }
+    list->addColumn("Name", 310, new TitleCol);
+    list->addColumn("Status", 170, new StatusCol);
 
-  // This needs to die
-  void tick()
-  {
-    for(int i=0; i<lister.size(); i++)
-      updateGameStatus(i);
+    lister.sortTitle();
   }
 };
-*/

@@ -10,7 +10,6 @@ SortList::SortList(ListBase *par)
 
 void SortList::setSort(Sorter *p)
 {
-  reverse = false;
   srt = p;
   updateChildren();
 }

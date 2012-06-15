@@ -90,8 +90,6 @@ struct TestList : wxGameList
   }
 };
 
-TestList testList;
-
 struct TestConf : wxGameConf
 {
   virtual bool getShowVotes() { return false; }
@@ -100,8 +98,6 @@ struct TestConf : wxGameConf
     cout << "Setting option: " << (b?"TRUE":"FALSE") << endl;
   }
 };
-
-TestConf testConf;
 
 struct TestNews : wxGameNews
 {
@@ -146,11 +142,17 @@ struct TestNews : wxGameNews
   }
 };
 
+TestList listLatest, listFreeware, listDemos, listInstalled;
+TestConf testConf;
 TestNews testNews;
 
 struct TestData : wxGameData
 {
-  wxGameList &getAllList() { return testList; }
+  wxGameList &getLatest() { return listLatest; }
+  wxGameList &getFreeware() { return listFreeware; }
+  wxGameList &getDemos() { return listDemos; }
+  wxGameList &getInstalled() { return listInstalled; }
+
   wxGameNews &getNews() { return testNews; }
   wxGameConf &conf() { return testConf; }
 };

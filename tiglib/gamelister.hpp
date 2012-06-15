@@ -46,13 +46,21 @@ namespace TigLib
     { base.setPick(mainPick); }
     ~GameLister() { if(searchPick) delete searchPick; }
 
-    const List::PtrList &getList() { return sort.getList(); }
+    const List::PtrList &getList() const { return sort.getList(); }
+    int size() const { return getList().size(); }
+
+    // Use this as the parent if you need to build more lists on top
+    // of this list.
+    List::ListBase &topList() { return sort; }
 
     void setPick(GamePicker *pck) { base.setPick(pck); }
     void setSort(GameSorter *srt) { sort.setSort(srt); }
     void setReverse(bool b) { sort.setReverse(b); }
     bool getReverse() { return sort.getReverse(); }
     void flipReverse() { setReverse(!getReverse()); }
+
+    // Refresh lists
+    void refresh() { base.refresh(); }
 
     // Use pre-defined sort classes
     void sortTitle();

@@ -31,10 +31,8 @@ namespace wxTiggit
     void addColumn(const std::string &name, int width, ColumnHandler *ch);
 
     // wxGameListener functions
-    void gameStatusChanged();
     void gameInfoChanged();
     void gameListChanged();
-    void gameListReloaded();
 
   private:
     void onHeaderClick(wxListEvent& event);

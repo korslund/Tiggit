@@ -53,17 +53,22 @@ TigFrame::TigFrame(const wxString& title, const std::string &ver,
   // Doesn't seem to work anymore
   SendSizeEvent();
 
-  allTab = new AllGamesTab(book, data);
   newGamesTab = new NewGamesTab(book, data);
+  freewareTab = new FreewareTab(book, data);
+  demosTab = new DemoTab(book, data);
+  installedTab = new InstalledTab(book, data);
   newsTab = new NewsTab(book, data);
 
   updateTabNames();
-  /* TODO: Select startup tab.
+
+  // Select starting tab
+  freewareTab->select();
+
+  /* TODO:
      - 'latest' tab if there are any new games added
      - 'installed' tab if there are installed games
      - 'freeware' tab if there are neither
    */
-  focusTab();
 
   Connect(wxID_EXIT, wxEVT_COMMAND_MENU_SELECTED,
           wxCommandEventHandler(TigFrame::onExit));
@@ -94,8 +99,10 @@ void TigFrame::onOption(wxCommandEvent &event)
 
 void TigFrame::updateTabNames()
 {
-  allTab->updateTitle();
   newGamesTab->updateTitle();
+  freewareTab->updateTitle();
+  demosTab->updateTitle();
+  installedTab->updateTitle();
   newsTab->updateTitle();
 }
 

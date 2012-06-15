@@ -32,7 +32,7 @@ GameListView::GameListView(wxWindow *parent, int id, wxGameList &lst)
   lister.addListener(this);
 
   // Do a complete data refresh
-  gameListReloaded();
+  gameListChanged();
 }
 
 // Handle column header clicks
@@ -58,10 +58,8 @@ void GameListView::addColumn(const std::string &name, int width, ColumnHandler *
   InsertColumn(colNum, col);
 }
 
-void GameListView::gameStatusChanged() { Refresh(); }
 void GameListView::gameInfoChanged() { Refresh(); }
 void GameListView::gameListChanged() { updateSize(); }
-void GameListView::gameListReloaded() { updateSize(); }
 
 // Refresh list size.
 void GameListView::updateSize()
