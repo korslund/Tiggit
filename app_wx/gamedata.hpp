@@ -4,7 +4,9 @@
 #include "wx/wxgamedata.hpp"
 #include "gameinfo/tigentry.hpp"
 #include "tiglib/gamelister.hpp"
+#include "tiglib/repo.hpp"
 #include "list/haschanged.hpp"
+#include "misc/jconfig.hpp"
 #include <set>
 
 /*
@@ -126,8 +128,13 @@ namespace wxTigApp
 
   struct GameConf : wxGameConf
   {
-    bool getShowVotes();
-    void setShowVotes(bool);
+    Misc::JConfig conf;
+
+    GameConf(const std::string &file)
+      : conf(file) {}
+
+    bool getShowVotes() { return conf.getBool("show_votes"); }
+    void setShowVotes(bool b) { conf.setBool("show_votes", b); }
   };
 
   struct GameNews : wxGameNews
@@ -146,7 +153,7 @@ namespace wxTigApp
     GameConf config;
     GameNews news;
 
-    GameData();
+    GameData(TigLib::Repo &rep);
 
     wxGameList &getLatest() { return latest; }
     wxGameList &getFreeware() { return freeware; }
@@ -169,5 +176,4 @@ namespace wxTigApp
     wxGameNews &getNews() { return news; }
   };
 }
-
 #endif

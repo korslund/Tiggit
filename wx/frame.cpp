@@ -50,9 +50,6 @@ TigFrame::TigFrame(const wxString& title, const std::string &ver,
 
   panel->SetSizer(mainSizer);
 
-  // Doesn't seem to work anymore
-  SendSizeEvent();
-
   newGamesTab = new NewGamesTab(book, data);
   freewareTab = new FreewareTab(book, data);
   demosTab = new DemoTab(book, data);

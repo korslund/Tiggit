@@ -1,31 +1,28 @@
 #include "gamedata.hpp"
 
-#include "misc/dirfinder.hpp"
-#include "misc/lockfile.hpp"
-#include "tasks/unpack.hpp"
-#include "tasks/download.hpp"
-#include "tiglib/gamedata.hpp"
-
-#include <boost/filesystem.hpp>
 #include <boost/unordered_map.hpp>
 #include <time.h>
 
-#include <iostream>
-using namespace std;
-
 using namespace TigData;
 
-/* 
-   Modularize:
-   - see if you could move more stuff to tiglib
-   - fix up the status stuff there, in a struct much like GameInf
-     here. Drop the hashmap solution and use shared_ptr extra-infos
-     instead. Or I guess you'll end up using hashmaps behind the
-     scenes anyway, unless you replace the void* in the base
-     lists. And that might be just as good a solution, actually.
+/*
+  You ALWAYS work on whatever you want. ALWAYS! You are not living or
+  working for anyone else.
+
+   Fix in tiglib:
+   - special gameinfo-kind of structure there
+     - then move that into the lists instead of using entries directly
+     - can have extra-pointers or sharedptrs or whatever
+   - hashmap solution
+   - finally, fix up so we have everything behind a clean usable
+     API. Then hide ALL the details from the user.
+
+   Repo finder:
+   - need tools to find and convert legacy repository locations and
+     content. For example, we will need to convert our old config
+     file.
 
    Backend:
-   - config files
    - fetching and loading news / read status
    - various fetches
      - includes cache fetching
@@ -44,153 +41,6 @@ using namespace TigData;
      - status notifications
    - launching games
  */
-
-std::string getHomeDir()
-{
-  Misc::DirFinder find("tiggit.net", "tiggit");
-
-  std::string res;
-  if(find.getStoredPath(res))
-    return res;
-
-  if(!find.getStandardPath(res))
-    {
-      //cout << "Failed to find any usable repo path";
-      return "";
-    }
-
-  find.setStoredPath(res);
-  return res;
-}
-
-void fail(const std::string &msg)
-{
-  throw std::runtime_error(msg);
-}
-
-void fetchFile(const std::string &url, const std::string &outfile)
-{
-  using namespace Jobify;
-
-  JobInfoPtr info(new JobInfo);
-  Tasks::DownloadTask dl(url, outfile, info);
-  dl.run();
-  if(!info->isSuccess())
-    fail("Failed to download " + url);
-}
-
-bool fetchIfOlder(const std::string &url,
-                  const std::string &outfile,
-                  int minutes)
-{
-  namespace bs = boost::filesystem;
-
-  // Check age if file exists
-  if(bs::exists(outfile))
-    {
-      time_t ft = bs::last_write_time(outfile);
-      time_t now = time(0);
-
-      // If we haven't expired, keep existing file
-      if(difftime(now,ft) < 60*minutes)
-        return false;
-    }
-
-  // Otherwise, go get it!
-  fetchFile(url, outfile);
-  return true;
-}
-
-struct MyFetch : GameInfo::URLManager
-{
-  void getUrl(const std::string &url, const std::string &outfile)
-  { fetchFile(url, outfile); }
-};
-
-struct Repo
-{
-  Misc::LockFile lock;
-  std::string dir;
-
-  TigLib::GameData data;
-
-  std::string listFile, tigDir;
-
-  Repo(const std::string &where="")
-    : dir(where)
-  {
-    if(dir == "")
-      dir = getHomeDir();
-
-    if(dir == "")
-      fail("Could not find a standard repository path");
-
-    if(!lock.lock(getPath("lock")))
-      fail("Failed to lock " + dir);
-
-    //cout << "Found repo at: " << dir << endl;
-
-    listFile = getPath("all_games.json");
-    tigDir = getPath("tigfiles/");
-  }
-
-  std::string getPath(const std::string &fname)
-  {
-    return (boost::filesystem::path(dir)/fname).string();
-  }
-
-  void fetchFiles()
-  {
-    fetchIfOlder("http://tiggit.net/api/all_games.json",
-                 listFile, 60);
-  }
-
-  void loadData()
-  {
-    MyFetch fetch;
-    data.data.addChannel(listFile, tigDir, &fetch);
-    data.copyList();
-  }
-
-  static const TigEntry* tt(const void*p)
-  { return (const TigEntry*)p; }
-
-  /*
-  void print()
-  {
-    //lister.setPick(&topPick);
-    lister.sortRating();
-    //lister.setSearch("ab");
-    //lister.setReverse(true);
-
-    cout << "\n  " << setw(40) << left << "Title"
-         << "   " << setw(10) << "Rating"
-         << "   " << setw(10) << "Downloads\n\n";
-
-    const List::PtrList &games = lister.getList();
-    for(int i=0; i<games.size(); i++)
-      {
-        const TigEntry *ent = tt(games[i]);
-        std::string title = ent->tigInfo.title;
-        if(title.size() > 35)
-          title = title.substr(0,35) + "...";
-
-        cout << "  " << setw(40) << left << title
-             << "   " << setw(10) << ent->rating
-             << "   " << setw(10) << ent->dlCount
-             << endl;
-
-        if(i > 30)
-          {
-            cout << "...\n";
-            break;
-          }
-      }
-  }
-  */
-};
-
-Repo rep;
 
 using namespace wxTigApp;
 
@@ -381,14 +231,15 @@ int GameList::size() const { return lister.size(); }
    Another big problem is that this is a global variable, and we don't
    want that.
 
-   Fix both issues later.
+   This should be packed into some structure in tiglib, which again is
+   passed to GameData.
  */
 
 // This is used frequently, so let's use a hashmap instead of the
 // slower std::map
 static boost::unordered_map<const void*, GameInf*> ptrmap;
 
-GameInf &ptrToInfo(const void *p)
+static GameInf &ptrToInfo(const void *p)
 {
   GameInf *gi = ptrmap[p];
   if(!gi)
@@ -404,9 +255,6 @@ wxGameInfo& GameList::edit(int i)
   assert(i>=0 && i<size());
   return ptrToInfo(lister.getList()[i]);
 }
-
-bool GameConf::getShowVotes() { return false; }
-void GameConf::setShowVotes(bool) {}
 
 wxGameNewsItem it;
 
@@ -439,11 +287,12 @@ struct InstalledPick : TigLib::GamePicker
 static FreeDemoPick freePick(true), demoPick(false);
 static InstalledPick instPick;
 
-GameData::GameData()
-  : latest(rep.data.allList, NULL)
-  , freeware(rep.data.allList, &freePick)
-  , demos(rep.data.allList, &demoPick)
-  , installed(rep.data.allList, &instPick)
+GameData::GameData(TigLib::Repo &rep)
+  : latest(rep.mainList(), NULL)
+  , freeware(rep.mainList(), &freePick)
+  , demos(rep.mainList(), &demoPick)
+  , installed(rep.mainList(), &instPick)
+  , config(rep.getPath("wxtiggit.conf"))
 {
   rep.fetchFiles();
   rep.loadData();

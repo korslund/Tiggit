@@ -3,7 +3,10 @@
 
 struct TigApp : wxApp
 {
+  TigLib::Repo rep;
   wxTigApp::GameData gameData;
+
+  TigApp() : gameData(rep) {}
 
   bool OnInit()
   {

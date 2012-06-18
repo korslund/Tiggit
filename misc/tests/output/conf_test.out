@@ -1,0 +1,11 @@
+Writing to fresh object:
+  Beautiful: 1
+  Umbrella: 0
+  Spork: 0
+  A cloud: 1
+Writing to pre-loaded object:
+  Morning: 33
+  Evening: 19
+Testing binary data:
+  f: 3.14
+  i: 103
