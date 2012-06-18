@@ -18,9 +18,9 @@ struct SearchPicker : GamePicker
 {
   std::string str;
 
-  bool include(const TigData::TigEntry *ent)
+  bool include(const LiveInfo *info)
   {
-    return boost::algorithm::icontains(ent->tigInfo.title, str);
+    return boost::algorithm::icontains(info->ent->tigInfo.title, str);
   }
 };
 

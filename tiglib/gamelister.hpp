@@ -4,6 +4,7 @@
 #include "list/picklist.hpp"
 #include "list/sortlist.hpp"
 #include "gameinfo/tigentry.hpp"
+#include "liveinfo.hpp"
 
 namespace TigLib
 {
@@ -13,33 +14,32 @@ namespace TigLib
    */
   struct GamePicker : List::Picker
   {
-    virtual bool include(const TigData::TigEntry*) = 0;
+    virtual bool include(const LiveInfo*) = 0;
 
   private:
     bool include(const void *p)
-    { return include((const TigData::TigEntry*)p); }
+    { return include((const LiveInfo*)p); }
   };
 
   struct GameSorter : List::Sorter
   {
-    virtual bool isLess(const TigData::TigEntry*, const TigData::TigEntry*) = 0;
+    virtual bool isLess(const LiveInfo*, const LiveInfo*) = 0;
 
   private:
     bool isLess(const void* a, const void* b)
-    { return isLess((const TigData::TigEntry*)a,
-                    (const TigData::TigEntry*)b);
-    }
+    { return isLess((const LiveInfo*)a,(const LiveInfo*)b); }
   };
 
   /* Create a sub-list from a given base list, and apply sorting,
      searching and other filters to that.
    */
-  struct GameLister
+  class GameLister
   {
     List::PickList base, tags, search;
     List::SortList sort;
     GamePicker *searchPick;
 
+  public:
     GameLister(List::ListBase &all, GamePicker *mainPick = NULL)
       : base(&all), tags(&base), search(&tags), sort(&search),
         searchPick(NULL)

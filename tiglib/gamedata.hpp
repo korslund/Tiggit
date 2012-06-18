@@ -6,19 +6,20 @@
 
 namespace TigLib
 {
+  class Repo;
   struct GameData
   {
     List::MainList allList;
     GameInfo::TigLoader data;
 
-    /* This will copy the complete game list over from the TigLoader
-       into the allList, and update it. Only pointers are copied so
-       this is very inexpensive.
+    /* This will create a new set of LiveInfo structs representing all
+       the TigEntrys in the tigloader list.
 
-       copyList() should be called whenever the game data has been
-       loaded or updated.
+       Running this function includes deleting all the old LiveInfo
+       structs and creating new ones. It should be called sparingly,
+       and only when the main data has been reloaded.
      */
-    void copyList();
+    void createLiveData(Repo *repo);
   };
 }
 

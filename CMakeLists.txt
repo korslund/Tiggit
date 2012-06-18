@@ -37,7 +37,8 @@ set(GAMEINFO ${GIDIR}/json_tigdata.cpp ${GIDIR}/binary_tigdata.cpp ${GIDIR}/tigl
 set(TASKS ${TDIR}/curl.cpp ${TDIR}/download.cpp ${TDIR}/unpack.cpp)
 set(UNPACK ${UDIR}/dirwriter.cpp ${UDIR}/base.cpp ${UDIR}/unpack_zip.cpp ${UDIR}/auto.cpp)
 set(LIST ${LDIR}/sortlist.cpp ${LDIR}/listbase.cpp ${LDIR}/picklist.cpp ${LDIR}/parentbase.cpp)
-set(TIGLIB ${TLDIR}/gamedata.cpp ${TLDIR}/gamelister.cpp ${TLDIR}/sorters.cpp ${TLDIR}/repo.cpp ${TLDIR}/fetch.cpp ${TLDIR}/findrepo.cpp)
+set(TIGLIB ${TLDIR}/gamedata.cpp ${TLDIR}/gamelister.cpp ${TLDIR}/sorters.cpp ${TLDIR}/repo.cpp ${TLDIR}/fetch.cpp ${TLDIR}/findrepo.cpp ${TLDIR}/liveinfo.cpp)
+
 set(WX ${WDIR}/frame.cpp ${WDIR}/tabbase.cpp ${WDIR}/gametab.cpp ${WDIR}/image_viewer.cpp ${WDIR}/gamelist.cpp ${WDIR}/listbase.cpp ${WDIR}/newstab.cpp)
 set(APPWX ${AWDIR}/wxtiggit_main.cpp ${AWDIR}/gamedata.cpp)
 

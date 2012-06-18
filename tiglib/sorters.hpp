@@ -8,7 +8,7 @@ namespace TigLib
   // Sort based on title (ascending, case insensitive)
   struct TitleSort : GameSorter
   {
-    bool isLess(const TigData::TigEntry *a, const TigData::TigEntry *b);
+    bool isLess(const LiveInfo *a, const LiveInfo *b);
   };
 
   /* Sort based on rating (decending). Sort missing ratings (0 votes)
@@ -17,7 +17,7 @@ namespace TigLib
   */
   struct RateSort : TitleSort
   {
-    bool isLess(const TigData::TigEntry *a, const TigData::TigEntry *b);
+    bool isLess(const LiveInfo *a, const LiveInfo *b);
   };
 
   /* Sort by download count (descending). If counts are equal, fall
@@ -26,14 +26,14 @@ namespace TigLib
    */
   struct DLSort : RateSort
   {
-    bool isLess(const TigData::TigEntry *a, const TigData::TigEntry *b);
+    bool isLess(const LiveInfo *a, const LiveInfo *b);
   };
 
   /* Sort by date (newest first)
    */
   struct DateSort : GameSorter
   {
-    bool isLess(const TigData::TigEntry *a, const TigData::TigEntry *b);
+    bool isLess(const LiveInfo *a, const LiveInfo *b);
   };
 }
 

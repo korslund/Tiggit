@@ -1,52 +1,14 @@
 #include "gamedata.hpp"
 
-#include <boost/unordered_map.hpp>
 #include <time.h>
 
 using namespace TigData;
-
-/*
-  You ALWAYS work on whatever you want. ALWAYS! You are not living or
-  working for anyone else.
-
-   Fix in tiglib:
-   - special gameinfo-kind of structure there
-     - then move that into the lists instead of using entries directly
-     - can have extra-pointers or sharedptrs or whatever
-   - hashmap solution
-   - finally, fix up so we have everything behind a clean usable
-     API. Then hide ALL the details from the user.
-
-   Repo finder:
-   - need tools to find and convert legacy repository locations and
-     content. For example, we will need to convert our old config
-     file.
-
-   Backend:
-   - fetching and loading news / read status
-   - various fetches
-     - includes cache fetching
-     - fetching screenshots with callback
-   - rating games / sending download ticks
-
-   Tags:
-   - tag list generator
-   - working tag list selector
-
-   Installing:
-   - starting, finishing and aborting game installs
-   - game install status
-     - isInstalled() etc
-     - job system
-     - status notifications
-   - launching games
- */
-
 using namespace wxTigApp;
+using namespace TigLib;
 
 bool GameInf::isInstalled() const { return false; }
-bool GameInf::isUninstalled() const { return !ent->tigInfo.isDemo; }
-bool GameInf::isWorking() const { return ent->tigInfo.isDemo; }
+bool GameInf::isUninstalled() const { return !info.ent->tigInfo.isDemo; }
+bool GameInf::isWorking() const { return info.ent->tigInfo.isDemo; }
 bool GameInf::isDemo() const { return false; }
 bool GameInf::isNew() const { return false; }
 
@@ -125,6 +87,8 @@ void GameInf::updateStatus()
 
 void GameInf::updateAll()
 {
+  const TigEntry *ent = info.ent;
+
   title = strToWx(ent->tigInfo.title);
   desc = strToWx(ent->tigInfo.desc);
 
@@ -141,11 +105,11 @@ void GameInf::updateAll()
 }
 
 std::string GameInf::getHomepage() const
-{ return ent->tigInfo.homepage; }
+{ return info.ent->tigInfo.homepage; }
 std::string GameInf::getTiggitPage() const
-{ return "http://tiggit.net/game/" + ent->urlname; }
+{ return "http://tiggit.net/game/" + info.ent->urlname; }
 std::string GameInf::getIdName() const
-{ return ent->idname; }
+{ return info.ent->idname; }
 std::string GameInf::getDir() const
 { return ""; }
 int GameInf::myRating() const
@@ -153,8 +117,61 @@ int GameInf::myRating() const
 
 void GameInf::rateGame(int i)
 {}
-void GameInf::requestShot(wxScreenshotCallback*)
-{}
+
+// Called when a screenshot file is ready, possibly called by TigLib
+// from a worker thread, but may also be called directly from
+// requestShot().
+void GameInf::shotIsReady(const std::string &idname,
+                          const std::string &file)
+{
+  assert(idname == getIdName());
+
+  // Are we in unloaded-mode?
+  if(loaded == 1)
+    {
+      // Load the image file
+      wxLogNull dontLog;
+      if(!screenshot.LoadFile(strToWx(file)))
+        return;
+
+      loaded = 2;
+    }
+
+  // We should now be loaded
+  assert(loaded == 2);
+
+  // Pass the event to the wxEvtHandler. It can handle threaded
+  // queuing.
+  ScreenshotEvent evt;
+  evt.id = idname;
+  evt.shot = &screenshot;
+  shotHandler->AddPendingEvent(evt);
+}
+
+void GameInf::requestShot(wxEvtHandler *cb)
+{
+  // Don't do anything if we are already working or if there was a
+  // failure.
+  if(loaded == 1) return;
+
+  // Store the handler so shotIsReady() finds it
+  shotHandler = cb;
+
+  // If the shot was already loaded, just return it directly
+  if(loaded == 2)
+    {
+      shotIsReady(getIdName(), "");
+      return;
+    }
+
+  assert(loaded == 0);
+
+  // Set 'working' status
+  loaded = 1;
+
+  // Delegate file fetching to TigLib
+  info.requestShot(this);
+}
 
 void GameInf::installGame()
 {}
@@ -222,31 +239,11 @@ bool GameList::sortDownloads()
 
 int GameList::size() const { return lister.size(); }
 
-/* Lookup entry and find corresponding GameInfo.
-
-   This is a quick hack with several problems. The biggest is what
-   happens when reloading the data, we have to make sure to clear this
-   out in that case.
-
-   Another big problem is that this is a global variable, and we don't
-   want that.
-
-   This should be packed into some structure in tiglib, which again is
-   passed to GameData.
- */
-
-// This is used frequently, so let's use a hashmap instead of the
-// slower std::map
-static boost::unordered_map<const void*, GameInf*> ptrmap;
-
 static GameInf &ptrToInfo(const void *p)
 {
-  GameInf *gi = ptrmap[p];
-  if(!gi)
-    {
-      gi = new GameInf((const TigEntry*)p);
-      ptrmap[p] = gi;
-    }
+  const LiveInfo *l = (const LiveInfo*)p;
+  GameInf *gi = (GameInf*)l->extra;
+  assert(gi);
   return *gi;
 }
 
@@ -269,31 +266,52 @@ void GameNews::markAsRead(int)
 void GameNews::markAllAsRead()
 {}
 
-struct FreeDemoPick : TigLib::GamePicker
+struct FreeDemoPick : GamePicker
 {
   bool free;
   FreeDemoPick(bool _free) : free(_free) {}
 
-  bool include(const TigEntry *ent)
-  { return ent->tigInfo.isDemo != free; }
+  bool include(const LiveInfo *inf)
+  { return inf->ent->tigInfo.isDemo != free; }
 };
 
-struct InstalledPick : TigLib::GamePicker
+struct InstalledPick : GamePicker
 {
-  bool include(const TigEntry *ent)
-  { return !ptrToInfo(ent).isUninstalled(); }
+  bool include(const LiveInfo *inf)
+  { return ptrToInfo(inf).isUninstalled(); }
 };
 
 static FreeDemoPick freePick(true), demoPick(false);
 static InstalledPick instPick;
 
-GameData::GameData(TigLib::Repo &rep)
-  : latest(rep.mainList(), NULL)
-  , freeware(rep.mainList(), &freePick)
-  , demos(rep.mainList(), &demoPick)
-  , installed(rep.mainList(), &instPick)
-  , config(rep.getPath("wxtiggit.conf"))
+wxTigApp::GameData::GameData(Repo &rep)
+  : config(rep.getPath("wxtiggit.conf")), repo(rep)
 {
   rep.fetchFiles();
   rep.loadData();
+
+  // Create GameInf structs attached to all the LiveInfo structs
+  const List::PtrList &lst = rep.mainList().getList();
+  for(int i=0; i<lst.size(); i++)
+    {
+      LiveInfo *li = (LiveInfo*)lst[i];
+      assert(li->extra == NULL);
+      li->extra = new GameInf(li, this);
+    }
+
+  // TODO: When updating the list, make sure to clean up and kill all
+  // the GameInfs as well.
+
+  latest = new GameList(rep.mainList(), NULL);
+  freeware = new GameList(rep.mainList(), &freePick);
+  demos = new GameList(rep.mainList(), &demoPick);
+  installed = new GameList(rep.mainList(), &instPick);
+}
+
+wxTigApp::GameData::~GameData()
+{
+  delete latest;
+  delete freeware;
+  delete demos;
+  delete installed;
 }

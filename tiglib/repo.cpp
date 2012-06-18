@@ -70,8 +70,24 @@ void Repo::initRepo()
             out.setData("last_time", &oldTime, 8);
           }
 
-        // Kill the old file
-        remove(oldcfg);
+        // Rename the old file
+        rename(oldcfg, oldcfg + ".old");
+
+        // Find and rename screenshot images
+        directory_iterator iter(getPath("cache/shot300x260/tiggit.net/")), end;
+        for(; iter != end; ++iter)
+          {
+            path p = iter->path();
+            if(!is_regular_file(p)) continue;
+
+            // Check file ending
+            std::string name = p.string();
+            if(name.size() > 4 && name.substr(name.size()-4, 1) == ".")
+              continue;
+
+            // Rename to .png
+            rename(name, name+".png");
+          }
       }
     catch(...) {}
 
@@ -104,5 +120,5 @@ void Repo::loadData()
 {
   MyFetch fetch;
   data.data.addChannel(listFile, tigDir, &fetch);
-  data.copyList();
+  data.createLiveData(this);
 }

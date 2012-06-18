@@ -38,6 +38,7 @@ Job::Job(JobInfoPtr i) : info(i)
 
 void Job::run()
 {
+  assert(info->isCreated());
   assert(!info->isBusy());
   assert(!info->isFinished());
   if(info->doAbort)

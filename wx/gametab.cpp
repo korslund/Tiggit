@@ -123,6 +123,9 @@ GameTab::GameTab(wxNotebook *parent, const wxString &name, wxGameList &lst)
   Connect(myID_SPECIAL_KEY, wxEVT_COMMAND_BUTTON_CLICKED,
           wxCommandEventHandler(GameTab::onSpecialKey));
 
+  Connect(myEVT_SCREENSHOT_READY,
+          (wxObjectEventFunction)&GameTab::onScreenshot);
+
   lister.addListener(this);
   gameListChanged();
 }
@@ -384,7 +387,7 @@ void GameTab::updateGameInfo()
   // Update the text view
   textView->ChangeValue(e.getDesc());
 
-  // Request a screenshot update. May result in shotIsReady() being
+  // Request a screenshot update. May result in onScreenshot() being
   // called immediately, or at a later time.
   e.requestShot(this);
 
@@ -410,16 +413,16 @@ void GameTab::updateGameInfo()
 }
 
 // Called whenever a screenshot is ready
-void GameTab::shotIsReady(const std::string &idname, const wxImage &shot)
+void GameTab::onScreenshot(ScreenshotEvent &event)
 {
   // Check if the shot belongs to the selected game
   if(select < 0 || select >= lister.size())
     return;
-  if(lister.get(select).getIdName() != idname)
+  if(lister.get(select).getIdName() != event.id)
     return;
 
   // We have a match. Set the screenshot.
-  screenshot->loadImage(shot);
+  screenshot->loadImage(*event.shot);
 }
 
 void GameTab::doAction1(int index)

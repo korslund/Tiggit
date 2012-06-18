@@ -3,19 +3,19 @@
 
 using namespace TigLib;
 
-bool TitleSort::isLess(const TigData::TigEntry *a, const TigData::TigEntry *b)
+bool TitleSort::isLess(const LiveInfo *a, const LiveInfo *b)
 {
   return boost::algorithm::ilexicographical_compare
-    (a->tigInfo.title, b->tigInfo.title);
+    (a->ent->tigInfo.title, b->ent->tigInfo.title);
 }
 
-bool RateSort::isLess(const TigData::TigEntry *a, const TigData::TigEntry *b)
+bool RateSort::isLess(const LiveInfo *a, const LiveInfo *b)
 {
-  float rateA = a->rating;
-  float rateB = b->rating;
+  float rateA = a->ent->rating;
+  float rateB = b->ent->rating;
 
-  if(a->rateCount == 0) rateA = -1;
-  if(b->rateCount == 0) rateB = -1;
+  if(a->ent->rateCount == 0) rateA = -1;
+  if(b->ent->rateCount == 0) rateB = -1;
 
   // Does 'a' have a rating? If so, sort by rating. This also
   // covers the case where 'b' has no rating (rateB = -1).
@@ -38,16 +38,16 @@ bool RateSort::isLess(const TigData::TigEntry *a, const TigData::TigEntry *b)
   return TitleSort::isLess(a, b);
 }
 
-bool DLSort::isLess(const TigData::TigEntry *a, const TigData::TigEntry *b)
+bool DLSort::isLess(const LiveInfo *a, const LiveInfo *b)
 {
-  if(a->dlCount == b->dlCount)
+  if(a->ent->dlCount == b->ent->dlCount)
     return RateSort::isLess(a,b);
 
   // Highest dl count first
-  return a->dlCount > b->dlCount;
+  return a->ent->dlCount > b->ent->dlCount;
 }
 
-bool DateSort::isLess(const TigData::TigEntry *a, const TigData::TigEntry *b)
+bool DateSort::isLess(const LiveInfo *a, const LiveInfo *b)
 {
-  return a->addTime > b->addTime;
+  return a->ent->addTime > b->ent->addTime;
 }

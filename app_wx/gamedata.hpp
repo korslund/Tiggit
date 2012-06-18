@@ -8,6 +8,7 @@
 #include "list/haschanged.hpp"
 #include "misc/jconfig.hpp"
 #include <set>
+#include "job/job.hpp"
 
 /*
   This is our backend implementation of the wx/wxgamedata.hpp abstract
@@ -20,10 +21,14 @@ using namespace wxTiggit;
 
 namespace wxTigApp
 {
-  struct GameInf : wxGameInfo
+  struct GameData;
+
+  struct GameInf : wxGameInfo, TigLib::ShotIsReady
   {
-    GameInf(const TigData::TigEntry *e)
-      : ent(e) { updateAll(); }
+    GameInf(TigLib::LiveInfo *_info, GameData *_data)
+      : info(*_info), data(*_data), loaded(0),
+        shotHandler(NULL)
+    { updateAll(); }
 
     bool isInstalled() const;
     bool isUninstalled() const;
@@ -32,7 +37,16 @@ namespace wxTigApp
     bool isNew() const;
 
   private:
-    const TigData::TigEntry *ent;
+    TigLib::LiveInfo &info;
+    GameData &data;
+
+    // Screenshot data
+    wxImage screenshot;
+    int loaded;
+    wxEvtHandler *shotHandler;
+
+    // Info from the job responsible for loading the screenshot
+    Jobify::JobInfoPtr screenJob;
 
     wxString title, titleStatus, timeStr, rateStr, rateStr2, dlStr, statusStr, desc;
 
@@ -43,6 +57,10 @@ namespace wxTigApp
     /* TODO: The backend should have a single-game status update
        callback.
      */
+
+    // Inherited from TigLib::ShotIsReady
+    void shotIsReady(const std::string &idname,
+                     const std::string &file);
 
     wxString getTitle(bool includeStatus=false) const
     { return includeStatus?titleStatus:title; }
@@ -59,7 +77,7 @@ namespace wxTigApp
     int myRating() const;
 
     void rateGame(int i);
-    void requestShot(wxScreenshotCallback*);
+    void requestShot(wxEvtHandler*);
 
     void installGame();
     void uninstallGame();
@@ -148,28 +166,30 @@ namespace wxTigApp
 
   struct GameData : wxGameData
   {
-    GameList latest, freeware, demos, installed;
+    GameList *latest, *freeware, *demos, *installed;
 
     GameConf config;
     GameNews news;
+    TigLib::Repo &repo;
 
     GameData(TigLib::Repo &rep);
+    ~GameData();
 
-    wxGameList &getLatest() { return latest; }
-    wxGameList &getFreeware() { return freeware; }
-    wxGameList &getDemos() { return demos; }
-    wxGameList &getInstalled() { return installed; }
+    wxGameList &getLatest() { return *latest; }
+    wxGameList &getFreeware() { return *freeware; }
+    wxGameList &getDemos() { return *demos; }
+    wxGameList &getInstalled() { return *installed; }
 
     void installStatusChanged()
     {
       // Notify main lists that their views should be updated
-      latest.notifyInfoChange();
-      freeware.notifyInfoChange();
-      demos.notifyInfoChange();
+      latest->notifyInfoChange();
+      freeware->notifyInfoChange();
+      demos->notifyInfoChange();
 
       // Refresh the installed list. Notifications will happen
       // automatically.
-      installed.lister.refresh();
+      installed->lister.refresh();
     }
 
     wxGameConf &conf() { return config; }

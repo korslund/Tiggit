@@ -8,8 +8,10 @@ using namespace wxTiggit;
 struct TestInfo : wxGameInfo
 {
   wxString name;
+  wxImage image;
 
-  TestInfo(const string &n) : name(strToWx(n)) {}
+  TestInfo(const string &n)
+    : name(strToWx(n)) {}
 
   bool isNew() const { return false; }
   bool isInstalled() const { return false; }
@@ -45,9 +47,12 @@ struct TestInfo : wxGameInfo
   std::string getDir() const { return "/"; }
   int myRating() const { return 4; }
 
-  void requestShot(wxScreenshotCallback*)
+  void requestShot(wxEvtHandler *hndl)
   {
-    cout << "Requesting screenshot\n";
+    ScreenshotEvent evt;
+    evt.id = getIdName();
+    evt.shot = &image;
+    hndl->AddPendingEvent(evt);
   }
   void rateGame(int i)
   {
@@ -60,7 +65,8 @@ struct TestInfo : wxGameInfo
   void abortJob() { cout << "Abort\n"; }
 };
 
-TestInfo game1("Game 1"), game2("Game 2!!"), game3("Another game");
+TestInfo
+  game1("Game 1"), game2("Game 2!!"), game3("Another game");
 
 struct TestList : wxGameList
 {
@@ -168,6 +174,10 @@ struct TigApp : wxApp
 
     SetAppName(wxT("Test App"));
     wxInitAllImageHandlers();
+
+    game1.image.LoadFile(wxT("game1.png"));
+    game2.image.LoadFile(wxT("game2.png"));
+    game3.image.LoadFile(wxT("game3.png"));
 
     TigFrame *frame = new TigFrame(wxT("Test App"), "1", testData);
     frame->Show(true);

@@ -8,7 +8,7 @@ namespace wxTiggit
 {
   struct ImageViewer;
 
-  struct GameTab : TabBase, wxGameListener, wxScreenshotCallback
+  struct GameTab : TabBase, wxGameListener
   {
     GameTab(wxNotebook *parent, const wxString &name, wxGameList &lst);
 
@@ -36,10 +36,8 @@ namespace wxTiggit
     void gotFocus();
     int getTitleNumber();
 
-    // Screenshot callback
-    void shotIsReady(const std::string &idname, const wxImage &shot);
-
     // Event handling functions
+    void onScreenshot(ScreenshotEvent &event);
     void onSpecialKey(wxCommandEvent &event);
     void onUrlEvent(wxTextUrlEvent &event);
     void onRating(wxCommandEvent &event);
