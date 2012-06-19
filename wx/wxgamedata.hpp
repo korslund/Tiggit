@@ -126,12 +126,18 @@ namespace wxTiggit
     wxGameList *list;
 
     // Called when game info or status has changed, but the list
-    // itself has not.
+    // itself has not. Often called on the non-install lists when a
+    // game has finished installing.
     virtual void gameInfoChanged() = 0;
 
     // Called when the list itself has changed in size, content or
     // ordering.
     virtual void gameListChanged() = 0;
+
+    // Called on 'soft' status changes, for example on the 'ticks'
+    // that happen while something is installing. Normally only the
+    // list itself needs to be refreshed.
+    virtual void gameStatusChanged() = 0;
   };
 }
 

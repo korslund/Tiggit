@@ -35,16 +35,21 @@ void DownloadTask::doJob()
     }
   else
     {
-      // Use a temporary output file to avoid potentially overwriting
-      // existing data with a botched download, and also to signal
-      // that this is not the completed file.
-      const std::string tmp = file + ".part";
+      using namespace boost::filesystem;
 
+      /* Add ".part" to the temporary output filename, to avoid
+         potentially overwriting existing valid data with invalid new
+         data, in case of a failed download. This also signals to
+         anyone inspecting the directory that this is not the complete
+         file.
+      */
+      const std::string tmp = file + ".part";
       setBusy("Downloading " + url + " to " + tmp);
+
+      create_directories(path(tmp).parent_path());
       cURL::get(url, tmp, userAgent, &prog);
 
       // Move the completed file into place
-      using namespace boost::filesystem;
       remove(file);
       rename(tmp, file);
     }

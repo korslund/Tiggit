@@ -1,7 +1,6 @@
 #include "repo.hpp"
 #include "fetch.hpp"
-#include "findrepo.hpp"
-#include "misc/jconfig.hpp"
+#include "misc/dirfinder.hpp"
 #include <boost/filesystem.hpp>
 
 using namespace TigLib;
@@ -12,36 +11,61 @@ struct MyFetch : GameInfo::URLManager
   { fetchFile(url, outfile); }
 };
 
-static void fail(const std::string &msg)
+static std::string getHomeDir()
 {
-  throw std::runtime_error(msg);
+  Misc::DirFinder find("tiggit.net", "tiggit");
+
+  std::string res;
+  if(find.getStoredPath(res))
+    return res;
+
+  if(!find.getStandardPath(res))
+    return "";
+
+  find.setStoredPath(res);
+  return res;
 }
 
-Repo::Repo(const std::string &where)
-  : dir(where)
+// Locate stored, standard or legacy repository paths, in that
+// order. May return empty string if no existing or usable path was
+// found.
+static std::string locateRepo()
 {
-  if(dir == "")
-    dir = findRepo();
+  /* TODO: This function should be responsible for finding legacy
+     repository locations. Kill getHomeDir and integrate the code from
+     old/repo.hpp instead.
+  */
+  return getHomeDir();
+}
+
+bool Repo::findRepo(const std::string &where)
+{
+  dir = where;
 
   if(dir == "")
-    fail("Could not find a standard repository path");
+    dir = locateRepo();
 
-  if(!lock.lock(getPath("lock")))
-    fail("Failed to lock " + dir);
-
-  initRepo();
+  if(dir == "")
+    return false;
 
   listFile = getPath("all_games.json");
   tigDir = getPath("tigfiles/");
+  return true;
 }
 
-/* Initialize repository. Is specifically used to convert old
-   repository content into something we can use.
- */
-void Repo::initRepo()
+bool Repo::initRepo(bool forceLock)
 {
+  if(!lock.lock(getPath("lock"), forceLock))
+    return false;
+
   using namespace boost::filesystem;
   using namespace Misc;
+
+  // Open new config file
+  conf.load(getPath("tiglib.conf"));
+  inst.load(getPath("tiglib_installed.conf"));
+  news.load(getPath("tiglib_news.conf"));
+  rates.load(getPath("tiglib_rates.conf"));
 
   // Is there an old config file?
   std::string oldcfg = getPath("config");
@@ -51,29 +75,42 @@ void Repo::initRepo()
         // Convert it to something usable
         JConfig in(oldcfg);
 
-        std::string tmp;
-        tmp = getPath("wxtiggit.conf");
-        if(in.has("vote_count") && !exists(tmp))
+        // Convert wxTiggit-specific options
+        if(in.has("vote_count"))
           {
-            JConfig out(tmp);
-            out.setBool("show_votes", in.getBool("vote_count"));
+            std::string tmp = getPath("wxtiggit.conf");
+            if(!exists(tmp))
+              {
+                JConfig out(tmp);
+                out.setBool("show_votes", in.getBool("vote_count"));
+              }
           }
 
-        tmp = getPath("tiglib.conf");
-        if(in.has("last_time") && !exists(tmp))
+        // Move last_time over to the new config.
+        if(in.has("last_time") && !conf.has("last_time"))
           {
-            JConfig out(tmp);
             int64_t oldTime = in.getInt("last_time");
-
-            // Store as binary data, since our jsoncpp doesn't support
-            // 64 bit ints.
-            out.setData("last_time", &oldTime, 8);
+            setLastTime(oldTime);
           }
 
-        // Rename the old file
-        rename(oldcfg, oldcfg + ".old");
+        // Kill the old file
+        remove(oldcfg);
 
-        // Find and rename screenshot images
+        // Convert the list of installed games
+        oldcfg = getPath("installed.json");
+        if(exists(oldcfg))
+          {
+            JConfig old(oldcfg);
+            std::vector<std::string> list = old.getNames();
+
+            for(int i=0; i<list.size(); i++)
+              if(!inst.has(list[i]))
+                setInstallStatus(list[i], 2);
+
+            remove(oldcfg);
+          }
+
+        // Find and rename screenshot images (add .png to filenames)
         directory_iterator iter(getPath("cache/shot300x260/tiggit.net/")), end;
         for(; iter != end; ++iter)
           {
@@ -88,20 +125,31 @@ void Repo::initRepo()
             // Rename to .png
             rename(name, name+".png");
           }
+
+        /* TODO:
+           - if there is a data/ but no games/, rename it
+        */
       }
     catch(...) {}
 
-  /* TODO:
-     - convert installed.json
-     - rename all cache/shot300x260/tiggit.net/* to add .png.
-     - don't delete old config files, rename them to .old instead.
+  // Load config options
+  conf.getData("last_time", &lastTime, 8);
 
-     - only do these things if we know we are converting an old
-       repository. Ie, they should all be done if the old config
-       exists. It makes sense to move all this to a separate function,
-       or set of functions. They can be static here, that's fine. The
-       file repo.cpp is exactly the right place for this code.
-   */
+  return true;
+}
+
+void Repo::setInstallStatus(const std::string &idname, int status)
+{
+  // This may be call from worker threads, but this is ok because the
+  // JConfig setters are thread safe.
+  inst.setInt(idname, status);
+}
+
+void Repo::setLastTime(int64_t val)
+{
+  // Store as binary data, since 64 bit int support in general is
+  // a bit dodgy.
+  conf.setData("last_time", &val, 8);
 }
 
 std::string Repo::getPath(const std::string &fname)
@@ -112,12 +160,14 @@ std::string Repo::getPath(const std::string &fname)
 
 void Repo::fetchFiles()
 {
+  assert(lock.isLocked());
   fetchIfOlder("http://tiggit.net/api/all_games.json",
                listFile, 60);
 }
 
 void Repo::loadData()
 {
+  assert(lock.isLocked());
   MyFetch fetch;
   data.data.addChannel(listFile, tigDir, &fetch);
   data.createLiveData(this);

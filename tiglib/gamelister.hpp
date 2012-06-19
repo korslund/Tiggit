@@ -46,8 +46,8 @@ namespace TigLib
     { base.setPick(mainPick); }
     ~GameLister() { if(searchPick) delete searchPick; }
 
-    const List::PtrList &getList() const { return sort.getList(); }
-    int size() const { return getList().size(); }
+    LiveInfo &get(int i) { return *((LiveInfo*)sort.getList()[i]); }
+    int size() const { return sort.getList().size(); }
 
     // Use this as the parent if you need to build more lists on top
     // of this list.

@@ -1,7 +1,8 @@
 #ifndef __JCONFIG_HPP_
-#define __JSONFIG_HPP_
+#define __JCONFIG_HPP_
 
 #include <string>
+#include <vector>
 
 namespace Misc
 {
@@ -34,6 +35,8 @@ namespace Misc
     std::string get(const std::string &name, const std::string &def="");
 
     bool has(const std::string &name);
+
+    std::vector<std::string> getNames();
 
   private:
     std::string file;

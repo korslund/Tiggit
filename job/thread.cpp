@@ -22,9 +22,10 @@ void Thread::sleep(double seconds)
   boost::this_thread::sleep(boost::posix_time::microseconds(msecs));
 }
 
-void Thread::run(Job *j)
+void Thread::run(Job *j, bool async)
 {
   ThreadObj to;
   to.j = j;
-  boost::thread trd(to);
+  if(async) boost::thread trd(to);
+  else to();
 }

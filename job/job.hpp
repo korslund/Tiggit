@@ -44,7 +44,7 @@ namespace Jobify
     virtual int64_t getCurrent() { return current; }
     virtual int64_t getTotal() { return total; }
 
-    void abort() { doAbort = true; }
+    virtual void abort() { doAbort = true; }
 
     bool isCreated() const { return status >= ST_CREATED; }
     bool hasStarted() const { return status >= ST_BUSY; }

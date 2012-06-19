@@ -3,14 +3,19 @@
 
 #include "gameinfo/tigloader.hpp"
 #include "list/mainlist.hpp"
+#include <map>
 
 namespace TigLib
 {
+  struct LiveInfo;
+  typedef std::map<std::string,LiveInfo*> InfoLookup;
+
   class Repo;
   struct GameData
   {
     List::MainList allList;
     GameInfo::TigLoader data;
+    InfoLookup lookup;
 
     /* This will create a new set of LiveInfo structs representing all
        the TigEntrys in the tigloader list.
@@ -20,6 +25,14 @@ namespace TigLib
        and only when the main data has been reloaded.
      */
     void createLiveData(Repo *repo);
+
+    LiveInfo *get(const std::string &id) const
+    {
+      InfoLookup::const_iterator it = lookup.find(id);
+      if(it == lookup.end())
+        return NULL;
+      return it->second;
+    }
   };
 }
 

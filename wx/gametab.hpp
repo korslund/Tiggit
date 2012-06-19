@@ -31,6 +31,7 @@ namespace wxTiggit
     // wxGameListener functions
     void gameInfoChanged();
     void gameListChanged();
+    void gameStatusChanged() {}
 
     // TabBase functions
     void gotFocus();

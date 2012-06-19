@@ -1,149 +1,12 @@
-#ifndef __WXAPP_WXGAMEDATA_HPP_
-#define __WXAPP_WXGAMEDATA_HPP_
+#ifndef __WXAPP_GAMEDATA_HPP_
+#define __WXAPP_GAMEDATA_HPP_
 
-#include "wx/wxgamedata.hpp"
-#include "gameinfo/tigentry.hpp"
-#include "tiglib/gamelister.hpp"
+#include "gamelist.hpp"
 #include "tiglib/repo.hpp"
-#include "list/haschanged.hpp"
 #include "misc/jconfig.hpp"
-#include <set>
-#include "job/job.hpp"
-
-/*
-  This is our backend implementation of the wx/wxgamedata.hpp abstract
-  interface. The implementation uses pretty much all the other modules
-  in the tiggit source set.
- */
-
-// This header is not included in a lot of places, so this is OK.
-using namespace wxTiggit;
 
 namespace wxTigApp
 {
-  struct GameData;
-
-  struct GameInf : wxGameInfo, TigLib::ShotIsReady
-  {
-    GameInf(TigLib::LiveInfo *_info, GameData *_data)
-      : info(*_info), data(*_data), loaded(0),
-        shotHandler(NULL)
-    { updateAll(); }
-
-    bool isInstalled() const;
-    bool isUninstalled() const;
-    bool isWorking() const;
-    bool isDemo() const;
-    bool isNew() const;
-
-  private:
-    TigLib::LiveInfo &info;
-    GameData &data;
-
-    // Screenshot data
-    wxImage screenshot;
-    int loaded;
-    wxEvtHandler *shotHandler;
-
-    // Info from the job responsible for loading the screenshot
-    Jobify::JobInfoPtr screenJob;
-
-    wxString title, titleStatus, timeStr, rateStr, rateStr2, dlStr, statusStr, desc;
-
-    // Used to update cached wxStrings from source data
-    void updateStatus();
-    void updateAll();
-
-    /* TODO: The backend should have a single-game status update
-       callback.
-     */
-
-    // Inherited from TigLib::ShotIsReady
-    void shotIsReady(const std::string &idname,
-                     const std::string &file);
-
-    wxString getTitle(bool includeStatus=false) const
-    { return includeStatus?titleStatus:title; }
-    wxString timeString() const { return timeStr; }
-    wxString rateString() const { return rateStr; }
-    wxString dlString() const { return dlStr; }
-    wxString statusString() const { return statusStr; }
-    wxString getDesc() const { return desc; }
-
-    std::string getHomepage() const;
-    std::string getTiggitPage() const;
-    std::string getIdName() const;
-    std::string getDir() const;
-    int myRating() const;
-
-    void rateGame(int i);
-    void requestShot(wxEvtHandler*);
-
-    void installGame();
-    void uninstallGame();
-    void launchGame();
-    void abortJob();
-  };
-
-  struct GameList;
-  struct Notifier : List::HasChanged
-  {
-    GameList *lst;
-    Notifier(List::ListBase &list, GameList *l)
-      : List::HasChanged(&list), lst(l) {}
-
-    void notify();
-  };
-
-  struct GameList : wxGameList
-  {
-    TigLib::GameLister lister;
-    Notifier notif;
-
-    enum SortStatus
-      {
-        SS_NONE, SS_TITLE, SS_DATE, SS_RATING, SS_DOWNLOADS
-      };
-    int sortStatus;
-    bool setStat(int i)
-    {
-      int old = sortStatus;
-      sortStatus = i;
-      return i == old;
-    }
-
-    std::set<wxGameListener*> listeners;
-
-    GameList(List::ListBase &list, TigLib::GamePicker *pick)
-      : lister(list, pick), notif(lister.topList(), this),
-        sortStatus(SS_NONE) {}
-
-    void addListener(wxGameListener *p);
-    void removeListener(wxGameListener *p);
-
-    // Invoke gameListChanged() on our listeners
-    void notifyListChange();
-
-    // Invoke gameInfoChanged() on our listeners
-    void notifyInfoChange();
-
-    void flipReverse();
-    void setReverse(bool);
-
-    void clearTags();
-    void setTags(const std::string &);
-    void setSearch(const std::string &);
-
-    bool sortTitle();
-    bool sortDate();
-    bool sortRating();
-    bool sortDownloads();
-
-    int size() const;
-    const wxGameInfo& get(int i) { return edit(i); }
-    wxGameInfo& edit(int);
-  };
-
   struct GameConf : wxGameConf
   {
     Misc::JConfig conf;
@@ -180,6 +43,8 @@ namespace wxTigApp
     wxGameList &getDemos() { return *demos; }
     wxGameList &getInstalled() { return *installed; }
 
+    // Called when a game has started or finished installing, or has
+    // been uninstalled.
     void installStatusChanged()
     {
       // Notify main lists that their views should be updated
@@ -190,6 +55,16 @@ namespace wxTigApp
       // Refresh the installed list. Notifications will happen
       // automatically.
       installed->lister.refresh();
+    }
+
+    // Called regularly when there are games being installed, to
+    // update display status.
+    void updateDisplayStatus()
+    {
+      latest->notifyStatusChange();
+      freeware->notifyStatusChange();
+      demos->notifyStatusChange();
+      installed->notifyStatusChange();
     }
 
     wxGameConf &conf() { return config; }

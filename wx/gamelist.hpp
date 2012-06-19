@@ -33,6 +33,7 @@ namespace wxTiggit
     // wxGameListener functions
     void gameInfoChanged();
     void gameListChanged();
+    void gameStatusChanged();
 
   private:
     void onHeaderClick(wxListEvent& event);

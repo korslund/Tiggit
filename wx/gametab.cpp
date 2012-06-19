@@ -251,8 +251,9 @@ void GameTab::onListSelect(wxListEvent &event)
 void GameTab::gameInfoChanged() { updateSelection(); }
 void GameTab::gameListChanged()
 {
-  // TODO: Fix tag list
   updateSelection();
+  updateTitle();
+  // TODO: Update tag list
 }
 
 void GameTab::onListRightClick(wxListEvent &event)
