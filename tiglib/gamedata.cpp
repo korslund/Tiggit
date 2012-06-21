@@ -35,8 +35,7 @@ void GameData::createLiveData(Repo *repo)
     }
 
   // Store new maxtime
-  if(maxTime > repo->getLastTime())
-    repo->setLastTime(maxTime);
+  repo->setLastTime(maxTime);
 
   // Apply install status
   std::vector<std::string> games = repo->inst.getNames();

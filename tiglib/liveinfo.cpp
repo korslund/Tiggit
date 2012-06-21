@@ -15,7 +15,7 @@ using namespace Tasks;
 
 struct InstallJob : MultiTask
 {
-  std::string url, zip, dir, idname;
+  std::string url, zip, dir, idname, urlname;
   Repo *repo;
 
   InstallJob(Jobify::JobInfoPtr _info)
@@ -35,7 +35,7 @@ struct InstallJob : MultiTask
 
     // Notify the config that we are done
     if(info->isSuccess())
-      repo->setInstallStatus(idname, 2);
+      repo->downloadFinished(idname, urlname);
   }
 
   void cleanup()
@@ -131,6 +131,7 @@ Jobify::JobInfoPtr LiveInfo::install(bool async)
   job->zip = repo->getPath("incoming/" + ent->idname);
   job->dir = repo->getInstDir(ent->idname);
   job->idname = ent->idname;
+  job->urlname = ent->urlname;
   job->repo = repo;
 
   Jobify::Thread::run(job, async);

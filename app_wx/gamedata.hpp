@@ -3,21 +3,10 @@
 
 #include "gamelist.hpp"
 #include "tiglib/repo.hpp"
-#include "misc/jconfig.hpp"
+#include "gameconf.hpp"
 
 namespace wxTigApp
 {
-  struct GameConf : wxGameConf
-  {
-    Misc::JConfig conf;
-
-    GameConf(const std::string &file)
-      : conf(file) {}
-
-    bool getShowVotes() { return conf.getBool("show_votes"); }
-    void setShowVotes(bool b) { conf.setBool("show_votes", b); }
-  };
-
   struct GameNews : wxGameNews
   {
     const wxGameNewsItem &get(int i) const;

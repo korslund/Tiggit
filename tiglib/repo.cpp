@@ -2,6 +2,8 @@
 #include "fetch.hpp"
 #include "misc/dirfinder.hpp"
 #include <boost/filesystem.hpp>
+#include "readjson/readjson.hpp"
+#include <stdio.h>
 
 using namespace TigLib;
 
@@ -111,16 +113,18 @@ bool Repo::initRepo(bool forceLock)
         oldcfg = getPath("readnews.json");
         if(exists(oldcfg))
           {
-            /*
             // TODO: requires some json reading
             Json::Value root = ReadJson::readJson(oldcfg);
             for(int i=0; i<root.size(); i++)
               {
-                // Test if this works - values are really ints
-                std::string key = root[i].asString();
-                news.set(key, true);
+                int val = root[i].asInt();
+                char buf[10];
+                snprintf(buf, 10, "%d", val);
+                std::string key(buf);
+                news.setBool(key, true);
               }
-            */
+
+            remove(oldcfg);
           }
 
         // Convert the list of installed games
@@ -164,9 +168,20 @@ bool Repo::initRepo(bool forceLock)
   rates.load(rateConf);
 
   // Load config options
-  conf.getData("last_time", &lastTime, 8);
+  lastTime = conf.getInt64("last_time", 0xffffffffffff);
 
   return true;
+}
+
+void Repo::downloadFinished(const std::string &idname,
+                            const std::string &urlname)
+{
+  // Set config status
+  setInstallStatus(idname, 2);
+
+  // Tell the server
+  std::string url = "http://tiggit.net/api/count/" + urlname + "&download";
+  Fetch::fetchString(url, true);
 }
 
 void Repo::setInstallStatus(const std::string &idname, int status)

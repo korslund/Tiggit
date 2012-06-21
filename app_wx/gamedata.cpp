@@ -45,7 +45,7 @@ wxTigApp::GameData::GameData(Repo &rep)
     {
       LiveInfo *li = it->second;
       assert(li->extra == NULL);
-      li->extra = new GameInf(li);
+      li->extra = new GameInf(li, &config);
     }
 
   // TODO: When updating the list, make sure to clean up and kill all

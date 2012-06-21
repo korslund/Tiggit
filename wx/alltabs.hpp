@@ -1,4 +1,4 @@
-/* This is a direct include file from frame.cpp. It is not meant to be
+/* This is a direct include file for frame.cpp. It is not meant to be
    included anywhere else.
  */
 struct TitleCol : ColumnHandler

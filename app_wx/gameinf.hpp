@@ -1,8 +1,8 @@
 #ifndef __WXAPP_GAMEINF_HPP_
 #define __WXAPP_GAMEINF_HPP_
 
-#include "wx/wxgamedata.hpp"
 #include "tiglib/liveinfo.hpp"
+#include "gameconf.hpp"
 
 using namespace wxTiggit;
 
@@ -10,8 +10,8 @@ namespace wxTigApp
 {
   struct GameInf : wxGameInfo, TigLib::ShotIsReady
   {
-    GameInf(TigLib::LiveInfo *_info)
-      : info(*_info), loaded(0),
+    GameInf(TigLib::LiveInfo *_info, GameConf *_conf)
+      : info(*_info), loaded(0), conf(_conf),
         shotHandler(NULL)
     { updateAll(); }
 
@@ -32,6 +32,8 @@ namespace wxTigApp
     int loaded;
     wxEvtHandler *shotHandler;
 
+    GameConf *conf;
+
     wxString title, titleStatus, timeStr, rateStr, rateStr2, dlStr, statusStr, desc;
 
     // Used to update cached wxStrings from source data
@@ -44,10 +46,11 @@ namespace wxTigApp
     wxString getTitle(bool includeStatus=false) const
     { return includeStatus?titleStatus:title; }
     wxString timeString() const { return timeStr; }
-    wxString rateString() const { return rateStr; }
     wxString dlString() const { return dlStr; }
     wxString statusString() const { return statusStr; }
     wxString getDesc() const { return desc; }
+    wxString rateString() const
+    { return conf->show_votes?rateStr2:rateStr; }
 
     std::string getHomepage() const;
     std::string getTiggitPage() const;

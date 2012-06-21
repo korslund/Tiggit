@@ -79,6 +79,17 @@ bool JConfig::getBool(const std::string &name, bool def)
 int JConfig::getInt(const std::string &name, int def)
 { return LG(p,name,def).asInt(); }
 
+void JConfig::setInt64(const std::string &name, int64_t i)
+{ setData(name, &i, 8); }
+
+int64_t JConfig::getInt64(const std::string &name, int64_t def)
+{
+  int64_t res;
+  try { getData(name, &res, 8); }
+  catch(...) { res=def; }
+  return res;
+}
+
 std::string JConfig::get(const std::string &name, const std::string &def)
 { return LG(p,name,def).asString(); }
 

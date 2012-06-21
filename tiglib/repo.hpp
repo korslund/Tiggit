@@ -91,6 +91,11 @@ namespace TigLib
     // Store install status for this game in the config files. Safe to
     // call from worker threads.
     void setInstallStatus(const std::string &idname, int status);
+
+    // Notify us that a download has finished. Will update config
+    // files and notify the server counter.
+    void downloadFinished(const std::string &idname,
+                          const std::string &urlname);
   };
 }
 #endif

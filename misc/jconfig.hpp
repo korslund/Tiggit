@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <stdint.h>
 
 namespace Misc
 {
@@ -26,6 +27,11 @@ namespace Misc
 
     void setInt(const std::string &name, int b);
     int getInt(const std::string &name, int def=0);
+
+    // Sets 64 bit data. Uses binary encoding, since jsoncpp doesn't
+    // reliably support 64 bit sizes.
+    void setInt64(const std::string &name, int64_t i);
+    int64_t getInt64(const std::string &name, int64_t def=0);
 
     // Store binary data encoded in a string
     void setData(const std::string &name, const void *p, size_t num);
