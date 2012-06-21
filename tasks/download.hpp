@@ -6,6 +6,15 @@
 
 namespace Tasks
 {
+  /* Download a file. You can download either to a filename or to a
+     Mangle::Stream.
+
+     You can also download to nowhere (ignore the data), by specifying
+     either an empty StreamPtr or an empty filename. This can be
+     useful to sending signals to a server via GET commands, for
+     example.
+   */
+
   struct DownloadTask : Jobify::Job
   {
     DownloadTask(const std::string &_url, const std::string &_file,

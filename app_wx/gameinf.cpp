@@ -108,12 +108,11 @@ std::string GameInf::getTiggitPage() const
 std::string GameInf::getIdName() const
 { return info.ent->idname; }
 std::string GameInf::getDir() const
-{ return ""; }
+{ return info.getInstallDir(); }
 int GameInf::myRating() const
-{ return -1; }
-
+{ return info.getMyRating(); }
 void GameInf::rateGame(int i)
-{}
+{ info.setMyRating(i); }
 
 // Called when a screenshot file is ready, possibly called by TigLib
 // from a worker thread, but may also be called directly from

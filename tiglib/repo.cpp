@@ -8,7 +8,7 @@ using namespace TigLib;
 struct MyFetch : GameInfo::URLManager
 {
   void getUrl(const std::string &url, const std::string &outfile)
-  { fetchFile(url, outfile); }
+  { Fetch::fetchFile(url, outfile); }
 };
 
 static std::string getHomeDir()
@@ -61,18 +61,19 @@ bool Repo::initRepo(bool forceLock)
   using namespace boost::filesystem;
   using namespace Misc;
 
-  // Open new config file
+  // Open config files
   conf.load(getPath("tiglib.conf"));
   inst.load(getPath("tiglib_installed.conf"));
   news.load(getPath("tiglib_news.conf"));
-  rates.load(getPath("tiglib_rates.conf"));
+  // Opened further down:
+  std::string rateConf = getPath("tiglib_rates.conf");
 
   // Is there an old config file?
   std::string oldcfg = getPath("config");
   if(exists(oldcfg))
     try
       {
-        // Convert it to something usable
+        // Open the old config file to convert the values
         JConfig in(oldcfg);
 
         // Convert wxTiggit-specific options
@@ -95,6 +96,32 @@ bool Repo::initRepo(bool forceLock)
 
         // Kill the old file
         remove(oldcfg);
+
+        /* If the old 'config' file existed, chances are that this is
+           an old repository. We should convert any other old data we
+           can find as well.
+         */
+
+        // Rename the ratings file
+        oldcfg = getPath("ratings.json");
+        if(exists(oldcfg) && !exists(rateConf))
+          rename(oldcfg, rateConf);
+
+        // Convert list of read news
+        oldcfg = getPath("readnews.json");
+        if(exists(oldcfg))
+          {
+            /*
+            // TODO: requires some json reading
+            Json::Value root = ReadJson::readJson(oldcfg);
+            for(int i=0; i<root.size(); i++)
+              {
+                // Test if this works - values are really ints
+                std::string key = root[i].asString();
+                news.set(key, true);
+              }
+            */
+          }
 
         // Convert the list of installed games
         oldcfg = getPath("installed.json");
@@ -126,11 +153,15 @@ bool Repo::initRepo(bool forceLock)
             rename(name, name+".png");
           }
 
-        /* TODO:
-           - if there is a data/ but no games/, rename it
-        */
+        // In some really old repos, the games may be installed into
+        // "data/" instead of "games/". If so, rename it.
+        if(exists(getPath("data/")) && !exists(getPath("games/")))
+          rename(getPath("data"), getPath("games"));
       }
     catch(...) {}
+
+  // Load ratings file
+  rates.load(rateConf);
 
   // Load config options
   conf.getData("last_time", &lastTime, 8);
@@ -152,6 +183,33 @@ void Repo::setLastTime(int64_t val)
   conf.setData("last_time", &val, 8);
 }
 
+int Repo::getRating(const std::string &id)
+{
+  int res = rates.getInt(id, -1);
+  if(res < 0 || res > 5)
+    res = -1;
+  return res;
+}
+
+void Repo::setRating(const std::string &id, const std::string &urlname,
+                     int rate)
+{
+  if(rate < 0 || rate > 5)
+    return;
+
+  // No point in voting more than once, the server will filter it out.
+  if(rates.has(id))
+    return;
+
+  rates.setInt(id, rate);
+
+  // Send it off to the server
+  std::string url = "http://tiggit.net/api/count/" + urlname + "&rate=";
+  char rateCh = '0' + rate;
+  url += rateCh;
+  Fetch::fetchString(url, true);
+}
+
 std::string Repo::getPath(const std::string &fname)
 {
   using namespace boost::filesystem;
@@ -161,8 +219,8 @@ std::string Repo::getPath(const std::string &fname)
 void Repo::fetchFiles()
 {
   assert(lock.isLocked());
-  fetchIfOlder("http://tiggit.net/api/all_games.json",
-               listFile, 60);
+  Fetch::fetchIfOlder("http://tiggit.net/api/all_games.json",
+                      listFile, 60);
 }
 
 void Repo::loadData()

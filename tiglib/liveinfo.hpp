@@ -79,6 +79,18 @@ namespace TigLib
      */
     Jobify::JobInfoPtr uninstall(bool async = true);
 
+    // Return install directory for this game. Only valid if the game
+    // is installed.
+    std::string getInstallDir();
+
+    /* Get and set my rating for this game. Multiple ratings are
+       currently ignored, but later the server may gain the capability
+       to change a vote. Ratings are in the range 0-5, and
+       getMyRating() returns -1 if no rating has been cast.
+    */
+    int getMyRating();
+    void setMyRating(int i);
+
     // Send signal to abort current install job, if any.
     void abort() { if(isWorking()) installJob->abort(); }
 
@@ -121,6 +133,7 @@ namespace TigLib
   private:
     Jobify::JobInfoPtr screenJob, installJob;
     Repo *repo;
+    int myRate;
 
     // 'new' status, set by constructor
     bool sNew;

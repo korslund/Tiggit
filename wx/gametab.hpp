@@ -3,6 +3,7 @@
 
 #include "tabbase.hpp"
 #include "gamelist.hpp"
+#include <time.h>
 
 namespace wxTiggit
 {
@@ -18,6 +19,7 @@ namespace wxTiggit
 
   private:
     int select;
+    time_t last_launch;
 
     // Controls
     wxButton *b1, *b2;

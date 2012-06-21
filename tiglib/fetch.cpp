@@ -2,8 +2,10 @@
 #include <boost/filesystem.hpp>
 #include "tasks/download.hpp"
 #include <time.h>
+#include <mangle/stream/servers/string_writer.hpp>
+#include "job/thread.hpp"
 
-void TigLib::fetchFile(const std::string &url, const std::string &outfile)
+void Fetch::fetchFile(const std::string &url, const std::string &outfile)
 {
   using namespace Jobify;
 
@@ -14,9 +16,9 @@ void TigLib::fetchFile(const std::string &url, const std::string &outfile)
     throw std::runtime_error("Failed to download " + url);
 }
 
-bool TigLib::fetchIfOlder(const std::string &url,
-                          const std::string &outfile,
-                          int minutes)
+bool Fetch::fetchIfOlder(const std::string &url,
+                         const std::string &outfile,
+                         int minutes)
 {
   namespace bs = boost::filesystem;
 
@@ -36,3 +38,23 @@ bool TigLib::fetchIfOlder(const std::string &url,
   return true;
 }
 
+std::string Fetch::fetchString(const std::string &url, bool async)
+{
+  using namespace Mangle::Stream;
+  using namespace Jobify;
+
+  StreamPtr out;
+  std::string res;
+
+  if(!async)
+    out.reset(new StringWriter(res));
+
+  JobInfoPtr info(new JobInfo);
+  Job *job = new Tasks::DownloadTask(url, out, info);
+
+  Jobify::Thread::run(job, async);
+  if(!async && !info->isSuccess())
+    throw std::runtime_error("Failed to get " + url);
+
+  return res;
+}

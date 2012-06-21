@@ -1,11 +1,12 @@
 #include "gametab.hpp"
 #include "image_viewer.hpp"
 #include "myids.hpp"
+#include "boxes.hpp"
 
 using namespace wxTiggit;
 
 GameTab::GameTab(wxNotebook *parent, const wxString &name, wxGameList &lst)
-  : TabBase(parent, name), lister(lst), select(0)
+  : TabBase(parent, name), lister(lst), select(0), last_launch(0)
 {
   list = new GameListView(this, myID_LIST, lister);
 
@@ -315,10 +316,8 @@ void GameTab::onContextClick(wxCommandEvent &evt)
         {
           std::string cmd = "explorer \"" + e.getDir() + "\"";
           int res = wxExecute(strToWx(cmd));
-          /*
           if(res == -1)
-            errorBox(wxT("Failed to launch ") + command);
-          */
+            Boxes::error("Failed to launch " + cmd);
         }
     }
 }
@@ -434,7 +433,18 @@ void GameTab::doAction1(int index)
   wxGameInfo &e = lister.edit(index);
 
   if(e.isUninstalled()) e.installGame();
-  else if(e.isInstalled()) e.launchGame();
+  else if(e.isInstalled())
+    {
+      // If the user just launched a game, ask them if they meant to
+      // do it twice.
+      time_t now = time(0);
+      if(difftime(now, last_launch) <= 10)
+        if(!Boxes::ask("You just started a game. Are you sure you want to launch again?\n\nSome games may take a few seconds to start."))
+          return;
+
+      last_launch = now;
+      e.launchGame();
+    }
 }
 
 void GameTab::doAction2(int index)
@@ -445,5 +455,12 @@ void GameTab::doAction2(int index)
   wxGameInfo &e = lister.edit(index);
 
   if(e.isWorking()) e.abortJob();
-  else if(e.isInstalled()) e.uninstallGame();
+  else if(e.isInstalled())
+    {
+      if(Boxes::ask(wxT("Are you sure you want to uninstall ") + e.getTitle() +
+                    wxT("? All savegames and configuration will be lost.")
+                    )
+         )
+        e.uninstallGame();
+    }
 }

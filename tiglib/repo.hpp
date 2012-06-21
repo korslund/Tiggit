@@ -77,6 +77,13 @@ namespace TigLib
     // The last known TigEntry::addDate of our previous run.
     int64_t getLastTime() const { return lastTime; }
 
+    // Get rating for a given game. Returns -1 if no rating is set.
+    int getRating(const std::string &id);
+
+    // Set rating, in range 0-5
+    void setRating(const std::string &id, const std::string &urlname,
+                   int rate);
+
     // Set new lastTime. Does NOT change the current lastTime field,
     // but instead stores the value in conf for our next run.
     void setLastTime(int64_t val);

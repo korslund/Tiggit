@@ -1,22 +1,7 @@
 #include "wx/frame.hpp"
 #include "gamedata.hpp"
 #include "notifier.hpp"
-
-// Ask the user an OK/Cancel question.
-bool ask(const wxString &question)
-{
-  return wxMessageBox(question, wxT("Please confirm"),
-                      wxOK | wxCANCEL | wxICON_QUESTION) == wxOK;
-}
-
-// Display an error message box
-void errorBox(const wxString &msg)
-{
-  wxMessageBox(msg, wxT("Error"), wxOK | wxICON_ERROR);
-}
-
-bool ask(const std::string &q) { return ask(strToWx(q)); }
-void errorBox(const std::string &q) { errorBox(strToWx(q)); }
+#include "wx/boxes.hpp"
 
 struct MyTimer : wxTimer
 {
@@ -46,32 +31,45 @@ struct TigApp : wxApp
     SetAppName(wxT("Tiggit"));
     wxInitAllImageHandlers();
 
-    if(!rep.findRepo())
-      errorBox(wxT("Unable to find repository"));
-
-    if(!rep.initRepo())
+    try
       {
-        if(ask("Failed to lock repository: " + rep.getPath("") + "\n\nThis usually means you are either running two instances of Tiggit, or that another instance has crashed.\n\nAre you SURE you want to continue? If two programs access the repository at the same, data loss may occur!"))
+        if(!rep.findRepo())
+          Boxes::error("Unable to find repository");
+
+        if(!rep.initRepo())
           {
-            if(!rep.initRepo(true))
+            if(Boxes::ask("Failed to lock repository: " + rep.getPath("") + "\n\nThis usually means you are either running two instances of Tiggit, or that another instance has crashed.\n\nAre you SURE you want to continue? If two programs access the repository at the same, data loss may occur!"))
               {
-                errorBox("Still unable to lock repository. Aborting.");
-                return false;
+                if(!rep.initRepo(true))
+                  {
+                    Boxes::error("Still unable to lock repository. Aborting.");
+                    return false;
+                  }
               }
+            else
+              return false;
           }
-        else
-          return false;
+
+        rep.fetchFiles();
+        rep.loadData();
+
+        gameData = new wxTigApp::GameData(rep);
+        wxTigApp::notify.data = gameData;
+
+        TigFrame *frame = new TigFrame(wxT("Tiggit"), "1", *gameData);
+        frame->Show(true);
+        return true;
+      }
+    catch(std::exception &e)
+      {
+        Boxes::error(std::string(e.what()));
+      }
+    catch(...)
+      {
+        Boxes::error("An unknown error occured");
       }
 
-    rep.fetchFiles();
-    rep.loadData();
-
-    gameData = new wxTigApp::GameData(rep);
-    wxTigApp::notify.data = gameData;
-
-    TigFrame *frame = new TigFrame(wxT("Tiggit"), "1", *gameData);
-    frame->Show(true);
-    return true;
+    return false;
   }
 };
 

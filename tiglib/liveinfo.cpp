@@ -108,7 +108,7 @@ struct UninstallJob : Jobify::Job
 };
 
 LiveInfo::LiveInfo(const TigData::TigEntry *e, Repo *_repo)
-  : ent(e), extra(NULL), repo(_repo)
+  : ent(e), extra(NULL), repo(_repo), myRate(-2)
 {
   // Mark newly added games as 'new'.
   sNew = ent->addTime > repo->getLastTime();
@@ -149,6 +149,32 @@ void LiveInfo::markAsInstalled()
   assert(isUninstalled());
   setupInfo();
   installJob->setDone();
+}
+
+std::string LiveInfo::getInstallDir()
+{
+  assert(isInstalled());
+  return repo->getInstDir(ent->idname);
+}
+
+int LiveInfo::getMyRating()
+{
+  if(myRate == -2)
+    myRate = repo->getRating(ent->idname);
+
+  return myRate;
+}
+
+void LiveInfo::setMyRating(int i)
+{
+  assert(i >= 0 && i <= 5);
+
+  getMyRating();
+  if(myRate != -1)
+    return;
+
+  myRate = i;
+  repo->setRating(ent->idname, ent->urlname, myRate);
 }
 
 Jobify::JobInfoPtr LiveInfo::install(bool async)

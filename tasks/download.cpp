@@ -1,6 +1,7 @@
 #include "download.hpp"
 #include "curl.hpp"
 #include <boost/filesystem.hpp>
+#include <mangle/stream/servers/null_stream.hpp>
 
 using namespace Tasks;
 
@@ -27,6 +28,11 @@ void DownloadTask::doJob()
 {
   DLProgress prog;
   prog.info = info;
+
+  // Check for the no-output case
+  if(!stream && file == "")
+    // Create a NULL writer
+    stream.reset(new Mangle::Stream::NullStream);
 
   if(stream)
     {
