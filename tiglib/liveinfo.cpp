@@ -1,6 +1,9 @@
 #include "liveinfo.hpp"
 #include "tasks/download.hpp"
 #include "tasks/unpack.hpp"
+#include "tasks/multi.hpp"
+#include "tasks/notify.hpp"
+#include "tasks/fileop.hpp"
 #include "job/thread.hpp"
 #include <boost/filesystem.hpp>
 #include "repo.hpp"
@@ -8,102 +11,39 @@
 
 namespace bs = boost::filesystem;
 using namespace TigLib;
+using namespace Tasks;
 
-struct OtherInfo : Jobify::JobInfo
-{
-  Jobify::JobInfoPtr client;
-
-  OtherInfo() : client(new Jobify::JobInfo) {}
-
-  void abort() { doAbort = true; client->abort(); }
-
-  int64_t getCurrent() { return current = client->getCurrent(); }
-  int64_t getTotal() { return total = client->getTotal(); }
-};
-
-struct InstallJob : Jobify::Job
+struct InstallJob : MultiTask
 {
   std::string url, zip, dir, idname;
   Repo *repo;
 
   InstallJob(Jobify::JobInfoPtr _info)
-    : Jobify::Job(_info) {}
+    : MultiTask(_info) {}
 
   void doJob()
   {
-    using namespace Jobify;
+    add(new DownloadTask(url, zip));
+    add(new UnpackTask(zip, dir));
 
-    // The JobInfo used by the sub tasks (download and install). We
-    // keep this separate from our own because we don't want the
-    // 'done' status of the download to imply that we are done
-    // ourselves.
-    JobInfoPtr client;
-
-    {
-      OtherInfo *inf = dynamic_cast<OtherInfo*>(info.get());
-      assert(inf);
-      client = inf->client;
-    }
-
-    assert(client && !client->isBusy());
-
-    // Set up and run the download
-    setBusy("Downloading");
-    client->reset();
-    {
-      Tasks::DownloadTask dl(url, zip, client);
-      dl.run();
-    }
-
-    // Abort on failure
-    if(!client->isSuccess())
-      {
-        if(client->isError())
-          setError(client->message);
-
-        bs::remove(zip);
-        return;
-      }
-
-    // Unpack
-    setBusy("Unpacking");
-    client->reset();
-    {
-      Tasks::UnpackTask unp(zip, dir, client);
-      unp.run();
-    }
-
-    bs::remove(zip);
-
-    if(!client->isSuccess())
-      {
-        if(client->isError())
-          setError(client->message);
-
-        bs::remove_all(dir);
-        return;
-      }
-
-    // Everything is dandy!
-    setDone();
+    try
+      { MultiTask::doJob(); }
+    catch(std::exception &e)
+      { setError(e.what()); }
+    catch(...)
+      { setError("Unknown error"); }
 
     // Notify the config that we are done
-    repo->setInstallStatus(idname, 2);
+    if(info->isSuccess())
+      repo->setInstallStatus(idname, 2);
   }
-};
 
-struct UninstallJob : Jobify::Job
-{
-  std::string dir;
-
-  UninstallJob(Jobify::JobInfoPtr _info)
-    : Jobify::Job(_info) {}
-
-  void doJob()
+  void cleanup()
   {
-    setBusy("Uninstalling");
-    bs::remove_all(dir);
-    setDone();
+    // Remove files on exit
+    if(info->isError())
+      bs::remove_all(dir);
+    bs::remove(zip);
   }
 };
 
@@ -141,7 +81,7 @@ bool LiveInfo::isWorking() const
 void LiveInfo::setupInfo()
 {
   if(!installJob)
-    installJob.reset(new OtherInfo);
+    installJob = MultiTask::makeInfo();
 }
 
 void LiveInfo::markAsInstalled()
@@ -213,9 +153,11 @@ Jobify::JobInfoPtr LiveInfo::uninstall(bool async)
   repo->setInstallStatus(ent->idname, 0);
   installJob->reset();
 
-  res.reset(new Jobify::JobInfo);
-  UninstallJob *job = new UninstallJob(res);
-  job->dir = repo->getInstDir(ent->idname);
+  // Set up a deletion job
+  FileOpTask *job = new FileOpTask();
+  res = job->getInfo();
+  job->del(repo->getInstDir(ent->idname));
+
   Jobify::Thread::run(job, async);
   return res;
 }
@@ -227,28 +169,22 @@ void LiveInfo::launch(bool async)
   // Invoke the launcher, which is an entirely separate module.
 }
 
-// Custom job used to download, then notify a callback
-struct DownloadNotify : Jobify::Job
+// Download screenshot, then notify the callback
+struct DownloadNotify : NotifyTask
 {
   ShotIsReady *cb;
-  std::string url, file, idname;
+  std::string file, idname;
 
-  DownloadNotify(Jobify::JobInfoPtr info)
-    : Jobify::Job(info) {}
+  DownloadNotify(const std::string &_url,
+                 const std::string &_file,
+                 const std::string &_idname,
+                 ShotIsReady *_cb,
+                 Jobify::JobInfoPtr _info)
+    : NotifyTask(new DownloadTask(_url, _file, _info)),
+      cb(_cb), file(_file), idname(_idname) {}
 
-  void doJob()
+  void onSuccess()
   {
-    // Reset info so we can reuse it
-    info->reset();
-    Tasks::DownloadTask dl(url, file, info);
-
-    // Run job in this thread
-    dl.run();
-
-    // Abort on failure
-    if(!info->isSuccess())
-      return;
-
     // Inform the callback
     cb->shotIsReady(idname, file);
   }
@@ -282,14 +218,14 @@ Jobify::JobInfoPtr LiveInfo::requestShot(ShotIsReady *cb, bool async)
   // There should not be any active job at this point
   assert(!screenJob->isCreated());
 
-  // File does not exist, and no work has been done. Create a new job.
-  DownloadNotify *job = new DownloadNotify(screenJob);
-  job->cb = cb;
-  job->file = file.string();
-  job->idname = ent->idname;
+  // File does not exist, and no work has been done. Go fetch the
+  // screenshot.
+
   // URL is hard-coded for now. We will soon replace individual
   // downloads with a mass package update, so it doesn't matter.
-  job->url = "http://tiggit.net/pics/300x260/" + ent->urlname + ".png";
+  std::string url = "http://tiggit.net/pics/300x260/" + ent->urlname + ".png";
+  DownloadNotify *job = new DownloadNotify(url, file.string(), ent->idname,
+                                           cb, screenJob);
 
   Jobify::Thread::run(job, async);
   return screenJob;

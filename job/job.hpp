@@ -76,8 +76,10 @@ namespace Jobify
        If that is the case, you can safely use info->isCreated() as a
        locking mechanism to avoid creating multiple jobs per Info
        struct.
+
+       If you don't provide a JobInfo struct, one will be created.
      */
-    Job(JobInfoPtr i);
+    Job(JobInfoPtr i = JobInfoPtr());
     virtual ~Job() {}
 
     void run();
@@ -87,6 +89,10 @@ namespace Jobify
     /* Run the actual job. Overwrite this in child classes.
      */
     virtual void doJob() = 0;
+
+    // Do optional exit handling. Called both on normal returns and
+    // exceptions. Check 'info' for error status
+    virtual void cleanup() {}
 
     JobInfoPtr info;
 

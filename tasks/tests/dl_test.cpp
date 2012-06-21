@@ -8,8 +8,8 @@ int main()
   string url = "http://tiggit.net/client/latest.tig";
   cout << "Downloading " << url << "...\n";
 
-  Jobify::JobInfoPtr info(new Jobify::JobInfo);
-  Tasks::DownloadTask dlj(url, "_output.txt", info);
+  Tasks::DownloadTask dlj(url, "_output.txt");
+  Jobify::JobInfoPtr info = dlj.getInfo();
 
   dlj.run();
 

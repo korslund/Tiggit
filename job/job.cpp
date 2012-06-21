@@ -28,7 +28,8 @@ bool JobInfo::checkStatus()
   return !isBusy();
 }
 
-Job::Job(JobInfoPtr i) : info(i)
+Job::Job(JobInfoPtr i)
+  : info(i?i:JobInfoPtr(new JobInfo))
 {
   assert(info);
   assert(!info->isCreated());
@@ -58,6 +59,7 @@ void Job::run()
     { setError("Unknown error"); }
 
   assert(!info->isBusy());
+  cleanup();
 }
 
 void Job::setBusy(const std::string &what)

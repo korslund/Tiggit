@@ -20,11 +20,13 @@ namespace Tasks
     typedef std::set<std::string> FileList;
 
     UnpackTask(const std::string &_file, const std::string &_dir,
-               Jobify::JobInfoPtr info, const FileList &_list = FileList())
+               Jobify::JobInfoPtr info = Jobify::JobInfoPtr(),
+               const FileList &_list = FileList())
       : Jobify::Job(info), file(_file), dir(_dir), list(_list) {}
 
     UnpackTask(const std::string &_file, Mangle::VFS::StreamFactoryPtr _writeTo,
-               Jobify::JobInfoPtr info, const FileList &_list = FileList())
+               Jobify::JobInfoPtr info = Jobify::JobInfoPtr(),
+               const FileList &_list = FileList())
       : Jobify::Job(info), file(_file), writeTo(_writeTo), list(_list) {}
 
   private:

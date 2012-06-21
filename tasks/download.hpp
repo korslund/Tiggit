@@ -18,11 +18,11 @@ namespace Tasks
   struct DownloadTask : Jobify::Job
   {
     DownloadTask(const std::string &_url, const std::string &_file,
-                 Jobify::JobInfoPtr info)
+                 Jobify::JobInfoPtr info = Jobify::JobInfoPtr())
       : Jobify::Job(info), url(_url), file(_file) {}
 
     DownloadTask(const std::string &_url, Mangle::Stream::StreamPtr _stream,
-                 Jobify::JobInfoPtr info)
+                 Jobify::JobInfoPtr info = Jobify::JobInfoPtr())
       : Jobify::Job(info), url(_url), stream(_stream) {}
 
     static std::string userAgent;

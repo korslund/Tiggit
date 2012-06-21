@@ -1,0 +1,12 @@
+Empty test:
+Not started yet!  - progress 0/0
+Success!  - progress 0/0
+
+Copy:
+Success!  - progress 1/1
+
+Copy - Remove - Move:
+Success!  - progress 2/3
+
+Copy to dir:
+Failure: Cannot copy to directories yet  - progress 0/1

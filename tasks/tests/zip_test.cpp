@@ -8,8 +8,8 @@ int main()
   string zip = "../../unpack/tests/archives/test.zip";
   cout << "Unpacking " << zip << "...\n";
 
-  Jobify::JobInfoPtr info(new Jobify::JobInfo);
-  Tasks::UnpackTask unp(zip, "_outdir1", info);
+  Tasks::UnpackTask unp(zip, "_outdir1");
+  Jobify::JobInfoPtr info = unp.getInfo();
 
   unp.run();
 
