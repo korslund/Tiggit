@@ -7,12 +7,51 @@ License v3.
 
 For more info, check out http://tiggit.net/ .
 
-This source code is currently messy, undocumented, early prototypish
-and not for the faint of heart. And there are NO build instructions,
-but you should be able to get going with CMake.
 
-Still, if you want to improve tiggit, all help and suggestions are
-highly welcome.
+  NOTE: the current code tree is in a middle of a rewrite. Don't
+  expect it to work. I will announce in the forums (found at
+  http://tiggit.net/forum ) and remove this message when the rewrite
+  is done.
 
-Send me a mail at korslund@gmail.com, or to publish code send me a
-pull request through github.
+
+
+BUILDING:
+
+Tiggit is known to build on Windows, Linux and FreeBSD, but is only
+supported on Windows as of yet, and only lists Windows games.
+
+There are no particular build instructions here yet, but you should be
+able to get going with CMake.
+
+
+
+DEPENDENCIES:
+
+- wxWidgets (at least 2.8) for the GUI
+- Boost (for filesystem, threading and other stuff)
+- libCURL (for downloading)
+- zzlib (ZIP unpacker)
+
+Git submodules:
+
+- Mangle (Minimal Abstracted Game Layer, for abstracted stream reading)
+
+Submodules are installed automatically if you run:
+
+  git submodule update --init"
+
+
+
+HELPING OUT:
+
+If you want to improve tiggit, all help, suggestions and patches are
+highly welcome and appreciated. You can post pull requests through
+github and I will usually respond to them fairly quickly.
+
+To post suggestions and comments, send me a mail at:
+
+  korslund@gmail.com
+
+or go to:
+
+  http://tiggit.net/forum
