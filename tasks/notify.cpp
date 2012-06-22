@@ -1,4 +1,5 @@
 #include "notify.hpp"
+#include <assert.h>
 
 using namespace Tasks;
 using namespace Jobify;
@@ -16,6 +17,7 @@ void NotifyTask::doJob()
 {
   // Make sure we reset the info status before running the other
   // job, or it will complain that it has already started.
+  assert(info->status == ST_BUSY);
   info->status = ST_CREATED;
 
   other->run();

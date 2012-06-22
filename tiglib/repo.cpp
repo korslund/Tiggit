@@ -4,6 +4,10 @@
 #include <boost/filesystem.hpp>
 #include "readjson/readjson.hpp"
 #include <stdio.h>
+#include "tasks/install.hpp"
+#include "job/thread.hpp"
+
+#define CACHE_VERSION 1
 
 using namespace TigLib;
 
@@ -231,11 +235,30 @@ std::string Repo::getPath(const std::string &fname)
   return (path(dir)/fname).string();
 }
 
-void Repo::fetchFiles()
+Jobify::JobInfoPtr Repo::fetchFiles()
 {
+  using namespace Tasks;
+  using namespace Jobify;
+
+  JobInfoPtr info;
+
   assert(lock.isLocked());
   Fetch::fetchIfOlder("http://tiggit.net/api/all_games.json",
                       listFile, 60);
+
+  // Check if we need to download the cache
+  if(conf.getInt("cache_version") < CACHE_VERSION)
+    {
+      conf.setInt("cache_version", CACHE_VERSION);
+      Job *job = new InstallTask
+        ("http://sourceforge.net/projects/tiggit/files/client_data/cache.zip",
+         getPath("incoming/cache.zip"),
+         getPath(""));
+      info = job->getInfo();
+      Jobify::Thread::run(job);
+    }
+
+  return info;
 }
 
 void Repo::loadData()

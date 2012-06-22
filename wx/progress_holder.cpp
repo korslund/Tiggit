@@ -13,9 +13,9 @@ ProgressHolder::~ProgressHolder()
     }
 }
 
-bool ProgressHolder::setMsg(const std::string &str, int value=0)
+bool ProgressHolder::setMsg(const std::string &str, int value)
 {
-  return setMsg(wxString(str.c_str(), wxConvUTF8), value);
+  return setMsg(strToWx(str), value);
 }
 
 bool ProgressHolder::update(int value)
@@ -32,7 +32,7 @@ bool ProgressHolder::pulse()
 
 void ProgressHolder::yield() { app->Yield(); }
 
-bool ProgressHolder::setMsg(const wxString &str, int value=0)
+bool ProgressHolder::setMsg(const wxString &str, int value)
 {
   if(!dlg)
     {

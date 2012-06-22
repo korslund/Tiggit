@@ -24,9 +24,9 @@ namespace wxTigApp
     // Update status strings
     void updateStatus();
 
-  private:
     TigLib::LiveInfo &info;
 
+  private:
     // Screenshot data
     wxImage screenshot;
     int loaded;

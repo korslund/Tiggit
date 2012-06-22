@@ -34,13 +34,13 @@ set(MANGLE ${MDIR}/stream/clients/io_stream.cpp)
 set(JSON ${JS}/json_reader.cpp ${JS}/json_writer.cpp ${JS}/json_value.cpp)
 set(READJSON ${RJDIR}/readjson.cpp)
 set(GAMEINFO ${GIDIR}/json_tigdata.cpp ${GIDIR}/binary_tigdata.cpp ${GIDIR}/tigloader.cpp)
-set(TASKS ${TDIR}/curl.cpp ${TDIR}/download.cpp ${TDIR}/unpack.cpp ${TDIR}/multi.cpp ${TDIR}/fileop.cpp ${TDIR}/notify.cpp)
+set(TASKS ${TDIR}/curl.cpp ${TDIR}/download.cpp ${TDIR}/unpack.cpp ${TDIR}/multi.cpp ${TDIR}/fileop.cpp ${TDIR}/notify.cpp ${TDIR}/install.cpp)
 set(UNPACK ${UDIR}/dirwriter.cpp ${UDIR}/base.cpp ${UDIR}/unpack_zip.cpp ${UDIR}/auto.cpp)
 set(LIST ${LDIR}/sortlist.cpp ${LDIR}/listbase.cpp ${LDIR}/picklist.cpp ${LDIR}/parentbase.cpp)
 set(TIGLIB ${TLDIR}/gamedata.cpp ${TLDIR}/gamelister.cpp ${TLDIR}/sorters.cpp ${TLDIR}/repo.cpp ${TLDIR}/fetch.cpp ${TLDIR}/liveinfo.cpp)
 
-set(WX ${WDIR}/frame.cpp ${WDIR}/tabbase.cpp ${WDIR}/gametab.cpp ${WDIR}/image_viewer.cpp ${WDIR}/gamelist.cpp ${WDIR}/listbase.cpp ${WDIR}/newstab.cpp)
-set(APPWX ${AWDIR}/wxtiggit_main.cpp ${AWDIR}/gamedata.cpp ${AWDIR}/gameinf.cpp ${AWDIR}/gamelist.cpp ${AWDIR}/notifier.cpp)
+set(WX ${WDIR}/frame.cpp ${WDIR}/tabbase.cpp ${WDIR}/gametab.cpp ${WDIR}/image_viewer.cpp ${WDIR}/gamelist.cpp ${WDIR}/listbase.cpp ${WDIR}/newstab.cpp ${WDIR}/progress_holder.cpp)
+set(APPWX ${AWDIR}/wxtiggit_main.cpp ${AWDIR}/gamedata.cpp ${AWDIR}/gameinf.cpp ${AWDIR}/gamelist.cpp ${AWDIR}/notifier.cpp ${AWDIR}/jobprogress.cpp)
 
 # All CPP files, excluding wxWidgets-users
 set(ALL ${JOB} ${MISC} ${MANGLE} ${JSON} ${READJSON} ${GAMEINFO} ${TASKS} ${UNPACK} ${LIST} ${TIGLIB})

@@ -2,6 +2,7 @@
 #include "gamedata.hpp"
 #include "notifier.hpp"
 #include "wx/boxes.hpp"
+#include "jobprogress.hpp"
 
 struct MyTimer : wxTimer
 {
@@ -50,7 +51,16 @@ struct TigApp : wxApp
               return false;
           }
 
-        rep.fetchFiles();
+        Jobify::JobInfoPtr info = rep.fetchFiles();
+
+        // Are we doing a larger download job here?
+        if(info)
+          {
+            // If so, keep the user informed
+            wxTigApp::JobProgress prog(this, info);
+            prog.start("Downloading data set...");
+          }
+
         rep.loadData();
 
         gameData = new wxTigApp::GameData(rep);

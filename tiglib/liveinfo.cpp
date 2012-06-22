@@ -1,9 +1,8 @@
 #include "liveinfo.hpp"
 #include "tasks/download.hpp"
-#include "tasks/unpack.hpp"
-#include "tasks/multi.hpp"
 #include "tasks/notify.hpp"
 #include "tasks/fileop.hpp"
+#include "tasks/install.hpp"
 #include "job/thread.hpp"
 #include <boost/filesystem.hpp>
 #include "repo.hpp"
@@ -13,37 +12,39 @@ namespace bs = boost::filesystem;
 using namespace TigLib;
 using namespace Tasks;
 
-struct InstallJob : MultiTask
+#include <iostream>
+using namespace std;
+
+// Job that installs a game, notifies the system on success, and
+// cleans up on error.
+struct InstallGameJob : NotifyTask
 {
-  std::string url, zip, dir, idname, urlname;
+  std::string idname, urlname, dir;
   Repo *repo;
+  bool killOnError;
 
-  InstallJob(Jobify::JobInfoPtr _info)
-    : MultiTask(_info) {}
+  InstallGameJob(const std::string &_url, const std::string &_zip,
+                 const std::string &_dir, const std::string &_idname,
+                 const std::string &_urlname, Repo *_repo,
+                 Jobify::JobInfoPtr _info)
+    : NotifyTask(new InstallTask(_url, _zip, _dir, _info)),
+      idname(_idname), urlname(_urlname), dir(_dir),
+      repo(_repo), killOnError(true)
+  {}
 
-  void doJob()
+  void onSuccess()
   {
-    add(new DownloadTask(url, zip));
-    add(new UnpackTask(zip, dir));
-
-    try
-      { MultiTask::doJob(); }
-    catch(std::exception &e)
-      { setError(e.what()); }
-    catch(...)
-      { setError("Unknown error"); }
-
-    // Notify the config that we are done
+    // Notify the repo that we are done. This updates config and tells
+    // the server to count a dounwload.
     if(info->isSuccess())
       repo->downloadFinished(idname, urlname);
   }
 
-  void cleanup()
+  void onError()
   {
-    // Remove files on exit
-    if(info->isError())
+    // Remove files on error
+    if(dir != "" && killOnError)
       bs::remove_all(dir);
-    bs::remove(zip);
   }
 };
 
@@ -125,14 +126,10 @@ Jobify::JobInfoPtr LiveInfo::install(bool async)
   setupInfo();
   installJob->reset();
 
-  InstallJob *job = new InstallJob(installJob);
-
-  job->url = ent->tigInfo.url;
-  job->zip = repo->getPath("incoming/" + ent->idname);
-  job->dir = repo->getInstDir(ent->idname);
-  job->idname = ent->idname;
-  job->urlname = ent->urlname;
-  job->repo = repo;
+  InstallGameJob *job = new InstallGameJob
+    (ent->tigInfo.url, repo->getPath("incoming/" + ent->idname),
+     repo->getInstDir(ent->idname), ent->idname, ent->urlname,
+     repo, installJob);
 
   Jobify::Thread::run(job, async);
 

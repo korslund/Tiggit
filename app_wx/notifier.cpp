@@ -1,5 +1,6 @@
 #include "notifier.hpp"
 #include "gamedata.hpp"
+#include "wx/boxes.hpp"
 
 using namespace wxTigApp;
 
@@ -28,14 +29,28 @@ void StatusNotifier::tick()
         {
           watchList.erase(itold);
           hard = true;
+
+          // Report errors to the user
+          Jobify::JobInfoPtr info = inf->info.getStatus();
+          if(info->isError())
+            Boxes::error(info->message);
         }
 
       // Update the object status
       inf->updateStatus();
     }
 
+  /* A 'hard' update means totally refresh the 'installed' list, and
+     tell all tabs to update game data - screenshot, butten
+     information etc - in case the currently selected game has changed
+     status.
+  */
   if(hard)
     statusChanged();
+
+  /* A 'soft' update just refreshes the list views. It's only meant to
+     update the percentages when downloading/installing.
+   */
   else if(soft)
     data->updateDisplayStatus();
 }

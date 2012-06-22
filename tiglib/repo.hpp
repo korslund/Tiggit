@@ -5,6 +5,7 @@
 #include "misc/lockfile.hpp"
 #include <stdint.h>
 #include "misc/jconfig.hpp"
+#include "job/job.hpp"
 
 namespace TigLib
 {
@@ -52,11 +53,17 @@ namespace TigLib
      */
     bool initRepo(bool forceLock=false);
 
-    /* Update all files from the net.
-     */
-    void fetchFiles();
+    /* Update all disk files from the net. May in some cases return a
+       JobInfo pointer. If it does, then it is not safe to proceed
+       (calling loadData) until the job has finished. Preferably you
+       should inform the user about the download progress.
 
-    /* Load current game data.
+       If the pointer is empty, or on error/abort status, you can
+       continue loading immediately.
+     */
+    Jobify::JobInfoPtr fetchFiles();
+
+    /* Load current game data from disk into memory.
      */
     void loadData();
 
