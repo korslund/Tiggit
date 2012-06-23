@@ -42,6 +42,15 @@ void cURL::get(const std::string &url, const std::string &outfile,
 void cURL::get(const std::string &url, Mangle::Stream::StreamPtr output,
                const std::string &useragent, Progress *prog)
 {
+  /* Use this to test offline mode. Will cause all net connections to
+     hang indefinitely, so it's a good test to see if you've got them
+     all.
+  */
+  /*
+  printf("Downloading %s\n", url.c_str());
+  while(true) {}
+  //*/
+
   CURL *curl = curl_easy_init();
   assert(curl);
 

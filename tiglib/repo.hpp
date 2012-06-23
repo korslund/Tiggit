@@ -106,14 +106,20 @@ namespace TigLib
     // but instead stores the value in conf for our next run.
     void setLastTime(int64_t val);
 
-    // Store install status for this game in the config files. Safe to
-    // call from worker threads.
-    void setInstallStatus(const std::string &idname, int status);
-
     // Notify us that a download has finished. Will update config
     // files and notify the server counter.
     void downloadFinished(const std::string &idname,
                           const std::string &urlname);
+
+    // Notify config that a game has been uninstalled.
+    void gameUninstalled(const std::string &idname,
+                         const std::string &urlname)
+    { setInstallStatus(idname, 0); }
+
+  private:
+    // Store install status for this game in the config files. Safe to
+    // call from worker threads.
+    void setInstallStatus(const std::string &idname, int status);
   };
 }
 #endif

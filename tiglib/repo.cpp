@@ -6,16 +6,11 @@
 #include <stdio.h>
 #include "tasks/install.hpp"
 #include "job/thread.hpp"
+#include "server_api.hpp"
 
 #define CACHE_VERSION 1
 
 using namespace TigLib;
-
-struct MyFetch : GameInfo::URLManager
-{
-  void getUrl(const std::string &url, const std::string &outfile)
-  { Fetch::fetchFile(url, outfile); }
-};
 
 static std::string getHomeDir()
 {
@@ -184,8 +179,11 @@ void Repo::downloadFinished(const std::string &idname,
   // Set config status
   setInstallStatus(idname, 2);
 
-  // Tell the server
-  std::string url = "http://tiggit.net/api/count/" + urlname + "&download";
+  // Respect offline mode even after a download has succeeded. The
+  // user may have a dodgy connection or something.
+  if(offline) return;
+
+  std::string url = ServerAPI::dlCountURL(urlname);
   Fetch::fetchString(url, true);
 }
 
@@ -221,12 +219,13 @@ void Repo::setRating(const std::string &id, const std::string &urlname,
   if(rates.has(id))
     return;
 
+  // Ignore votes in offline mode
+  if(offline) return;
+
   rates.setInt(id, rate);
 
   // Send it off to the server
-  std::string url = "http://tiggit.net/api/count/" + urlname + "&rate=";
-  char rateCh = '0' + rate;
-  url += rateCh;
+  std::string url = ServerAPI::rateURL(urlname, rate);
   Fetch::fetchString(url, true);
 }
 
@@ -240,7 +239,8 @@ std::string Repo::fetchPath(const std::string &url,
                             const std::string &fname)
 {
   std::string outfile = getPath(fname);
-  Fetch::fetchFile(url, outfile);
+  if(!offline)
+    Fetch::fetchFile(url, outfile);
   return outfile;
 }
 
@@ -251,16 +251,18 @@ Jobify::JobInfoPtr Repo::fetchFiles()
 
   JobInfoPtr info;
 
+  // If we're in offline mode, skip this entire function
+  if(offline) return info;
+
   assert(lock.isLocked());
-  Fetch::fetchIfOlder("http://tiggit.net/api/all_games.json",
-                      listFile, 60);
+  Fetch::fetchIfOlder(ServerAPI::listURL(), listFile, 60);
 
   // Check if we need to download the cache
   if(conf.getInt("cache_version") < CACHE_VERSION)
     {
       conf.setInt("cache_version", CACHE_VERSION);
       Job *job = new InstallTask
-        ("http://sourceforge.net/projects/tiggit/files/client_data/cache.zip",
+        (ServerAPI::cacheURL(),
          getPath("incoming/cache.zip"),
          getPath(""));
       info = job->getInfo();
@@ -270,10 +272,19 @@ Jobify::JobInfoPtr Repo::fetchFiles()
   return info;
 }
 
+struct MyFetch : GameInfo::URLManager
+{
+  bool offline;
+
+  void getUrl(const std::string &url, const std::string &outfile)
+  { if(!offline) Fetch::fetchFile(url, outfile); }
+};
+
 void Repo::loadData()
 {
   assert(lock.isLocked());
   MyFetch fetch;
+  fetch.offline = offline;
   data.data.addChannel(listFile, tigDir, &fetch);
   data.createLiveData(this);
 }

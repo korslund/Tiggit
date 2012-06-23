@@ -29,6 +29,9 @@ struct TigApp : wxApp
     if(!wxApp::OnInit())
       return false;
 
+    // Use to test offline mode
+    //rep.offline = true;
+
     SetAppName(wxT("Tiggit"));
     wxInitAllImageHandlers();
 
@@ -39,7 +42,7 @@ struct TigApp : wxApp
 
         if(!rep.initRepo())
           {
-            if(Boxes::ask("Failed to lock repository: " + rep.getPath("") + "\n\nThis usually means you are either running two instances of Tiggit, or that another instance has crashed.\n\nAre you SURE you want to continue? If two programs access the repository at the same, data loss may occur!"))
+            if(Boxes::ask("Failed to lock repository: " + rep.getPath("") + "\n\nThis usually means that Tiggit crashed. But it MIGHT also mean you are running two instances of Tiggit at once.\n\nAre you SURE you want to continue? If two programs access the repository at the same, data loss may occur!"))
               {
                 if(!rep.initRepo(true))
                   {
@@ -59,6 +62,8 @@ struct TigApp : wxApp
             // If so, keep the user informed
             wxTigApp::JobProgress prog(this, info);
             prog.start("Downloading data set...");
+            if(info->isError())
+              Boxes::error("Download failed: " + info->message);
           }
 
         rep.loadData();

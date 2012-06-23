@@ -1,9 +1,10 @@
 #include "news.hpp"
-#include "fetch.hpp"
 #include "readjson/readjson.hpp"
+#include "repo.hpp"
+#include "server_api.hpp"
+
 #include <assert.h>
 #include <set>
-#include "repo.hpp"
 
 using namespace TigLib;
 
@@ -41,16 +42,7 @@ void NewsReader::reload()
 
   try
     {
-      std::string file = repo->fetchPath("http://tiggit.net/api/news.json", "news.json");
-
-      if(file == "")
-        {
-          if(repo->offline)
-            error(items, "Could not load news in offline mode");
-          else
-            error(items, "An unknown error occured while loading news");
-          return;
-        }
+      std::string file = repo->fetchPath(ServerAPI::newsURL(), "news.json");
 
       Value root = ReadJson::readJson(file);
       if(!root.isObject())

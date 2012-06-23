@@ -7,6 +7,7 @@
 #include <boost/filesystem.hpp>
 #include "repo.hpp"
 #include <assert.h>
+#include "server_api.hpp"
 
 namespace bs = boost::filesystem;
 using namespace TigLib;
@@ -126,6 +127,9 @@ Jobify::JobInfoPtr LiveInfo::install(bool async)
   setupInfo();
   installJob->reset();
 
+  // Ignore offline mode. If the user wants to try installing a game,
+  // then go ahead and try it.
+
   InstallGameJob *job = new InstallGameJob
     (ent->tigInfo.url, repo->getPath("incoming/" + ent->idname),
      repo->getInstDir(ent->idname), ent->idname, ent->urlname,
@@ -148,7 +152,7 @@ Jobify::JobInfoPtr LiveInfo::uninstall(bool async)
     }
 
   // Mark the game as uninstalled
-  repo->setInstallStatus(ent->idname, 0);
+  repo->gameUninstalled(ent->idname, ent->urlname);
   installJob->reset();
 
   // Set up a deletion job
@@ -168,16 +172,16 @@ void LiveInfo::launch(bool async)
 }
 
 // Download screenshot, then notify the callback
-struct DownloadNotify : NotifyTask
+struct ScreenshotJob : NotifyTask
 {
   ShotIsReady *cb;
   std::string file, idname;
 
-  DownloadNotify(const std::string &_url,
-                 const std::string &_file,
-                 const std::string &_idname,
-                 ShotIsReady *_cb,
-                 Jobify::JobInfoPtr _info)
+  ScreenshotJob(const std::string &_url,
+                const std::string &_file,
+                const std::string &_idname,
+                ShotIsReady *_cb,
+                Jobify::JobInfoPtr _info)
     : NotifyTask(new DownloadTask(_url, _file, _info)),
       cb(_cb), file(_file), idname(_idname) {}
 
@@ -219,12 +223,15 @@ Jobify::JobInfoPtr LiveInfo::requestShot(ShotIsReady *cb, bool async)
   // File does not exist, and no work has been done. Go fetch the
   // screenshot.
 
-  // URL is hard-coded for now. We will soon replace individual
-  // downloads with a mass package update, so it doesn't matter.
-  std::string url = "http://tiggit.net/pics/300x260/" + ent->urlname + ".png";
-  DownloadNotify *job = new DownloadNotify(url, file.string(), ent->idname,
-                                           cb, screenJob);
+  // Skip in offline mode
+  if(!repo->offline)
+    {
+      // Fetch then start a job
+      std::string url = ServerAPI::screenshotURL(ent->urlname);
+      ScreenshotJob *job = new ScreenshotJob(url, file.string(), ent->idname,
+                                             cb, screenJob);
 
-  Jobify::Thread::run(job, async);
-  return screenJob;
+      Jobify::Thread::run(job, async);
+      return screenJob;
+    }
 }
