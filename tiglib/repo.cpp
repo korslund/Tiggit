@@ -117,10 +117,11 @@ bool Repo::initRepo(bool forceLock)
         oldcfg = getPath("readnews.json");
         if(exists(oldcfg))
           {
-            // TODO: requires some json reading
+            // Convert JSON array to config value
             Json::Value root = ReadJson::readJson(oldcfg);
             for(int i=0; i<root.size(); i++)
               {
+                // The old values were ints, now we are using strings.
                 int val = root[i].asInt();
                 char buf[10];
                 snprintf(buf, 10, "%d", val);
@@ -233,6 +234,14 @@ std::string Repo::getPath(const std::string &fname)
 {
   using namespace boost::filesystem;
   return (path(dir)/fname).string();
+}
+
+std::string Repo::fetchPath(const std::string &url,
+                            const std::string &fname)
+{
+  std::string outfile = getPath(fname);
+  Fetch::fetchFile(url, outfile);
+  return outfile;
 }
 
 Jobify::JobInfoPtr Repo::fetchFiles()

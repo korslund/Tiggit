@@ -88,7 +88,6 @@ namespace wxTiggit
 
   struct wxGameNewsItem
   {
-    int id;
     time_t dateNum;
     wxString date, subject, body;
     bool read;

@@ -4,13 +4,19 @@
 #include "gamelist.hpp"
 #include "tiglib/repo.hpp"
 #include "gameconf.hpp"
+#include "tiglib/news.hpp"
 
 namespace wxTigApp
 {
   struct GameNews : wxGameNews
   {
-    const wxGameNewsItem &get(int i) const;
-    int size() const;
+    TigLib::NewsReader news;
+    std::vector<wxGameNewsItem> items;
+
+    GameNews(TigLib::Repo *repo) : news(repo) {}
+
+    const wxGameNewsItem &get(int i) const { return items[i]; }
+    int size() const { return items.size(); }
     void reload();
     void markAsRead(int);
     void markAllAsRead();

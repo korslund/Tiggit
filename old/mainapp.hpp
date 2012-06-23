@@ -16,18 +16,3 @@ string version;
 // Then find and load the repository
 if(!Repository::setupPaths(exe, appData))
   return false;
-
-auth.load();
-ratings.read();
-
-// Download cached data if this is the first time we run.
-if(conf.updateCache && !conf.offline)
-  {
-    CacheFetcher cf(this);
-    cf.goDoItAlready();
-  }
-
-updateData(conf.updateList || conf.updateCache);
-
-// ...
-return true;

@@ -4,18 +4,39 @@ using namespace TigData;
 using namespace wxTigApp;
 using namespace TigLib;
 
-wxGameNewsItem it;
-
-const wxGameNewsItem &GameNews::get(int i) const
-{ return it; }
-int GameNews::size() const
-{ return 0; }
 void GameNews::reload()
-{}
-void GameNews::markAsRead(int)
-{}
+{
+  news.reload();
+  items.resize(news.size());
+
+  for(int i=0; i<news.size(); i++)
+    {
+      wxGameNewsItem &out = items[i];
+      const TigLib::NewsItem &in = news.get(i);
+
+      out.read = in.isRead;
+      out.dateNum = in.date;
+      out.subject = strToWx(in.subject);
+      out.body = strToWx(in.body);
+
+      char buf[50];
+      strftime(buf,50, "%Y-%m-%d", gmtime(&in.date));
+      out.date = wxString(buf, wxConvUTF8);
+    }
+}
+
+void GameNews::markAsRead(int i)
+{
+  news.markAsRead(i);
+  items[i].read = true;
+}
+
 void GameNews::markAllAsRead()
-{}
+{
+  news.markAllAsRead();
+  for(int i=0; i<items.size(); i++)
+    items[i].read = true;
+}
 
 struct FreeDemoPick : GamePicker
 {
@@ -36,7 +57,8 @@ static FreeDemoPick freePick(true), demoPick(false);
 static InstalledPick instPick;
 
 wxTigApp::GameData::GameData(Repo &rep)
-  : config(rep.getPath("wxtiggit.conf")), repo(rep)
+  : config(rep.getPath("wxtiggit.conf")), news(&rep),
+    repo(rep)
 {
   // Create GameInf structs attached to all the LiveInfo structs
   const InfoLookup &lst = rep.getList();

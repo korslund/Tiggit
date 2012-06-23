@@ -16,10 +16,16 @@ namespace TigLib
     Misc::JConfig conf;
     Misc::LockFile lock;
     TigLib::GameData data;
-
     int64_t lastTime;
 
   public:
+    Repo(bool runOffline=false) : offline(runOffline) {}
+
+    // Set to true to run in offline mode. You can switch this on/off
+    // at any time. Various internal functions will skip trying to
+    // connect to the net if this is set.
+    bool offline;
+
     Misc::JConfig inst, news, rates;
     /* Find or establish a repository in the given location. An empty
        path means we should use the standard path for this OS. This
@@ -70,6 +76,11 @@ namespace TigLib
     // Get the path of a file or directory within the repository. Only
     // valid after findRepo() has been invoked successfully.
     std::string getPath(const std::string &fname);
+
+    // Fetch file from URL to the given location within the
+    // repository. Returns the full path.
+    std::string fetchPath(const std::string &url,
+                          const std::string &fname);
 
     // Get install dir for a game
     std::string getInstDir(const std::string &idname)

@@ -111,14 +111,12 @@ struct TestNews : wxGameNews
 
   TestNews()
   {
-    it1.id = 1;
     it1.dateNum = 1;
     it1.date = wxT("long ago");
     it1.subject = wxT("Some subject");
     it1.body = wxT("Some body");
     it1.read = true;
 
-    it2.id = 2;
     it2.dateNum = 2;
     it2.date = wxT("in a galaxy far away");
     it2.subject = wxT("Help!");
