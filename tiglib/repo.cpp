@@ -282,7 +282,7 @@ struct MyFetch : GameInfo::URLManager
 
 void Repo::loadData()
 {
-  assert(lock.isLocked());
+  assert(isLocked());
   MyFetch fetch;
   fetch.offline = offline;
   data.data.addChannel(listFile, tigDir, &fetch);

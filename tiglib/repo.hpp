@@ -27,6 +27,11 @@ namespace TigLib
     bool offline;
 
     Misc::JConfig inst, news, rates;
+
+    // Check if the repository is locked. If not, we are not allowed
+    // to write to it.
+    bool isLocked() { return lock.isLocked(); }
+
     /* Find or establish a repository in the given location. An empty
        path means we should use the standard path for this OS. This
        will also look for repositories in legacy locations from older

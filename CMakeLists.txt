@@ -42,7 +42,7 @@ set(TIGLIB ${TLDIR}/gamedata.cpp ${TLDIR}/gamelister.cpp ${TLDIR}/sorters.cpp ${
 set(WX ${WDIR}/frame.cpp ${WDIR}/tabbase.cpp ${WDIR}/gametab.cpp ${WDIR}/image_viewer.cpp ${WDIR}/gamelist.cpp ${WDIR}/listbase.cpp ${WDIR}/newstab.cpp ${WDIR}/progress_holder.cpp)
 set(APPWX ${AWDIR}/wxtiggit_main.cpp ${AWDIR}/gamedata.cpp ${AWDIR}/gameinf.cpp ${AWDIR}/gamelist.cpp ${AWDIR}/notifier.cpp ${AWDIR}/jobprogress.cpp)
 
-# All CPP files, excluding wxWidgets-users
+# All CPP files, excluding wxWidgets-dependent files
 set(ALL ${JOB} ${MISC} ${MANGLE} ${JSON} ${READJSON} ${GAMEINFO} ${TASKS} ${UNPACK} ${LIST} ${TIGLIB})
 
 # Only wxWidgets CPP files
@@ -50,3 +50,6 @@ set(ALL_WX ${WX} ${APPWX})
 
 add_executable(tiggit ${ALL} ${ALL_WX})
 target_link_libraries(tiggit ${LIBS} ${WLIBS})
+
+#add_executable(tiggit-cli ${ALL} cli/cli_main.cpp)
+#target_link_libraries(tiggit-cli ${LIBS})
