@@ -3,6 +3,7 @@
 #include "notifier.hpp"
 #include "wx/boxes.hpp"
 #include "jobprogress.hpp"
+#include "wx/dialogs.hpp"
 
 struct MyTimer : wxTimer
 {
@@ -38,11 +39,34 @@ struct TigApp : wxApp
     try
       {
         if(!rep.findRepo())
-          Boxes::error("Unable to find repository");
+          {
+            std::string dir = rep.defaultPath();
+            bool failed = false;
+
+            // Unable to find a repository. Ask the user.
+            while(true)
+              {
+                wxTiggit::OutputDirDialog dlg(NULL, dir, failed, true);
+
+                // Exit when the user has had enough
+                if(!dlg.ok)
+                  return false;
+
+                dir = dlg.path;
+
+                // We're done when the given path is an acceptible
+                // repo path.
+                if(rep.findRepo(dir))
+                  break;
+
+                // If not, continue asking, and tell the user why.
+                failed = true;
+              }
+          }
 
         if(!rep.initRepo())
           {
-            if(Boxes::ask("Failed to lock repository: " + rep.getPath("") + "\n\nThis usually means that Tiggit crashed. But it MIGHT also mean you are running two instances of Tiggit at once.\n\nAre you SURE you want to continue? If two programs access the repository at the same, data loss may occur!"))
+            if(Boxes::ask("Failed to lock repository: " + rep.getPath("") + "\n\nThis usually means that a previous instance of Tiggit crashed. But it MIGHT also mean you are running two instances of Tiggit at once.\n\nAre you SURE you want to continue? If two programs access the repository at the same, data loss may occur!"))
               {
                 if(!rep.initRepo(true))
                   {
@@ -61,7 +85,7 @@ struct TigApp : wxApp
           {
             // If so, keep the user informed
             wxTigApp::JobProgress prog(this, info);
-            prog.start("Downloading data set...");
+            prog.start("Downloading initial data set...");
             if(info->isError())
               Boxes::error("Download failed: " + info->message);
           }

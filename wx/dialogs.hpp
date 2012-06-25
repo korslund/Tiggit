@@ -2,10 +2,11 @@
 #define __TIGGIT_DIALOGS_HPP_
 
 #include "wxcommon.hpp"
-#include <vector>
+//#include <vector>
 
 namespace wxTiggit
 {
+  // Base class for dialogs that have a "browse file/directory" entry.
   struct BrowseDialog : wxDialog
   {
     BrowseDialog(wxWindow *parent, const wxString &title,
@@ -21,6 +22,19 @@ namespace wxTiggit
     void onBrowse(wxCommandEvent &event);
   };
 
+  /* Select a new repository directory.
+
+     Parameters:
+
+       old_dir    - old directory (in case of moving), or suggestion for new
+                    directory (in case of a fresh install)
+
+       writeFailed - display a message saying that the previously selected directory was not                      writable
+
+       freshInstall - treat this as a fresh install, where the user gets to select the
+                      directory for the first time
+
+   */
   struct OutputDirDialog : BrowseDialog
   {
     OutputDirDialog(wxWindow *parent, const std::string &old_dir,

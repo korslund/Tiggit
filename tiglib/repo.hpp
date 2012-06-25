@@ -42,9 +42,11 @@ namespace TigLib
        found.
 
        If it fails, you may prompt the user for a new location and try
-       again.
+       again. Optionally you may use defaultPath() to get a standard
+       location suggestion.
      */
     bool findRepo(const std::string &where = "");
+    static std::string defaultPath();
 
     /* Initialize repository. This includes creating a lock file and
        loading configuration. The function will also convert legacy

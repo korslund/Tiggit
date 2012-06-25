@@ -35,17 +35,17 @@ void BrowseDialog::onBrowse(wxCommandEvent &event)
 
 OutputDirDialog::OutputDirDialog(wxWindow *parent, const std::string &old_dir,
                                  bool writeFailed, bool freshInstall)
-  : BrowseDialog(parent, wxT("Set Data Directory"), 430, 256)
+  : BrowseDialog(parent, wxT("Select Data Directory"), 430, 256)
 {
   wxString old(old_dir.c_str(), wxConvUTF8);
 
   wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
 
-  wxString text = wxT("Please specify data directory. All games will be installed into this\npath, and Tiggit itself will store images and config data here.");
+  wxString text = wxT("Select your data storage directory. All games will be installed here, and\nTiggit will also store its cache data here.");
 
   vbox->Add(new wxStaticText(this, -1, text), 0, wxBOTTOM, 30);
 
-  vbox->Add(new wxStaticText(this, -1, wxT("New data directory:")));
+  vbox->Add(new wxStaticText(this, -1, wxT("Data directory:")));
   addTo(vbox,old);
   if(writeFailed)
     {
@@ -55,7 +55,7 @@ OutputDirDialog::OutputDirDialog(wxWindow *parent, const std::string &old_dir,
     }
 
   if(freshInstall)
-    text = wxT("The directory will be created if it does not exist.\nPress Cancel to exit.");
+    text = wxT("The directory will be created if it does not already exist.\nPress Cancel to exit.");
   else
     text = wxT("Already installed games and data will be MOVED to this directory");
   vbox->Add(new wxStaticText(this, -1, text),0, wxTOP, 12);
