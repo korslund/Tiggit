@@ -32,7 +32,8 @@ namespace Tasks
       std::string source, dest; // Use 'dest' for delete operations
     };
 
-    FileOpTask(Jobify::JobInfoPtr info = Jobify::JobInfoPtr());
+    FileOpTask(Jobify::JobInfoPtr info = Jobify::JobInfoPtr())
+      : Jobify::Job(info) {}
 
     void addOp(const FileOp &op);
     void addOp(int type, const std::string &source, const std::string &dest);

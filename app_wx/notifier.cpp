@@ -20,6 +20,9 @@ void StatusNotifier::tick()
       // displays.
       soft = true;
 
+      // Get the GameInf pointer. Then increase the iterator, since we
+      // might erase it from the list below, invalidating the current
+      // position.
       itold = it++;
       GameInf *inf = *itold;
 
@@ -62,3 +65,19 @@ void StatusNotifier::statusChanged()
 }
 
 StatusNotifier wxTigApp::notify;
+
+// This makes sure the notifier runs regularly
+struct MyTimer : wxTimer
+{
+  MyTimer(int ms)
+  {
+    Start(ms);
+  }
+
+  void Notify()
+  {
+    notify.tick();
+  }
+};
+
+static MyTimer timer(300);

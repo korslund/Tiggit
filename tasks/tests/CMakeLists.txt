@@ -18,6 +18,7 @@ set(DL ${CURL} ${TDIR}/download.cpp ${JOB})
 set(MULT ${TDIR}/multi.cpp ${JOB})
 set(NOTE ${TDIR}/notify.cpp ${JOB})
 set(FOP ${TDIR}/fileop.cpp ${JOB})
+set(DIC ${TDIR}/dircopy.cpp ${JOB})
 
 set(UBASE ${UDIR}/dirwriter.cpp ${UDIR}/base.cpp)
 set(ZIP ${UBASE} ${UDIR}/unpack_zip.cpp)
@@ -36,3 +37,6 @@ add_executable(notify_test notify_test.cpp ${NOTE})
 
 add_executable(fileop_test fileop_test.cpp ${FOP})
 target_link_libraries(fileop_test ${Boost_LIBRARIES})
+
+add_executable(dircopy_test dircopy_test.cpp ${DIC})
+target_link_libraries(dircopy_test ${Boost_LIBRARIES})

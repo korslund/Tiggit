@@ -6,9 +6,6 @@ using namespace Tasks;
 using namespace Jobify;
 namespace bs = boost::filesystem;
 
-FileOpTask::FileOpTask(JobInfoPtr info) : Job(info?info:JobInfoPtr(new JobInfo))
-{}
-
 void FileOpTask::addOp(const FileOp &op)
 {
   ops.push_back(op);

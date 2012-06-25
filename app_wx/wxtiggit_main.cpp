@@ -5,21 +5,6 @@
 #include "jobprogress.hpp"
 #include "wx/dialogs.hpp"
 
-struct MyTimer : wxTimer
-{
-  MyTimer(int ms)
-  {
-    Start(ms);
-  }
-
-  void Notify()
-  {
-    wxTigApp::notify.tick();
-  }
-};
-
-MyTimer timer(300);
-
 struct TigApp : wxApp
 {
   TigLib::Repo rep;
