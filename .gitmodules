@@ -1,3 +1,6 @@
 [submodule "libs/mangle"]
 	path = libs/mangle
 	url = git://github.com/korslund/mangle
+[submodule "libs/spread"]
+	path = libs/spread
+	url = git://github.com/korslund/spread

@@ -1,6 +1,0 @@
-Job 1: OK (normal execution)
-Cleaning up 1 (Success!)
-Job 2: ERROR! (using setError)
-Cleaning up 2 (Error: We can't have that crap!)
-Job 3: EXCEPTION! (throw)
-Cleaning up 3 (Error: blablah)
