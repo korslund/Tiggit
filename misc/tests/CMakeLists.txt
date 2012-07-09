@@ -26,8 +26,6 @@ set(JSON ${JS}/json_reader.cpp ${JS}/json_writer.cpp ${JS}/json_value.cpp)
 set(READJSON ${MANGLE} ${JSON} ${SPDIR}/json/readjson.cpp)
 set(C85 ${SPDIR}/misc/comp85.cpp)
 
-set(CONF ${READJSON} ${MIDIR}/jconfig.cpp ${C85})
-
 # This automagically sets up everything for us
 include( ${wxWidgets_USE_FILE} )
 
@@ -39,6 +37,3 @@ target_link_libraries(wx_test ${WLIBS})
 
 add_executable(lock_test lock_test.cpp ${LOCK})
 target_link_libraries(lock_test ${LIBS})
-
-add_executable(conf_test conf_test.cpp ${CONF})
-target_link_libraries(conf_test ${LIBS})

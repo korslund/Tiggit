@@ -2,8 +2,8 @@
 
 #include "misc/dirfinder.hpp"
 #include <boost/filesystem.hpp>
-#include "readjson/readjson.hpp"
-#include "misc/jconfig.hpp"
+#include <spread/misc/readjson.hpp>
+#include <spread/misc/jconfig.hpp>
 
 static Misc::DirFinder dfinder("tiggit.net", "tiggit");
 

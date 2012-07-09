@@ -2,7 +2,7 @@
 
 #include "json_tigdata.hpp"
 #include "binary_tigdata.hpp"
-#include "readjson/readjson.hpp"
+#include <spread/misc/readjson.hpp>
 #include <boost/filesystem.hpp>
 #include <stdexcept>
 

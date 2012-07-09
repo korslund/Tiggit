@@ -1,5 +1,5 @@
 #include "news.hpp"
-#include "readjson/readjson.hpp"
+#include <spread/misc/readjson.hpp>
 #include "repo.hpp"
 #include "server_api.hpp"
 
