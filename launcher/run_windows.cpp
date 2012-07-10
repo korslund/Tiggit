@@ -34,7 +34,7 @@ void Launcher::win32_run(const std::string &command, const std::string &workdir)
   si.cb = sizeof(si);
 
   bool ok =
-    CreateProcess(NULL, command.c_str(), NULL, NULL, false,
+    CreateProcess(NULL, (char*)command.c_str(), NULL, NULL, false,
                   DETACHED_PROCESS, NULL,
                   (workdir==""?NULL:workdir.c_str()),
                   &si, &pi);

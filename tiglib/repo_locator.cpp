@@ -14,8 +14,6 @@ using namespace boost::filesystem;
 */
 #ifdef _WIN32
 
-#include <windows.h>
-
 /* Check a directory if it has an old-style repository. May change
    'dir'.
 */
@@ -49,13 +47,6 @@ static bool hasRepo(path &dir)
   return false;
 }
 
-static std::string getExePath()
-{
-  char buf[2000];
-  GetModuleFileName(NULL, buf, 2000);
-  return std::string(buf);
-}
-
 // Find and return legacy repository path, if any
 static std::string findLegacyDir()
 {
@@ -66,7 +57,7 @@ static std::string findLegacyDir()
       return dir;
   }
 
-  path exeDir = getExePath();
+  path exeDir = finder.getExePath();
   exeDir = exeDir.parent_path();
 
   // Check for a paths.json co-located with the exe.

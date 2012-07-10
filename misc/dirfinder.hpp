@@ -71,6 +71,10 @@ namespace Misc
      */
     static std::string getAppData();
 
+    /* Get current executable path. Currently windows only.
+     */
+    static std::string getExePath();
+
     /* Set stored path. Will return true if the path was accepted,
        ie. it was writable, and we were able to store the information
        in a retrievable way.

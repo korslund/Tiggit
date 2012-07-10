@@ -15,7 +15,7 @@ using namespace boost::filesystem;
 
 TCHAR pathbuf[MAX_PATH];
 
-std::string getPathCSIDL(int csidl)
+static std::string getPathCSIDL(int csidl)
 {
   SHGetFolderPath(NULL, csidl, NULL, 0, pathbuf);
   return std::string(pathbuf);
@@ -26,7 +26,14 @@ std::string DirFinder::getAppData()
   return getPathCSIDL(CSIDL_LOCAL_APPDATA);
 }
 
-std::string getDataDir(int csidl, const std::string &vname, const std::string &aname)
+std::string DirFinder::getExePath()
+{
+  char buf[2000];
+  GetModuleFileName(NULL, buf, 2000);
+  return std::string(buf);
+}
+
+static std::string getDataDir(int csidl, const std::string &vname, const std::string &aname)
 {
   path p = getPathCSIDL(csidl);
   if(vname != "") p /= vname;
@@ -39,7 +46,7 @@ bool DirFinder::getStandardPath(std::string &dir)
   return isWritable(dir);
 }
 
-bool openRegKey(const std::string &vname, const std::string &aname, HKEY &hkey)
+static bool openRegKey(const std::string &vname, const std::string &aname, HKEY &hkey)
 {
   std::string where = "Software\\" + vname + "\\" + aname;
   LPCTSTR sk = where.c_str();
@@ -114,6 +121,8 @@ bool DirFinder::getStandardPath(std::string &dir)
   dir = getHome(aname);
   return isWritable(dir);
 }
+
+std::string DirFinder::getExePath() { return ""; }
 
 static std::string os_getStoredPath(const std::string &vname,
                                     const std::string &aname,
