@@ -70,6 +70,11 @@ namespace wxTiggit
     virtual void setTags(const std::string &) = 0;
     virtual void setSearch(const std::string &) = 0;
 
+    // Count the number of elements that would result in the list if
+    // you had called setTags() with this string. The result is not
+    // cached, so use sparingly.
+    virtual int countTags(const std::string &) = 0;
+
     virtual bool sortTitle() = 0;
     virtual bool sortDate() = 0;
     virtual bool sortRating() = 0;
@@ -129,13 +134,18 @@ namespace wxTiggit
     // game has finished installing.
     virtual void gameInfoChanged() = 0;
 
+    // Called when the current list has changed selection in response
+    // to internal functions (such as sorting or tag selection), but
+    // the base list has not changed.
+    virtual void gameSelectionChanged() = 0;
+
     // Called when the list itself has changed in size, content or
     // ordering.
     virtual void gameListChanged() = 0;
 
     // Called on 'soft' status changes, for example on the 'ticks'
     // that happen while something is installing. Normally only the
-    // list itself needs to be refreshed.
+    // list view needs to be refreshed.
     virtual void gameStatusChanged() = 0;
   };
 }

@@ -61,6 +61,7 @@ void GameListView::addColumn(const std::string &name, int width, ColumnHandler *
 void GameListView::gameInfoChanged() { Refresh(); }
 void GameListView::gameStatusChanged() { Refresh(); }
 void GameListView::gameListChanged() { updateSize(); }
+void GameListView::gameSelectionChanged() { updateSize(); }
 
 // Refresh list size.
 void GameListView::updateSize()

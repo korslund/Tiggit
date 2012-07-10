@@ -8,6 +8,7 @@
 #include "repo.hpp"
 #include <assert.h>
 #include "server_api.hpp"
+#include "launcher/run.hpp"
 
 namespace bs = boost::filesystem;
 using namespace TigLib;
@@ -164,11 +165,18 @@ Jobify::JobInfoPtr LiveInfo::uninstall(bool async)
   return res;
 }
 
-void LiveInfo::launch(bool async)
+void LiveInfo::launch()
 {
   assert(isInstalled());
 
-  // Invoke the launcher, which is an entirely separate module.
+  // Figure out what to run
+  bs::path exe = getInstallDir();
+  exe /= ent->tigInfo.launch;
+
+  // Use executable location as working directory
+  bs::path work = exe.parent_path();
+
+  Launcher::run(exe.string(), work.string());
 }
 
 // Download screenshot, then notify the callback

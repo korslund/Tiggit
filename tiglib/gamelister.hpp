@@ -37,14 +37,18 @@ namespace TigLib
   {
     List::PickList base, tags, search;
     List::SortList sort;
-    GamePicker *searchPick;
+    GamePicker *searchPick, *tagPick;
 
   public:
     GameLister(List::ListBase &all, GamePicker *mainPick = NULL)
       : base(&all), tags(&base), search(&tags), sort(&search),
-        searchPick(NULL)
+        searchPick(NULL), tagPick(NULL)
     { base.setPick(mainPick); }
-    ~GameLister() { if(searchPick) delete searchPick; }
+    ~GameLister()
+    {
+      if(searchPick) delete searchPick;
+      if(tagPick) delete tagPick;
+    }
 
     LiveInfo &get(int i) { return *((LiveInfo*)sort.getList()[i]); }
     int size() const { return sort.getList().size(); }
@@ -70,6 +74,17 @@ namespace TigLib
 
     // Specify search string
     void setSearch(const std::string &str);
+
+    /* Set space and/or comma-delimited tag list. List will only pick
+       out games that match ALL the given tags, or aliases of them.
+     */
+    void setTags(const std::string &str);
+
+    /* Count the number of games matching a given tag string.
+     */
+    int countTags(const std::string &str);
+
+    //void dumpTags();
   };
 }
 

@@ -4,7 +4,7 @@ using namespace TigData;
 using namespace wxTigApp;
 using namespace TigLib;
 
-void Notifier::notify() { lst->notifyListChange(); }
+void Notifier::notify() { lst->notifySelectChange(); }
 
 void GameList::addListener(wxGameListener *p)
 {
@@ -25,6 +25,13 @@ void GameList::notifyListChange()
     (*it)->gameListChanged();
 }
 
+void GameList::notifySelectChange()
+{
+  std::set<wxGameListener*>::iterator it;
+  for(it = listeners.begin(); it != listeners.end(); it++)
+    (*it)->gameSelectionChanged();
+}
+
 void GameList::notifyInfoChange()
 {
   std::set<wxGameListener*>::iterator it;
@@ -42,8 +49,9 @@ void GameList::notifyStatusChange()
 void GameList::flipReverse() { lister.flipReverse(); }
 void GameList::setReverse(bool b) { lister.setReverse(b); }
 void GameList::clearTags() { setTags(""); }
-void GameList::setTags(const std::string &) {}
+void GameList::setTags(const std::string &str) { lister.setTags(str); }
 void GameList::setSearch(const std::string &str) { lister.setSearch(str); }
+int GameList::countTags(const std::string &str) { return lister.countTags(str); }
 
 bool GameList::sortTitle()
 {

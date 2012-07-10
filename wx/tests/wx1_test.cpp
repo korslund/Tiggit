@@ -85,6 +85,7 @@ struct TestList : wxGameList
   void setTags(const std::string &) {}
   void setSearch(const std::string &str)
   { cout << "Setting search: " << str << endl; }
+  int countTags(const std::string &str) { return str.size(); }
 
   int size() const { return 4; }
   const wxGameInfo& get(int i) { return edit(i); }

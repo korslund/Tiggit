@@ -32,6 +32,7 @@ namespace wxTiggit
 
     // wxGameListener functions
     void gameInfoChanged();
+    void gameSelectionChanged();
     void gameListChanged();
     void gameStatusChanged();
 

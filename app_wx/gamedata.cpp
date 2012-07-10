@@ -76,6 +76,8 @@ wxTigApp::GameData::GameData(Repo &rep)
   freeware = new GameList(rep.baseList(), &freePick);
   demos = new GameList(rep.baseList(), &demoPick);
   installed = new GameList(rep.baseList(), &instPick);
+
+  //freeware->lister.dumpTags();
 }
 
 wxTigApp::GameData::~GameData()

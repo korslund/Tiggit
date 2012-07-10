@@ -94,12 +94,10 @@ namespace TigLib
     // Send signal to abort current install job, if any.
     void abort() { if(isWorking()) installJob->abort(); }
 
-    /* Launch this game.
-
-       If async is true, launch a separate process and return
-       immediately. If false, wait until it finishes.
+    /* Launch this game. The game is started as a separate
+       asynchronous process.
      */
-    void launch(bool async = true);
+    void launch();
 
     // Mark this game as installed. Called on installed games at
     // startup.

@@ -12,8 +12,9 @@ GameTab::GameTab(wxNotebook *parent, const wxString &name, wxGameList &lst)
 
   wxBoxSizer *searchBox = new wxBoxSizer(wxHORIZONTAL);
   searchBox->Add(new wxStaticText(this, wxID_ANY, wxT("Search:")), 0);
-  searchBox->Add(new wxTextCtrl(this, myID_SEARCH_BOX, wxT(""), wxDefaultPosition,
-                                wxSize(260,22)),1, wxGROW);
+  searchCtrl = new wxTextCtrl(this, myID_SEARCH_BOX, wxT(""), wxDefaultPosition,
+                              wxSize(260,22));
+  searchBox->Add(searchCtrl,1, wxGROW);
 
   wxBoxSizer *bcLeft = new wxBoxSizer(wxVERTICAL);
   bcLeft->Add(searchBox, 0, wxBOTTOM | wxLEFT, 2);
@@ -131,6 +132,59 @@ GameTab::GameTab(wxNotebook *parent, const wxString &name, wxGameList &lst)
   gameListChanged();
 }
 
+// Hard-coded list of tags to display
+static const char* itags[] =
+  {
+    "Action",
+    "Arcade",
+    "Cards",
+    "Casual",
+    "Fighter",
+    "FPS",
+    "Music",
+    "Platform",
+    "Point-n-click",
+    "Puzzle",
+    "Rogue-like",
+    "RPG",
+    "Racing",
+    "Shooter",
+    "Simulation",
+    "Strategy",
+    "single-player",
+    "multi-player",
+    "open-source",
+    "\0"
+  };
+
+void GameTab::updateTags()
+{
+  using namespace std;
+
+  tagList.clear();
+
+  vector<wxString> labels;
+  labels.push_back(wxString::Format(wxT("All (%d)"), lister.size()));
+
+  for(const char **ip = itags; **ip != 0; ip++)
+    {
+      string tag(*ip);
+
+      int count = lister.countTags(tag);
+
+      if(count)
+        {
+          // Add the tag
+          tagList.push_back(tag);
+          labels.push_back(strToWx(tag) + wxString::Format(wxT(" (%d)"), count));
+        }
+    }
+
+  // Set up the tag control
+  tags->Clear();
+  tags->InsertItems(labels.size(), &labels[0], 0);
+}
+
 void GameTab::onSpecialKey(wxCommandEvent &event)
 {
   if(event.GetInt() == WXK_DELETE)
@@ -181,17 +235,29 @@ void GameTab::onTagSelect(wxCommandEvent &event)
 {
   int sel = event.GetSelection();
 
-  /* TODO
-  // Deselections are equivalent to selecting "All"
-  if(sel <= 0 || !event.IsSelection() || sel > taglist.size())
-    lister.clearTags();
+  /* Clear search when setting tags, as a lingering search string
+     might be easily missed by the user, and they will usually expect
+     that clicking on a tag will give them the full list of games for
+     that tag (especially since the tag list displays tags along with
+     the full game number), regardless of whether they searched for a
+     game in the past.
+
+     We might change this behavior later if we change how searching
+     and tags interact.
+  */
+  searchCtrl->Clear();
+
+  // Deselections are equivalent to selecting "All" (sel==0).
+  if(sel <= 0 || !event.IsSelection() || sel > tagList.size())
+    {
+      lister.clearTags();
+    }
   else
     {
-      sel--;
+      sel--; // Count from zero, not counting "All"
       assert(sel >= 0 && sel < tagList.size());
       lister.setTags(tagList[sel]);
     }
-  */
 }
 
 void GameTab::onSearch(wxCommandEvent &event)
@@ -250,11 +316,15 @@ void GameTab::onListSelect(wxListEvent &event)
 }
 
 void GameTab::gameInfoChanged() { updateSelection(); }
-void GameTab::gameListChanged()
+void GameTab::gameSelectionChanged()
 {
   updateSelection();
+}
+void GameTab::gameListChanged()
+{
+  gameSelectionChanged();
   updateTitle();
-  // TODO: Update tag list
+  updateTags();
 }
 
 void GameTab::onListRightClick(wxListEvent &event)
@@ -443,7 +513,16 @@ void GameTab::doAction1(int index)
           return;
 
       last_launch = now;
-      e.launchGame();
+
+      try { e.launchGame(); }
+      catch(std::exception &e)
+        {
+          Boxes::error("Failed to launch game: " + std::string(e.what()));
+        }
+      catch(...)
+        {
+          Boxes::error("Failed to launch game: Unknown error");
+        }
     }
 }
 

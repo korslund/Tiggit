@@ -23,15 +23,19 @@ namespace wxTiggit
 
     // Controls
     wxButton *b1, *b2;
-    wxTextCtrl *textView;
+    wxTextCtrl *textView, *searchCtrl;
     ImageViewer *screenshot;
     wxListBox *tags;
     wxChoice *rateBox;
     wxStaticText *rateText;
     wxString rateString[7];
 
+    // List of tags shown in the tag view window
+    std::vector<std::string> tagList;
+
     // wxGameListener functions
     void gameInfoChanged();
+    void gameSelectionChanged();
     void gameListChanged();
     void gameStatusChanged() {}
 
@@ -56,6 +60,7 @@ namespace wxTiggit
 
     // Internal functions
     void updateSelection();
+    void updateTags();
     void fixButtons();
     void updateGameInfo();
     void doAction1(int index);

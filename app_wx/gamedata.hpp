@@ -47,9 +47,18 @@ namespace wxTigApp
       freeware->notifyInfoChange();
       demos->notifyInfoChange();
 
-      // Refresh the installed list. Notifications will happen
-      // automatically.
+      // Refresh the installed list.
       installed->lister.refresh();
+      installed->notifyListChange();
+    }
+
+    // Notify all lists that the main data has been reloaded.
+    void notifyReloaded()
+    {
+      latest->notifyListChange();
+      freeware->notifyListChange();
+      demos->notifyListChange();
+      installed->notifyListChange();
     }
 
     // Called regularly when there are games being installed, to

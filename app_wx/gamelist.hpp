@@ -27,6 +27,9 @@ namespace wxTigApp
     // Invoke gameListChanged() on our listeners
     void notifyListChange();
 
+    // Invoke gameSelectionChanged() on listeners
+    void notifySelectChange();
+
     // Invoke gameInfoChanged() on our listeners
     void notifyInfoChange();
 
@@ -61,6 +64,7 @@ namespace wxTigApp
     void clearTags();
     void setTags(const std::string &);
     void setSearch(const std::string &);
+    int countTags(const std::string &);
 
     bool sortTitle();
     bool sortDate();
