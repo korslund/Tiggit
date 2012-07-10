@@ -48,9 +48,21 @@ namespace TigLib
     bool findRepo(const std::string &where = "");
     static std::string defaultPath();
 
+    /* Set the repository directory directly. This is an alternative
+       to findRepo() that doesn't use or update the global stored
+       config settings.
+
+       You can use this eg. to maintain several independent
+       repositories, or to use a repository on a flash drive without
+       disturbing the configuration of an existing installed
+       repository.
+     */
+    void setRepo(const std::string &where);
+
     /* Initialize repository. This includes creating a lock file and
        loading configuration. The function will also convert legacy
-       data from older versions of Tiggit.
+       data from older versions of Tiggit. Call this after calling
+       findRepo() or setRepo() successfully.
 
        Returns true on success, false if the locking failed.
 
@@ -73,10 +85,13 @@ namespace TigLib
 
        If the pointer is empty, or on error/abort status, you can
        continue loading immediately.
+
+       May only be called on an initialized repository (initRepo()
+       returned true.)
      */
     Jobify::JobInfoPtr fetchFiles();
 
-    /* Load current game data from disk into memory.
+    /* Load current game data from the repository files into memory.
      */
     void loadData();
 

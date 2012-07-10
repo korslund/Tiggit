@@ -4,11 +4,44 @@
 #include "wx/boxes.hpp"
 #include "jobprogress.hpp"
 #include "wx/dialogs.hpp"
+#include <wx/cmdline.h>
+
+/* Command line options
+ */
+
+static const wxCmdLineEntryDesc cmdLineDesc[] =
+  {
+    { wxCMD_LINE_SWITCH, wxT("o"), wxT("offline"), wxT("Offline mode") },
+    { wxCMD_LINE_OPTION, wxT("r"), wxT("repo"), wxT("Use repository dir. Will not use or set the default repository location."), wxCMD_LINE_VAL_STRING },
+    { wxCMD_LINE_SWITCH, wxT("h"), wxT("help"), wxT("Display this help"),
+      wxCMD_LINE_VAL_NONE, wxCMD_LINE_OPTION_HELP },
+    { wxCMD_LINE_NONE }
+  };
 
 struct TigApp : wxApp
 {
   TigLib::Repo rep;
   wxTigApp::GameData *gameData;
+
+  std::string param_repo;
+  bool param_offline;
+
+  void OnInitCmdLine(wxCmdLineParser& parser)
+  {
+    parser.SetDesc (cmdLineDesc);
+    parser.SetSwitchChars(wxT("-"));
+  }
+
+  bool OnCmdLineParsed(wxCmdLineParser& parser)
+  {
+    param_offline = parser.Found(wxT("o"));
+
+    wxString str;
+    if(parser.Found(wxT("r"), &str))
+      param_repo = wxToStr(str);
+
+    return true;
+  }
 
   bool OnInit()
   {
@@ -16,14 +49,16 @@ struct TigApp : wxApp
       return false;
 
     // Use to test offline mode
-    //rep.offline = true;
+    rep.offline = param_offline;
 
     SetAppName(wxT("Tiggit"));
     wxInitAllImageHandlers();
 
     try
       {
-        if(!rep.findRepo())
+        if(param_repo != "")
+          rep.setRepo(param_repo);
+        else if(!rep.findRepo())
           {
             std::string dir = rep.defaultPath();
             bool failed = false;
@@ -70,9 +105,12 @@ struct TigApp : wxApp
           {
             // If so, keep the user informed
             wxTigApp::JobProgress prog(this, info);
-            prog.start("Downloading initial data set...");
-            if(info->isError())
-              Boxes::error("Download failed: " + info->message);
+            if(!prog.start("Downloading initial data set...\nDestination directory: " + rep.getPath("")))
+              {
+                if(info->isError())
+                  Boxes::error("Download failed: " + info->message);
+                return false;
+              }
           }
 
         rep.loadData();

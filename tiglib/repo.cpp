@@ -5,6 +5,7 @@
 #include "job/thread.hpp"
 #include "server_api.hpp"
 #include "repo_locator.hpp"
+#include <boost/filesystem.hpp>
 
 #define CACHE_VERSION 1
 
@@ -31,10 +32,22 @@ bool Repo::findRepo(const std::string &where)
   return true;
 }
 
+void Repo::setRepo(const std::string &where)
+{
+  dir = where;
+
+  if(dir == "") dir = ".";
+
+  listFile = getPath("all_games.json");
+  tigDir = getPath("tigfiles/");
+}
+
 std::string Repo::defaultPath() { return TigLibInt::getDefaultPath(); }
 
 bool Repo::initRepo(bool forceLock)
 {
+  boost::filesystem::create_directories(dir);
+
   // Lock the repo before we start writing to it
   if(!lock.lock(getPath("lock"), forceLock))
     return false;
@@ -112,7 +125,7 @@ void Repo::setRating(const std::string &id, const std::string &urlname,
 
 std::string Repo::getPath(const std::string &fname)
 {
-  return dir + "/" + fname;
+  return (boost::filesystem::path(dir) / fname).string();
 }
 
 std::string Repo::fetchPath(const std::string &url,
