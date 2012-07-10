@@ -10,18 +10,19 @@ static std::string getWinError(int errCode, const std::string &prepend = "")
   if(errCode)
     {
       LPTSTR winError = NULL;
-      if(FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-                       NULL, errCode, 0, (LPTSTR)&winError, 0, NULL) == 0)
-        res = prepend + winError;
-      if( winError ) LocalFree(winError);
+      FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                    FORMAT_MESSAGE_FROM_SYSTEM |
+                    FORMAT_MESSAGE_IGNORE_INSERTS,
+                    NULL, errCode,
+                    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                    (LPTSTR)&winError, 0, NULL);
+      if( winError )
+        {
+          res = prepend + winError;
+          LocalFree(winError);
+        }
     }
   return res;
-}
-
-static std::string getWinError(const std::string &prepend = "")
-{
-  int errCode = GetLastError();
-  return getWinError(errCode, prepend);
 }
 
 void Launcher::win32_run(const std::string &command, const std::string &workdir)
@@ -41,8 +42,9 @@ void Launcher::win32_run(const std::string &command, const std::string &workdir)
 
   if(!ok)
     {
+      int code = GetLastError();
       std::string err = "Error executing " + command;
-      err += getWinError(": ");
+      err += getWinError(code, ": ");
       throw std::runtime_error(err);
     }
 
