@@ -30,7 +30,7 @@ namespace Misc
 
     void setFile(const std::string &_file)
     { unlock(); file = _file; }
-    bool isLocked() { return locked; }
+    bool isLocked() const { return locked; }
 
   private:
 

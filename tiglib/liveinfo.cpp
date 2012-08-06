@@ -1,54 +1,12 @@
 #include "liveinfo.hpp"
-#include "tasks/download.hpp"
-#include "tasks/notify.hpp"
-#include "tasks/fileop.hpp"
-#include "tasks/install.hpp"
-#include "job/thread.hpp"
-#include <boost/filesystem.hpp>
 #include "repo.hpp"
-#include <assert.h>
 #include "server_api.hpp"
 #include "launcher/run.hpp"
+#include <boost/filesystem.hpp>
+#include <assert.h>
 
 namespace bs = boost::filesystem;
 using namespace TigLib;
-using namespace Tasks;
-
-#include <iostream>
-using namespace std;
-
-// Job that installs a game, notifies the system on success, and
-// cleans up on error.
-struct InstallGameJob : NotifyTask
-{
-  std::string idname, urlname, dir;
-  Repo *repo;
-  bool killOnError;
-
-  InstallGameJob(const std::string &_url, const std::string &_zip,
-                 const std::string &_dir, const std::string &_idname,
-                 const std::string &_urlname, Repo *_repo,
-                 Jobify::JobInfoPtr _info)
-    : NotifyTask(new InstallTask(_url, _zip, _dir, _info)),
-      idname(_idname), urlname(_urlname), dir(_dir),
-      repo(_repo), killOnError(true)
-  {}
-
-  void onSuccess()
-  {
-    // Notify the repo that we are done. This updates config and tells
-    // the server to count a dounwload.
-    if(info->isSuccess())
-      repo->downloadFinished(idname, urlname);
-  }
-
-  void onError()
-  {
-    // Remove files on error
-    if(dir != "" && killOnError)
-      bs::remove_all(dir);
-  }
-};
 
 LiveInfo::LiveInfo(const TigData::TigEntry *e, Repo *_repo)
   : ent(e), extra(NULL), repo(_repo), myRate(-2)
@@ -84,7 +42,7 @@ bool LiveInfo::isWorking() const
 void LiveInfo::setupInfo()
 {
   if(!installJob)
-    installJob = MultiTask::makeInfo();
+    installJob.reset(new Spread::JobInfo);
 }
 
 void LiveInfo::markAsInstalled()
@@ -94,7 +52,7 @@ void LiveInfo::markAsInstalled()
   installJob->setDone();
 }
 
-std::string LiveInfo::getInstallDir()
+std::string LiveInfo::getInstallDir() const
 {
   assert(isInstalled());
   return repo->getInstDir(ent->idname);
@@ -120,58 +78,38 @@ void LiveInfo::setMyRating(int i)
   repo->setRating(ent->idname, ent->urlname, myRate);
 }
 
-Jobify::JobInfoPtr LiveInfo::install(bool async)
+Spread::JobInfoPtr LiveInfo::install(bool async)
 {
-  if(!isUninstalled())
-    return installJob;
-
-  setupInfo();
-  installJob->reset();
-
-  // Ignore offline mode. If the user wants to try installing a game,
-  // then go ahead and try it.
-
-  InstallGameJob *job = new InstallGameJob
-    (ent->tigInfo.url, repo->getPath("incoming/" + ent->idname),
-     repo->getInstDir(ent->idname), ent->idname, ent->urlname,
-     repo, installJob);
-
-  Jobify::Thread::run(job, async);
+  if(isUninstalled())
+    // Ask the repository to start the install process
+    installJob = repo->startInstall(ent->idname, ent->urlname, async);
 
   return installJob;
 }
 
-Jobify::JobInfoPtr LiveInfo::uninstall(bool async)
+Spread::JobInfoPtr LiveInfo::uninstall(bool async)
 {
-  Jobify::JobInfoPtr res;
-
   if(!isInstalled())
     {
       if(isWorking())
         abort();
-      return res;
-    }
 
-  // Mark the game as uninstalled
-  repo->gameUninstalled(ent->idname, ent->urlname);
+      installJob->reset();
+      return Spread::JobInfoPtr();
+    }
   installJob->reset();
 
-  // Set up a deletion job
-  FileOpTask *job = new FileOpTask();
-  res = job->getInfo();
-  job->del(repo->getInstDir(ent->idname));
-
-  Jobify::Thread::run(job, async);
-  return res;
+  // Tell the repository to uninstall this game
+  return repo->startUninstall(ent->idname, async);
 }
 
-void LiveInfo::launch()
+void LiveInfo::launch() const
 {
   assert(isInstalled());
 
   // Figure out what to run
   bs::path exe = getInstallDir();
-  exe /= ent->tigInfo.launch;
+  exe /= ent->launch;
 
   // Use executable location as working directory
   bs::path work = exe.parent_path();
@@ -179,67 +117,10 @@ void LiveInfo::launch()
   Launcher::run(exe.string(), work.string());
 }
 
-// Download screenshot, then notify the callback
-struct ScreenshotJob : NotifyTask
+std::string LiveInfo::getScreenshot() const
 {
-  ShotIsReady *cb;
-  std::string file, idname;
-
-  ScreenshotJob(const std::string &_url,
-                const std::string &_file,
-                const std::string &_idname,
-                ShotIsReady *_cb,
-                Jobify::JobInfoPtr _info)
-    : NotifyTask(new DownloadTask(_url, _file, _info)),
-      cb(_cb), file(_file), idname(_idname) {}
-
-  void onSuccess()
-  {
-    // Inform the callback
-    cb->shotIsReady(idname, file);
-  }
-};
-
-Jobify::JobInfoPtr LiveInfo::requestShot(ShotIsReady *cb, bool async)
-{
-  if(!screenJob)
-    screenJob.reset(new Jobify::JobInfo);
-
-  // Don't interupt a working thread
-  if(screenJob->isCreated() && !screenJob->isFinished())
-    return screenJob;
-
-  // If the job has already failed, don't try again.
-  if(screenJob->isNonSuccess())
-    return screenJob;
-
-  // Calculate cache path
-  bs::path file = repo->getPath("cache/shot300x260");
-  file /= ent->idname + ".png";
-
-  // Does the file already exist in cache?
-  if(bs::exists(file))
-    {
-      cb->shotIsReady(ent->idname, file.string());
-      screenJob->setDone();
-      return screenJob;
-    }
-
-  // There should not be any active job at this point
-  assert(!screenJob->isCreated());
-
-  // File does not exist, and no work has been done. Go fetch the
-  // screenshot.
-
-  // Skip in offline mode
-  if(!repo->offline)
-    {
-      // Fetch then start a job
-      std::string url = ServerAPI::screenshotURL(ent->urlname);
-      ScreenshotJob *job = new ScreenshotJob(url, file.string(), ent->idname,
-                                             cb, screenJob);
-
-      Jobify::Thread::run(job, async);
-      return screenJob;
-    }
+  const std::string &shot = repo->getScreenshot(ent->idname);
+  if(bs::exists(shot))
+    return shot;
+  return "";
 }

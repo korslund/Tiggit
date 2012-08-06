@@ -2,15 +2,15 @@
 #define __WXAPP_JOBPROG_HPP_
 
 #include "wx/progress_holder.hpp"
-#include "job/jobinfo.hpp"
+#include <spread/job/jobinfo.hpp>
 
 namespace wxTigApp
 {
   struct JobProgress : wxTiggit::ProgressHolder
   {
-    Jobify::JobInfoPtr info;
+    Spread::JobInfoPtr info;
 
-    JobProgress(wxApp *app, Jobify::JobInfoPtr _info)
+    JobProgress(wxApp *app, Spread::JobInfoPtr _info)
       : wxTiggit::ProgressHolder(app), info(_info) {}
 
     // Returns true on success, false on failure or abort.

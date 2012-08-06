@@ -34,9 +34,9 @@ void StatusNotifier::tick()
           hard = true;
 
           // Report errors to the user
-          Jobify::JobInfoPtr info = inf->info.getStatus();
+          Spread::JobInfoPtr info = inf->info.getStatus();
           if(info->isError())
-            Boxes::error(info->message);
+            Boxes::error(info->getMessage());
         }
 
       // Update the object status

@@ -1,25 +1,30 @@
 #ifndef __TIGLIB_REPO_HPP_
 #define __TIGLIB_REPO_HPP_
 
-#include "gamedata.hpp"
-#include "misc/lockfile.hpp"
 #include <stdint.h>
-#include "misc/jconfig.hpp"
-#include "job/job.hpp"
+#include <spread/job/jobinfo.hpp>
+#include <spread/misc/jconfig.hpp>
+#include <boost/shared_ptr.hpp>
+#include "list/mainlist.hpp"
+#include "gamedata.hpp"
 
 namespace TigLib
 {
   class Repo
   {
+    struct _Internal;
+    boost::shared_ptr<_Internal> ptr;
+
     std::string dir;
-    std::string listFile, tigDir;
+    std::string tigFile, statsFile, shotDir, spreadDir;
     Misc::JConfig conf;
-    Misc::LockFile lock;
-    TigLib::GameData data;
     int64_t lastTime;
 
+    void setDirs();
+
   public:
-    Repo(bool runOffline=false) : offline(runOffline) {}
+    Repo(bool runOffline=false)
+      : offline(runOffline) {}
 
     // Set to true to run in offline mode. You can switch this on/off
     // at any time. Various internal functions will skip trying to
@@ -30,7 +35,7 @@ namespace TigLib
 
     // Check if the repository is locked. If not, we are not allowed
     // to write to it.
-    bool isLocked() { return lock.isLocked(); }
+    bool isLocked() const;
 
     /* Find or establish a repository in the given location. An empty
        path means we should use the standard path for this OS. This
@@ -83,13 +88,15 @@ namespace TigLib
        (calling loadData) until the job has finished. Preferably you
        should inform the user about the download progress.
 
-       If the pointer is empty, or on error/abort status, you can
-       continue loading immediately.
+       If the pointer is empty or the info has isSuccess() set, you
+       can continue loading immediately. If the info has isError() or
+       isAbort() set, you may still be able to load the data, but
+       errors may occur or the data may be outdated.
 
        May only be called on an initialized repository (initRepo()
        returned true.)
      */
-    Jobify::JobInfoPtr fetchFiles();
+    Spread::JobInfoPtr fetchFiles(bool includeShots=true, bool async=true);
 
     /* Load current game data from the repository files into memory.
      */
@@ -97,7 +104,7 @@ namespace TigLib
 
     // Get the path of a file or directory within the repository. Only
     // valid after findRepo() has been invoked successfully.
-    std::string getPath(const std::string &fname);
+    std::string getPath(const std::string &fname) const;
 
     // Fetch file from URL to the given location within the
     // repository. Returns the full path.
@@ -105,14 +112,25 @@ namespace TigLib
                           const std::string &fname);
 
     // Get install dir for a game
-    std::string getInstDir(const std::string &idname)
+    std::string getInstDir(const std::string &idname) const
     { return getPath("games/" + idname); }
 
+    // Get screenshot path for a game.
+    std::string getScreenshot(const std::string &idname) const;
+
+    // Start installing a game
+    Spread::JobInfoPtr startInstall(const std::string &idname,
+                                    const std::string &urlname,
+                                    bool async=true); 
+
+    // Start uninstalling a game
+    Spread::JobInfoPtr startUninstall(const std::string &idname, bool async=true);
+   
     // Main lookup list of all games
-    const InfoLookup &getList() { return data.lookup; }
+    const InfoLookup &getList() const;
 
     // Use this to derive other ListBase structs from the main list.
-    List::ListBase &baseList() { return data.allList; }
+    List::ListBase &baseList();
 
     // The last known TigEntry::addDate of our previous run.
     int64_t getLastTime() const { return lastTime; }
@@ -127,21 +145,6 @@ namespace TigLib
     // Set new lastTime. Does NOT change the current lastTime field,
     // but instead stores the value in conf for our next run.
     void setLastTime(int64_t val);
-
-    // Notify us that a download has finished. Will update config
-    // files and notify the server counter.
-    void downloadFinished(const std::string &idname,
-                          const std::string &urlname);
-
-    // Notify config that a game has been uninstalled.
-    void gameUninstalled(const std::string &idname,
-                         const std::string &urlname)
-    { setInstallStatus(idname, 0); }
-
-  private:
-    // Store install status for this game in the config files. Safe to
-    // call from worker threads.
-    void setInstallStatus(const std::string &idname, int status);
   };
 }
 #endif

@@ -86,8 +86,8 @@ void GameInf::updateAll()
 {
   const TigEntry *ent = info.ent;
 
-  title = strToWx(ent->tigInfo.title);
-  desc = strToWx(ent->tigInfo.desc);
+  title = strToWx(ent->title);
+  desc = strToWx(ent->desc);
 
   dlStr = wxString::Format(wxT("%d"), ent->dlCount);
   if(ent->rateCount > 0 && ent->rating > 0)
@@ -102,7 +102,7 @@ void GameInf::updateAll()
 }
 
 std::string GameInf::getHomepage() const
-{ return info.ent->tigInfo.homepage; }
+{ return info.ent->homepage; }
 std::string GameInf::getTiggitPage() const
 { return "http://tiggit.net/game/" + info.ent->urlname; }
 std::string GameInf::getIdName() const
@@ -114,59 +114,19 @@ int GameInf::myRating() const
 void GameInf::rateGame(int i)
 { info.setMyRating(i); }
 
-// Called when a screenshot file is ready, possibly called by TigLib
-// from a worker thread, but may also be called directly from
-// requestShot().
-void GameInf::shotIsReady(const std::string &idname,
-                          const std::string &file)
+const wxImage &GameInf::getShot()
 {
-  assert(idname == getIdName());
-
-  // Are we in unloaded-mode?
-  if(loaded == 1)
+  if(!shotIsLoaded)
     {
-      // Load the image file
+      // Load the image file, and ignore error messages
+      std::string file = info.getScreenshot();
+
       wxLogNull dontLog;
-      if(!screenshot.LoadFile(strToWx(file)))
-        return;
-
-      loaded = 2;
+      if(file != "" && screenshot.LoadFile(strToWx(file)))
+        shotIsLoaded = true;
     }
 
-  // We should now be loaded
-  assert(loaded == 2);
-
-  // Pass the event to the wxEvtHandler. It can handle threaded
-  // queuing.
-  ScreenshotEvent evt;
-  evt.id = idname;
-  evt.shot = &screenshot;
-  shotHandler->AddPendingEvent(evt);
-}
-
-void GameInf::requestShot(wxEvtHandler *cb)
-{
-  // Don't do anything if we are already working or if there was a
-  // failure.
-  if(loaded == 1) return;
-
-  // Store the handler so shotIsReady() finds it
-  shotHandler = cb;
-
-  // If the shot was already loaded, just return it directly
-  if(loaded == 2)
-    {
-      shotIsReady(getIdName(), "");
-      return;
-    }
-
-  assert(loaded == 0);
-
-  // Set 'working' status
-  loaded = 1;
-
-  // Delegate file fetching to TigLib
-  info.requestShot(this);
+  return screenshot;
 }
 
 void GameInf::installGame()

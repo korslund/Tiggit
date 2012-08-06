@@ -4,69 +4,46 @@
 #include "tiglist.hpp"
 #include <map>
 #include <vector>
+#include <boost/shared_ptr.hpp>
 
 namespace GameInfo
 {
-  // Callback
-  struct URLManager
-  {
-    /* Download 'url' to the given file. Expected to throw exceptions
-       on failure.
-     */
-    virtual void getUrl(const std::string &url, const std::string &outfile) = 0;
-  };
-
   class TigLoader
   {
   public:
+    typedef boost::shared_ptr<TigData::TigList> ListPtr;
     typedef std::map<std::string, TigData::TigEntry*> Lookup;
-    typedef std::map<std::string, TigData::TigList*> ChanMap;
+    typedef std::map<std::string, ListPtr> ChanMap;
 
   private:
-    typedef std::pair<std::string, std::string> ChanInfo;
-    typedef std::vector<ChanInfo> ChanInfoList;
+    typedef std::vector<std::string> ChanInfoList;
 
     Lookup lookup;
     ChanMap channels;
     ChanInfoList chanInfo;
 
   public:
-    ~TigLoader() { dumpData(); }
+    /* Load a channel data file. The channel name is read from the
+       data itself. An exception is thrown if the name matches an
+       already existing channel name, or if any other error occurs.
 
-    /* Add a new channel.
-
-       The listFile is the path to a JSON tiglist (ie. the
-       all_games.json file)
-
-       The tigDir is where to find the JSON tigfiles (ie.
-       tigDir/channelname/gamename.tig), and also where newly
-       downloaded tigfiles will be stored.
-
-       The URL manager can be used to fetch missing tigfiles. If not
-       provided, missing games will be skipped.
+       Returns the channel name.
      */
-    void addChannel(const std::string &listFile,
-                    const std::string &tigDir,
-                    URLManager *urlm = NULL);
+    std::string addChannel(const std::string &dataFile);
 
-    /* Load and save binary channel data. This replaces both the
-       tiglist and the individual tigfile directory. The binary format
-       is optimized for faster loading, a smaller download, and for
-       small bsdiff patching.
+    /* Save a binary file from a channel.
      */
-    void loadBinary(const std::string &binfile);
-    void saveBinary(const std::string &channel, const std::string &outfile) const;
+    void saveChannel(const std::string &channel, const std::string &outfile) const;
 
-    /* Reload all data. Will reload all the channels already added
-       with addChannel() and loadBinary(). Assumes files and
-       directories are in the same place as when last added.
+    /* Reload all files previously added with addChannel. Assumes they
+       are still in the same place.
 
        NOTE: will invalidate ALL pointers returned through getGame,
        getChannel and getList!
      */
     void reload();
 
-    /* Dump all data, and remove all added lists.
+    /* Drop all data, and remove all added lists.
 
        NOTE: will invalidate ALL pointers returned through the get*()
        functions!
@@ -77,6 +54,9 @@ namespace GameInfo
        not found.
      */
     const TigData::TigEntry* getGame(const std::string &idname) const;
+
+    /* Edit a game entry. Used by the stats loader. */
+    TigData::TigEntry *editGame(const std::string &idname);
 
     /* Find a channel's info. Returns NULL if not found.
      */
@@ -92,9 +72,7 @@ namespace GameInfo
 
   private:
     void dumpData();
-    void addList(TigData::TigList *list,
-                 const std::string &param1,
-                 const std::string &param2 = "");
+    void addList(ListPtr list, const std::string &file = "");
   };
 }
 

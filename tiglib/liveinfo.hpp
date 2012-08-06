@@ -2,28 +2,16 @@
 #define __TIGLIB_LIVEINFO_HPP_
 
 #include "gameinfo/tigentry.hpp"
-#include "job/job.hpp"
+#include <spread/job/jobinfo.hpp>
 
 namespace TigLib
 {
-  /* Callback functor called when a screenshot download is ready. It
-     may either be invoked immediately from requestShot(), or from a
-     worker thread. For asynchronous requests, make sure the reciever
-     is thread safe!
-   */
-  struct ShotIsReady
-  {
-    virtual void shotIsReady(const std::string &idname,
-                             const std::string &file) = 0;
-  };
-
   /* This represents the 'live' counterpart to the game information in
      gameinfo/.
 
      Unlike TigData::TigEntry, which contains static, pre-loaded data,
      this structure is used to host dynamically updated information
-     such as the local user's install status and rating information,
-     and functionality such as screenshot fetching.
+     such as the local user's install status and rating information.
    */
   class Repo;
   struct LiveInfo
@@ -48,7 +36,7 @@ namespace TigLib
         {
           current = installJob->getCurrent();
           total = installJob->getTotal();
-          return installJob->message;
+          return installJob->getMessage();
         }
       current = total = 0;
       return "Inactive";
@@ -56,7 +44,7 @@ namespace TigLib
 
     // Get direct access to the install job info status. May return an
     // uninitialized shared_ptr if no job is active.
-    Jobify::JobInfoPtr getStatus() const { return installJob; }
+    Spread::JobInfoPtr getStatus() const { return installJob; }
 
     /* Install game into the repository. Returns the JobInfo
        associated with the installer job.
@@ -64,7 +52,7 @@ namespace TigLib
        If async is false, the function will not return until the
        install is complete.
      */
-    Jobify::JobInfoPtr install(bool async = true);
+    Spread::JobInfoPtr install(bool async = true);
 
     /* Uninstall game, or abort an install in progress.
 
@@ -77,11 +65,11 @@ namespace TigLib
        If async is false, the game will be uninstalled before the
        function returns, and the returned pointer will be empty.
      */
-    Jobify::JobInfoPtr uninstall(bool async = true);
+    Spread::JobInfoPtr uninstall(bool async = true);
 
     // Return install directory for this game. Only valid if the game
     // is installed.
-    std::string getInstallDir();
+    std::string getInstallDir() const;
 
     /* Get and set my rating for this game. Multiple ratings are
        currently ignored, but later the server may gain the capability
@@ -97,7 +85,7 @@ namespace TigLib
     /* Launch this game. The game is started as a separate
        asynchronous process.
      */
-    void launch();
+    void launch() const;
 
     // Mark this game as installed. Called on installed games at
     // startup.
@@ -107,29 +95,13 @@ namespace TigLib
     // Allows clients to notify users about newly added games.
     bool isNew() const { return sNew; }
 
-    /* Request a screenshot. Will invoke the given callback when the
-       screenshot is ready.
-
-       If async==true, a download will start in the background if a
-       cached file is not available. A pointer to the attached JobInfo
-       is returned. If async==false, the function will not return
-       until the screenshot is available.
-
-       In any case, you may use JobInfo::isBusy, ::isSuccess(),
-       ::isError etc on the result to inquire about status. You can
-       also call JobInfo::reset() after error if you want to try
-       again.
-
-       Calling the function multiple times may or may not invoke the
-       callback multiple times. The behavior depends on thread status
-       and is thus undefined. Once the cache file is downloaded and
-       available though, the callback will ALWAYS be invoked
-       immediately.
+    /* Get the file name of the screenshot for this game. Returns an
+       empty string if nothing was found.
     */
-    Jobify::JobInfoPtr requestShot(ShotIsReady*, bool async = true);
+    std::string getScreenshot() const;
 
   private:
-    Jobify::JobInfoPtr screenJob, installJob;
+    Spread::JobInfoPtr installJob;
     Repo *repo;
     int myRate;
 

@@ -1,21 +1,22 @@
 #include "fetch.hpp"
-#include <boost/filesystem.hpp>
-#include "tasks/download.hpp"
 #include <time.h>
 #include <mangle/stream/servers/string_writer.hpp>
-#include "job/thread.hpp"
+#include <boost/filesystem.hpp>
+#include <spread/tasks/download.hpp>
+#include <spread/job/thread.hpp>
+
+using namespace Spread;
 
 void Fetch::fetchFile(const std::string &url, const std::string &outfile)
 {
-  using namespace Jobify;
-
-  JobInfoPtr info(new JobInfo);
-  Tasks::DownloadTask dl(url, outfile, info);
-  dl.run();
+  DownloadTask dl(url, outfile);
+  JobInfoPtr info = dl.run();
   if(!info->isSuccess())
     throw std::runtime_error("Failed to download " + url);
 }
 
+// Fetch a file only if the outfile doesn't exist or is older than
+// 'minutes'.
 bool Fetch::fetchIfOlder(const std::string &url,
                          const std::string &outfile,
                          int minutes)
@@ -41,7 +42,6 @@ bool Fetch::fetchIfOlder(const std::string &url,
 std::string Fetch::fetchString(const std::string &url, bool async)
 {
   using namespace Mangle::Stream;
-  using namespace Jobify;
 
   StreamPtr out;
   std::string res;
@@ -49,10 +49,9 @@ std::string Fetch::fetchString(const std::string &url, bool async)
   if(!async)
     out.reset(new StringWriter(res));
 
-  JobInfoPtr info(new JobInfo);
-  Job *job = new Tasks::DownloadTask(url, out, info);
+  Job *job = new DownloadTask(url, out);
 
-  Jobify::Thread::run(job, async);
+  JobInfoPtr info = Thread::run(job, async);
   if(!async && !info->isSuccess())
     throw std::runtime_error("Failed to get " + url);
 

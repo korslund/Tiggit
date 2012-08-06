@@ -8,8 +8,7 @@ int main()
 {
   TigLoader tig;
 
-  tig.addChannel("data2/gamelist.json", "data2");
-  tig.loadBinary("data.bin");
+  tig.addChannel("data.bin");
 
   const TigLoader::Lookup &list = tig.getList();
   TigLoader::Lookup::const_iterator it;
@@ -17,12 +16,12 @@ int main()
     {
       const TigData::TigEntry &ent = *it->second;
       cout << "\n" << ent.urlname << ":\n";
-      cout << "  Title: " << ent.tigInfo.title
-           << "\n  Homepage: " << ent.tigInfo.homepage
-           << "\n  Tags: " << ent.tigInfo.tags
+      cout << "  Title: " << ent.title
+           << "\n  Homepage: " << ent.homepage
+           << "\n  Tags: " << ent.tags
            << "\n  Channel: " << ent.channel
            << "\n  Rating: " << ent.rating << " (" << ent.rateCount << " votes)\n";
-      cout << "  Demo: " << (ent.tigInfo.isDemo?"yes":"no") << endl;
+      cout << "  Demo: " << (ent.isDemo()?"yes":"no") << endl;
     }
 
   return 0;

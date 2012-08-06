@@ -7,28 +7,13 @@
   This abstract set of interfaces represents all our interaction with
   the outside world.
  */
-
 namespace wxTiggit
 {
-#define myEVT_SCREENSHOT_READY 20900
-
-  struct ScreenshotEvent : wxEvent
-  {
-    std::string id;
-    const wxImage *shot;
-
-    ScreenshotEvent() : wxEvent(0, myEVT_SCREENSHOT_READY) {}
-    wxEvent *Clone(void) const { return new ScreenshotEvent(*this); }
-  };
-
   struct wxGameInfo
   {
-    /* Request a screenshot for this game. The given event handler is
-       sent a ScreenshotEvent when the screenshot is ready. This may
-       happen synchronously (before requestShot() returns) or
-       asynchronously (throgh AddPendingEvent from a worker thread.)
-     */
-    virtual void requestShot(wxEvtHandler*) = 0;
+    // Get screenshot for this game. May return an empty image, but it
+    // should still be usable.
+    virtual const wxImage &getShot() = 0;
 
     virtual bool isNew() const = 0;
     virtual bool isInstalled() const = 0;

@@ -1,25 +1,38 @@
 #ifndef __TIGENTRY_HPP_
 #define __TIGENTRY_HPP_
 
-#include "tiginfo.hpp"
 #include <stdint.h>
+#include <string>
 
 namespace TigData
 {
+  // Tig entry flags. Meanings may change later on.
+  enum TigFlags
+    {
+      TF_DEMO           = 0x01,
+    };
+
   struct TigEntry
   {
-    // Info from the stand-alone .tig file
-    TigInfo tigInfo;
+    // Strings from the dataset
+    std::string launch, title, desc, devname, homepage, tags, urlname;
+
+    // Generated strings. idname = channel+"/"+urlname
+    std::string channel, idname;
+
+    // See TigFlags for meaning.
+    uint32_t flags;
+
+    bool isDemo() const { return flags & TF_DEMO; }
 
     // Time added to the channel database
-    int64_t addTime;
+    uint64_t addTime;
 
-    // Rating and download count info
+    // Statistics info
     float rating;
     int rateCount, dlCount;
 
-    // Idname = channel/urlname
-    std::string urlname, channel, idname, tigurl;
+    TigEntry() : rating(-1), rateCount(0), dlCount(0) {}
   };
 }
 #endif

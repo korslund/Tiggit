@@ -1,15 +1,47 @@
 #include "repo.hpp"
 #include "fetch.hpp"
-#include <stdio.h>
-#include "tasks/install.hpp"
-#include "job/thread.hpp"
 #include "server_api.hpp"
 #include "repo_locator.hpp"
+#include "misc/lockfile.hpp"
+#include "gameinfo/stats_json.hpp"
+#include <spread/job/thread.hpp>
+#include <spread/spread.hpp>
 #include <boost/filesystem.hpp>
-
-#define CACHE_VERSION 1
+#include <stdio.h>
 
 using namespace TigLib;
+using namespace Spread;
+
+namespace bf = boost::filesystem;
+
+struct Repo::_Internal
+{
+  Misc::LockFile lock;
+  TigLib::GameData data;
+  SpreadLib spread;
+  std::string tmp;
+
+  _Internal(const std::string &ruleDir, const std::string &tmpDir)
+    : spread(ruleDir, tmpDir), tmp(tmpDir) {}
+
+  ~_Internal()
+  { bf::remove_all(tmp); }
+};
+
+bool Repo::isLocked() const
+{ return ptr && ptr->lock.isLocked(); }
+
+const InfoLookup &Repo::getList() const
+{
+  assert(ptr);
+  return ptr->data.lookup;
+}
+
+List::ListBase &Repo::baseList()
+{
+  assert(ptr);
+  return ptr->data.allList;
+}
 
 bool Repo::findRepo(const std::string &where)
 {
@@ -22,8 +54,7 @@ bool Repo::findRepo(const std::string &where)
   if(dir == "")
     return false;
 
-  listFile = getPath("all_games.json");
-  tigDir = getPath("tigfiles/");
+  setDirs();
 
   // Store path for later
   if(!TigLibInt::setStoredPath(dir))
@@ -32,24 +63,35 @@ bool Repo::findRepo(const std::string &where)
   return true;
 }
 
+void Repo::setDirs()
+{
+  assert(dir != "");
+  tigFile = getPath("spread/tigdata.dat");
+  statsFile = getPath("stats.json");
+  shotDir = getPath("cache/shot300x260/");
+  spreadDir = getPath("spread/");
+
+  ptr.reset(new _Internal(getPath("spread/rules/"), getPath("spread/tmp/")));
+}
+
 void Repo::setRepo(const std::string &where)
 {
   dir = where;
-
   if(dir == "") dir = ".";
 
-  listFile = getPath("all_games.json");
-  tigDir = getPath("tigfiles/");
+  setDirs();
 }
 
 std::string Repo::defaultPath() { return TigLibInt::getDefaultPath(); }
 
 bool Repo::initRepo(bool forceLock)
 {
-  boost::filesystem::create_directories(dir);
+  assert(ptr);
+
+  bf::create_directories(dir);
 
   // Lock the repo before we start writing to it
-  if(!lock.lock(getPath("lock"), forceLock))
+  if(!ptr->lock.lock(getPath("lock"), forceLock))
     return false;
 
   // Make sure the repo format is up-to-date
@@ -65,27 +107,6 @@ bool Repo::initRepo(bool forceLock)
   lastTime = conf.getInt64("last_time", 0xffffffffffff);
 
   return true;
-}
-
-void Repo::downloadFinished(const std::string &idname,
-                            const std::string &urlname)
-{
-  // Set config status
-  setInstallStatus(idname, 2);
-
-  // Respect offline mode even after a download has succeeded. The
-  // user may have a dodgy connection or something.
-  if(offline) return;
-
-  std::string url = ServerAPI::dlCountURL(urlname);
-  Fetch::fetchString(url, true);
-}
-
-void Repo::setInstallStatus(const std::string &idname, int status)
-{
-  // This may be call from worker threads, but this is ok because the
-  // JConfig setters are thread safe.
-  inst.setInt(idname, status);
 }
 
 void Repo::setLastTime(int64_t val)
@@ -123,9 +144,9 @@ void Repo::setRating(const std::string &id, const std::string &urlname,
   Fetch::fetchString(url, true);
 }
 
-std::string Repo::getPath(const std::string &fname)
+std::string Repo::getPath(const std::string &fname) const
 {
-  return (boost::filesystem::path(dir) / fname).string();
+  return (bf::path(dir) / fname).string();
 }
 
 std::string Repo::fetchPath(const std::string &url,
@@ -137,47 +158,129 @@ std::string Repo::fetchPath(const std::string &url,
   return outfile;
 }
 
-Jobify::JobInfoPtr Repo::fetchFiles()
+struct FetchJob : Job
 {
-  using namespace Tasks;
-  using namespace Jobify;
+  SpreadLib &spread;
+  bool shots;
+  std::string spreadRepo, shotsPath, statsFile;
 
-  JobInfoPtr info;
+  FetchJob(SpreadLib &_spread, bool _shots, const std::string &_spreadRepo,
+           const std::string &_shotsPath, const std::string &_statsFile)
+    : spread(_spread), shots(_shots), spreadRepo(_spreadRepo),
+      shotsPath(_shotsPath), statsFile(_statsFile) {}
 
-  // If we're in offline mode, skip this entire function
-  if(offline) return info;
+  void doJob()
+  {
+    JobInfoPtr client = spread.updateFromURL("tiggit.net", ServerAPI::spreadURL_SR0());
+    if(waitClient(client)) return;
+    client = spread.install("tiggit.net", "tigdata", spreadRepo);
+    if(waitClient(client)) return;
+    if(shots)
+      {
+        client = spread.install("tiggit.net", "shots", shotsPath);
+        if(waitClient(client)) return;
+      }
 
-  assert(lock.isLocked());
-  Fetch::fetchIfOlder(ServerAPI::listURL(), listFile, 60);
+    /* Fetch the stats file (download counts etc), if the current file
+       is older than 24 hours.
+    */
+    try { Fetch::fetchIfOlder(ServerAPI::statsURL(), statsFile, 24*60); }
+    /*
+       Ignore errors. Stats are just cosmetics, not critically
+       important.
+    */
+    catch(...) {}
 
-  // Check if we need to download the cache
-  if(conf.getInt("cache_version") < CACHE_VERSION)
-    {
-      conf.setInt("cache_version", CACHE_VERSION);
-      Job *job = new InstallTask
-        (ServerAPI::cacheURL(),
-         getPath("incoming/cache.zip"),
-         dir);
-      info = job->getInfo();
-      Jobify::Thread::run(job);
-    }
-
-  return info;
-}
-
-struct MyFetch : GameInfo::URLManager
-{
-  bool offline;
-
-  void getUrl(const std::string &url, const std::string &outfile)
-  { if(!offline) Fetch::fetchFile(url, outfile); }
+    setDone();
+  }
 };
+
+JobInfoPtr Repo::fetchFiles(bool includeShots, bool async)
+{
+  // If we're in offline mode, skip this entire function
+  if(offline) return JobInfoPtr();
+
+  assert(isLocked());
+
+  // Create and run the fetch job
+  return Thread::run(new FetchJob(ptr->spread, includeShots, spreadDir,
+                                  shotDir, statsFile), async);
+}
 
 void Repo::loadData()
 {
   assert(isLocked());
-  MyFetch fetch;
-  fetch.offline = offline;
-  data.data.addChannel(listFile, tigDir, &fetch);
-  data.createLiveData(this);
+  ptr->data.data.addChannel(tigFile);
+
+  // Load stats, but ignore errors
+  try { Stats::fromJson(ptr->data.data, statsFile); }
+  catch(...) {}
+
+  ptr->data.createLiveData(this);
+}
+
+// Get screenshot path for a game.
+std::string Repo::getScreenshot(const std::string &idname) const
+{
+  return (bf::path(shotDir) / idname).string() + ".png";
+}
+
+struct InstallJob : Job
+{
+  std::string sendOnDone;
+  JobInfoPtr client;
+  std::string idname;
+  Misc::JConfig *inst;
+
+  void doJob()
+  {
+    if(waitClient(client)) return;
+
+    // Set config status
+    inst->setInt(idname, 2);
+
+    // Notify the server that the game was downloaded
+    Fetch::fetchString(sendOnDone, true);
+
+    setDone();
+  }
+};
+
+// Start installing or upgrading a game
+JobInfoPtr Repo::startInstall(const std::string &idname, const std::string &urlname,
+                              bool async)
+{
+  // Ignore offline mode for game installs, since they are user-initiated.
+
+  JobInfoPtr client = ptr->spread.install("tiggit.net", idname, getInstDir(idname));
+  InstallJob *job = new InstallJob;
+  job->client = client;
+  job->sendOnDone = ServerAPI::dlCountURL(urlname);
+  job->idname = idname;
+  job->inst = &inst;
+  return Thread::run(job,async);
+}
+
+struct RemoveJob : Job
+{
+  RemoveJob(const std::string &_what) : what(_what) {}
+
+  std::string what;
+
+  void doJob()
+  {
+    setBusy("Removing " + what);
+    bf::remove_all(what);
+    setDone();
+  }
+};
+
+// Start uninstalling a game
+JobInfoPtr Repo::startUninstall(const std::string &idname, bool async)
+{
+  // Mark the game as uninstalled immediately
+  inst.setInt(idname, 0);
+
+  // Kill the installation directory
+  return Thread::run(new RemoveJob(getInstDir(idname)), async);
 }

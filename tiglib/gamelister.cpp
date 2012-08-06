@@ -24,7 +24,7 @@ struct SearchPicker : GamePicker
 
   bool include(const LiveInfo *info)
   {
-    return boost::algorithm::icontains(info->ent->tigInfo.title, str);
+    return boost::algorithm::icontains(info->ent->title, str);
   }
 };
 
@@ -116,7 +116,7 @@ struct TagPicker : GamePicker
   bool include(const LiveInfo *info)
   {
     TagSet gameTags;
-    tokenize(info->ent->tigInfo.tags, gameTags);
+    tokenize(info->ent->tags, gameTags);
 
     // Search for tag mismatches
     BOOST_FOREACH(const std::string &tag, searchFor)
@@ -168,7 +168,7 @@ void GameLister::dumpTags()
   for(int i=0; i<size(); i++)
     {
       TagSet tags;
-      tokenize(get(i).ent->tigInfo.tags, tags);
+      tokenize(get(i).ent->tags, tags);
 
       BOOST_FOREACH(const std::string &s, tags)
         {

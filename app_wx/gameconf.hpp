@@ -2,7 +2,7 @@
 #define __WXAPP_GAMECONF_HPP_
 
 #include "wx/wxgamedata.hpp"
-#include "misc/jconfig.hpp"
+#include <spread/misc/jconfig.hpp>
 
 namespace wxTigApp
 {

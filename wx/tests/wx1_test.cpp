@@ -47,13 +47,8 @@ struct TestInfo : wxGameInfo
   std::string getDir() const { return "/"; }
   int myRating() const { return 4; }
 
-  void requestShot(wxEvtHandler *hndl)
-  {
-    ScreenshotEvent evt;
-    evt.id = getIdName();
-    evt.shot = &image;
-    hndl->AddPendingEvent(evt);
-  }
+  const wxImage &getShot() { return image; }
+
   void rateGame(int i)
   {
     cout << "Rating to " << i << endl;

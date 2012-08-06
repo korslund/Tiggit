@@ -17,17 +17,14 @@ namespace TigLib
     typedef std::string S;
     typedef const S& CS;
 
-    static S screenshotURL(CS urlname)
-    { return "http://tiggit.net/pics/300x260/" + urlname + ".png"; }
+    static S statsURL()
+    { return "http://tiggit.net/api/stats.json"; }
 
-    static S listURL()
-    { return "http://tiggit.net/api/all_games.json"; }
+    static S spreadURL_SR0()
+    { return "http://tiggit.net/api/sr0/"; }
 
     static S newsURL()
-    { return "http://tiggit.net/api/news.json"; }
-
-    static S cacheURL()
-    { return "http://sourceforge.net/projects/tiggit/files/client_data/cache.zip"; }
+    { return "http://tiggit.net/api/news2.json"; }
 
     static S countURL(CS urlname)
     { return "http://tiggit.net/api/count/" + urlname; }

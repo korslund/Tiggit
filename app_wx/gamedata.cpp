@@ -44,13 +44,12 @@ struct FreeDemoPick : GamePicker
   FreeDemoPick(bool _free) : free(_free) {}
 
   bool include(const LiveInfo *inf)
-  { return inf->ent->tigInfo.isDemo != free; }
+  { return inf->ent->isDemo() != free; }
 };
 
 struct InstalledPick : GamePicker
 {
-  bool include(const LiveInfo *inf)
-  { return !(((GameInf*)inf->extra)->isUninstalled()); }
+  bool include(const LiveInfo *inf) { return !inf->isUninstalled(); }
 };
 
 static FreeDemoPick freePick(true), demoPick(false);

@@ -8,17 +8,16 @@ using namespace wxTiggit;
 
 namespace wxTigApp
 {
-  struct GameInf : wxGameInfo, TigLib::ShotIsReady
+  struct GameInf : wxGameInfo
   {
     GameInf(TigLib::LiveInfo *_info, GameConf *_conf)
-      : info(*_info), loaded(0), conf(_conf),
-        shotHandler(NULL)
+      : info(*_info), shotIsLoaded(false), conf(_conf)
     { updateAll(); }
 
     bool isInstalled() const { return info.isInstalled(); }
     bool isUninstalled() const { return info.isUninstalled(); }
     bool isWorking() const { return info.isWorking(); }
-    bool isDemo() const { return info.ent->tigInfo.isDemo; }
+    bool isDemo() const { return info.ent->isDemo(); }
     bool isNew() const { return info.isNew(); }
 
     // Update status strings
@@ -29,8 +28,7 @@ namespace wxTigApp
   private:
     // Screenshot data
     wxImage screenshot;
-    int loaded;
-    wxEvtHandler *shotHandler;
+    bool shotIsLoaded;
 
     GameConf *conf;
 
@@ -38,10 +36,6 @@ namespace wxTigApp
 
     // Used to update cached wxStrings from source data
     void updateAll();
-
-    // Inherited from TigLib::ShotIsReady
-    void shotIsReady(const std::string &idname,
-                     const std::string &file);
 
     wxString getTitle(bool includeStatus=false) const
     { return includeStatus?titleStatus:title; }
@@ -59,7 +53,7 @@ namespace wxTigApp
     int myRating() const;
 
     void rateGame(int i);
-    void requestShot(wxEvtHandler*);
+    const wxImage &getShot();
 
     void installGame();
     void uninstallGame();

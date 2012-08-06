@@ -98,7 +98,7 @@ struct TigApp : wxApp
               return false;
           }
 
-        Jobify::JobInfoPtr info = rep.fetchFiles();
+        Spread::JobInfoPtr info = rep.fetchFiles();
 
         // Are we doing a larger download job here?
         if(info)
@@ -108,7 +108,7 @@ struct TigApp : wxApp
             if(!prog.start("Downloading initial data set...\nDestination directory: " + rep.getPath("")))
               {
                 if(info->isError())
-                  Boxes::error("Download failed: " + info->message);
+                  Boxes::error("Download failed: " + info->getMessage());
                 return false;
               }
           }

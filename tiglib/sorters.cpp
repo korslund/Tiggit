@@ -6,7 +6,7 @@ using namespace TigLib;
 bool TitleSort::isLess(const LiveInfo *a, const LiveInfo *b)
 {
   return boost::algorithm::ilexicographical_compare
-    (a->ent->tigInfo.title, b->ent->tigInfo.title);
+    (a->ent->title, b->ent->title);
 }
 
 bool RateSort::isLess(const LiveInfo *a, const LiveInfo *b)

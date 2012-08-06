@@ -1,33 +1,8 @@
-#include "json_tigdata.hpp"
-#include "binary_tigdata.hpp"
-#include <readjson/readjson.hpp>
+#include "binary_tigfile.hpp"
 #include <iostream>
 
 using namespace std;
 using namespace TigData;
-
-struct Fetch : FetchTig
-{
-  std::string path;
-
-  Json::Value fetchTig(const std::string &idname,
-                       const std::string &url)
-  {
-    string file = path + idname + ".tig";
-    return ReadJson::readJson(file);
-  }
-};
-
-void load(TigList &list,
-          const std::string &tigfile,
-          const std::string &path)
-{
-  Fetch fetch;
-  fetch.path = path;
-  if(fetch.path[path.size()-1] != '/')
-    fetch.path += '/';
-  fromJson(list, ReadJson::readJson(tigfile), fetch);
-}
 
 void print(TigList &list)
 {
@@ -39,37 +14,22 @@ void print(TigList &list)
     {
       const TigEntry &ent = list.list[i];
       cout << "\n" << ent.urlname << ":\n";
-      cout << "  Title: " << ent.tigInfo.title
-           << "\n  Homepage: " << ent.tigInfo.homepage
-           << "\n  Tags: " << ent.tigInfo.tags
+      cout << "  Title: " << ent.title
+           << "\n  Homepage: " << ent.homepage
+           << "\n  Tags: " << ent.tags
            << "\n  Channel: " << ent.channel
-           << "\n  Rating: " << ent.rating << " (" << ent.rateCount << " votes)\n";
-      cout << "  Demo: " << (ent.tigInfo.isDemo?"yes":"no") << endl;
+           << "\n  Rating: " << ent.rating << " (" << ent.rateCount << " votes)";
+      cout << "\n  Demo: " << (ent.isDemo()?"yes":"no") << endl;
     }
 }
 
 int main(int argc, char**argv)
 {
-  std::string binfile = "_test.bin";
-  if(argc < 2 || argc > 3)
-    {
-      cout << "Syntax: app tiglist.json tigdir/\n";
-      cout << "- or -: app binfile.dat\n";
-      return 1;
-    }
-
-  if(argc == 3)
-    {
-      TigList list;
-      load(list, argv[1], argv[2]);
-      toBinary(list, binfile);
-    }
-  else
-    binfile = argv[1];
-
   TigList list;
-  fromBinary(list, binfile);
+
+  BinLoader::readBinary("data.bin", list);
   print(list);
+  BinLoader::writeBinary("_data.bin", list);
 
   return 0;
 }

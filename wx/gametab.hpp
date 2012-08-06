@@ -44,7 +44,6 @@ namespace wxTiggit
     int getTitleNumber();
 
     // Event handling functions
-    void onScreenshot(ScreenshotEvent &event);
     void onSpecialKey(wxCommandEvent &event);
     void onUrlEvent(wxTextUrlEvent &event);
     void onRating(wxCommandEvent &event);
