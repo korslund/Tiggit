@@ -87,6 +87,19 @@ Spread::JobInfoPtr LiveInfo::install(bool async)
   return installJob;
 }
 
+/* TODO: This is an ad-hoc solution. We will improve it later, and
+   allow upgrading to be counted as a separate mode (ie. uninstalled,
+   installing, installed, upgrading).
+
+   Right now this is meant to be used modally, meaning that no other
+   LiveInfo functions should be called while the update is in
+   progress.
+ */
+Spread::JobInfoPtr LiveInfo::update(bool async)
+{
+  return repo->startInstall(ent->idname, ent->urlname, async);
+}
+
 Spread::JobInfoPtr LiveInfo::uninstall(bool async)
 {
   if(!isInstalled())

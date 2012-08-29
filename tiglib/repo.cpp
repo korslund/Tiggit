@@ -6,6 +6,8 @@
 #include "gameinfo/stats_json.hpp"
 #include <spread/job/thread.hpp>
 #include <spread/spread.hpp>
+#include <spread/hash/hash.hpp>
+#include <spread/tasks/download.hpp>
 #include <boost/filesystem.hpp>
 #include <stdio.h>
 
@@ -13,6 +15,15 @@ using namespace TigLib;
 using namespace Spread;
 
 namespace bf = boost::filesystem;
+
+// Used to notify the server about broken URLs
+struct CallbackURL
+{
+  void operator()(const Hash &hash, const std::string &url) const
+  {
+    Fetch::fetchString(ServerAPI::brokenURL(hash.toString(), url), true);
+  }
+};
 
 struct Repo::_Internal
 {
@@ -22,7 +33,13 @@ struct Repo::_Internal
   std::string tmp;
 
   _Internal(const std::string &spreadDir, const std::string &tmpDir)
-    : spread(spreadDir, tmpDir), tmp(tmpDir) {}
+    : spread(spreadDir, tmpDir), tmp(tmpDir)
+  {
+    CallbackURL cb;
+    spread.setURLCallback(cb);
+
+    DownloadTask::userAgent = "Tiggit/1.0 - see http://tiggit.net";
+  }
 
   ~_Internal()
   { bf::remove_all(tmp); }

@@ -10,8 +10,8 @@ namespace wxTigApp
   {
     Spread::JobInfoPtr info;
 
-    JobProgress(wxApp *app, Spread::JobInfoPtr _info)
-      : wxTiggit::ProgressHolder(app), info(_info) {}
+    JobProgress(Spread::JobInfoPtr _info)
+      : info(_info) {}
 
     // Returns true on success, false on failure or abort.
     bool start(const std::string &msg);

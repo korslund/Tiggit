@@ -54,6 +54,15 @@ namespace TigLib
      */
     Spread::JobInfoPtr install(bool async = true);
 
+    /* Update the game to the latest version.
+
+       TODO: This is not fully integrated into the rest of the system
+       yet. A game that's being upgraded will show up (via.
+       isInstalled etc) as just another installed game. This will be
+       fixed later.
+     */
+    Spread::JobInfoPtr update(bool async = true);
+
     /* Uninstall game, or abort an install in progress.
 
        The returned JobInfo is local for the uninstall task only. It

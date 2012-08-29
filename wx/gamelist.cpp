@@ -89,11 +89,17 @@ wxListItemAttr *GameListView::OnGetItemAttr(long item) const
 
   if(g.isUninstalled()) return NULL;
 
-  if(markInstalled)
-    // Gray out installed/installing games in this list
-    return (wxListItemAttr*)&gray;
+  // Status here is either installed or working
+  if(g.isInstalled())
+    {
+      if(markInstalled)
+        // Gray out installed games in this list
+        return (wxListItemAttr*)&gray;
+      else
+        return NULL;
+    }
 
-  if(g.isInstalled()) return NULL;
+  // Installing entries are marked in orange
   return (wxListItemAttr*)&orange;
 }
 

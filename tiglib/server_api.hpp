@@ -26,6 +26,9 @@ namespace TigLib
     static S newsURL()
     { return "http://tiggit.net/api/news2.json"; }
 
+    static S brokenURL(CS hash, CS url)
+    { return "http://tiggit.net/api/broken_url.php?hash=" + hash; }
+
     static S countURL(CS urlname)
     { return "http://tiggit.net/api/count/" + urlname; }
 

@@ -9,7 +9,7 @@ ProgressHolder::~ProgressHolder()
     {
       dlg->Update(100);
       dlg->Destroy();
-      app->Yield();
+      ::wxSafeYield(dlg);
     }
 }
 
@@ -30,7 +30,7 @@ bool ProgressHolder::pulse()
   return dlg->Pulse();
 }
 
-void ProgressHolder::yield() { app->Yield(); }
+void ProgressHolder::yield() { ::wxSafeYield(dlg); }
 
 bool ProgressHolder::setMsg(const wxString &str, int value)
 {
@@ -44,6 +44,6 @@ bool ProgressHolder::setMsg(const wxString &str, int value)
 
   dlg->Show(true);
   bool res = dlg->Update(value, str);
-  app->Yield();
+  ::wxSafeYield(dlg);
   return res;
 }

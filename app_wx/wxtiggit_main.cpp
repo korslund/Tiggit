@@ -104,7 +104,7 @@ struct TigApp : wxApp
         if(info)
           {
             // If so, keep the user informed
-            wxTigApp::JobProgress prog(this, info);
+            wxTigApp::JobProgress prog(info);
             if(!prog.start("Updating data...\nDestination directory: " + rep.getPath("")))
               {
                 if(info->isError())

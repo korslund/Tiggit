@@ -8,14 +8,11 @@ namespace wxTiggit
 {
   class ProgressHolder
   {
-    wxApp *app;
     wxProgressDialog *dlg;
 
   public:
 
-    ProgressHolder(wxApp *_app)
-      : app(_app), dlg(NULL)
-    {}
+    ProgressHolder() : dlg(NULL){}
     ~ProgressHolder();
 
     bool update(int value);

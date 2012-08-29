@@ -47,6 +47,17 @@ static bool hasRepo(path &dir)
   return false;
 }
 
+/*
+  We are no longer going to update repos in place. Instead we will
+  import them, and we'll make a separate function for that later. Some
+  notes:
+
+  - games => gamedata
+  - kill all_games.json and tigfiles
+  - cache/shot300x260/tiggit.net/ => shots_300x260/tiggit.net/
+  - everything you're already doing below
+ */
+
 // Find and return legacy repository path, if any
 static std::string findLegacyDir()
 {
