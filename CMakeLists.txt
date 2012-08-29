@@ -3,8 +3,6 @@ cmake_minimum_required(VERSION 2.6)
 find_package(Boost COMPONENTS filesystem system thread REQUIRED)
 find_package(CURL REQUIRED)
 
-
-
 find_package(wxWidgets COMPONENTS core base REQUIRED)
 include(${wxWidgets_USE_FILE})
 
@@ -33,7 +31,7 @@ set(AWDIR ${TIG}/app_wx)
 
 set(MISC ${MIDIR}/dirfinder.cpp ${MIDIR}/lockfile.cpp)
 set(MANGLE ${MDIR}/stream/clients/io_stream.cpp)
-set(GAMEINFO ${GIDIR}/stats_json.cpp ${GIDIR}/binary_tigfile.cpp ${GIDIR}/tigloader.cpp)
+set(GAMEINFO ${GIDIR}/stats_json.cpp ${GIDIR}/tigloader.cpp)
 set(LIST ${LDIR}/sortlist.cpp ${LDIR}/listbase.cpp ${LDIR}/picklist.cpp ${LDIR}/parentbase.cpp)
 set(TIGLIB ${TLDIR}/gamedata.cpp ${TLDIR}/gamelister.cpp ${TLDIR}/sorters.cpp ${TLDIR}/repo.cpp ${TLDIR}/fetch.cpp ${TLDIR}/liveinfo.cpp ${TLDIR}/news.cpp ${TLDIR}/repo_locator.cpp)
 set(LAUNCH ${LADIR}/run.cpp ${LADIR}/run_windows.cpp)
@@ -48,6 +46,6 @@ set(ALL ${MISC} ${MANGLE} ${GAMEINFO} ${LIST} ${TIGLIB} ${LAUNCH})
 set(ALL_WX ${WX} ${APPWX})
 
 add_executable(tiggit ${ALL} ${ALL_WX})
-target_link_libraries(tiggit LibSpread ${LIBS} ${WLIBS})
+target_link_libraries(tiggit Spread ${LIBS} ${WLIBS})
 #add_executable(tiggit-cli ${ALL} cli/cli_main.cpp)
 #target_link_libraries(tiggit-cli ${LIBS})

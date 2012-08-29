@@ -1,8 +1,9 @@
 #include "tigloader.hpp"
 
-#include "binary_tigfile.hpp"
+#include <misc/readjson.hpp>
 #include <boost/filesystem.hpp>
 #include <stdexcept>
+#include <cstdlib>
 
 using namespace GameInfo;
 using namespace TigData;
@@ -13,42 +14,63 @@ static void fail(const std::string &msg)
   throw std::runtime_error(msg);
 }
 
-std::string TigLoader::addChannel(const std::string &binfile)
+void TigLoader::addChannel(const std::string &channel,
+                           const std::string &jsonfile)
 {
-  assert(binfile != "");
-
-  ListPtr list(new TigList);
-
-  BinLoader::readBinary(binfile, *list);
-  addList(list, binfile);
-}
-
-void TigLoader::saveChannel(const std::string &channel, const std::string &outfile) const
-{
-  const TigList *list = getChannel(channel);
-  if(list == NULL)
-    fail("Error writing " + outfile + ": Channel not found: " + channel);
-
-  create_directories(path(outfile).parent_path());
-  BinLoader::writeBinary(outfile, *list);
-}
-
-void TigLoader::addList(ListPtr list, const std::string &binFile)
-{
-  // Get and check the channel name
-  const std::string &chan = list->channel;
-  if(chan == "")
-    fail("Invalid (empty) channel name in " + binFile);
+  // Check the channel name
+  if(channel.find('\\') != std::string::npos ||
+     channel.find('/') != std::string::npos)
+    fail("Invalid channel name '" + channel + "' (empty or contains slashes)");
 
   // Does the channel already exist?
-  if(getChannel(chan) != NULL)
-    fail("Channel '" + chan + "' already exists! (reading " + binFile + ")");
+  if(getChannel(channel) != NULL)
+    fail("Channel '" + channel + "' already exists!");
 
-  // Add channel to our lists
-  chanInfo.push_back(binFile);
-  channels[chan] = list;
+  // Load the JSON data
+  Json::Value root = ReadJson::readJson(jsonfile);
+  if(root.isNull()) return;
+  if(!root.isArray())
+    fail("Invalid game data in " + jsonfile);
 
-  // Add all the entries to the lookup
+  // Create and set up the list
+  ListPtr list(new TigList);
+  list->channel = channel;
+
+  list->list.reserve(root.size());
+  for(int i=0; i<root.size(); i++)
+    {
+      const Json::Value &v = root[i];
+      TigEntry e;
+
+      e.launch = v["launch"].asString();
+      e.title = v["title"].asString();
+      e.desc = v["desc"].asString();
+      e.devname = v["devname"].asString();
+      e.homepage = v["homepage"].asString();
+      e.tags = v["tags"].asString();
+      e.urlname = v["name"].asString();
+
+      e.channel = channel;
+      e.idname = channel + "/" + e.urlname;
+      e.flags = 0;
+
+      if(v["is_demo"].asBool())
+        e.flags |= TF_DEMO;
+
+      e.addTime = std::atoll(v["addtime"].asString().c_str());
+
+      /* TODO: Perform more sanitation here. The tigdata is in
+         principle untrusted data.
+       */
+      if(e.launch == "" || e.title == "" || e.urlname == "")
+        continue;
+
+      // Add the item if it checked out
+      list->list.push_back(e);
+    }
+
+  // Store the list, and add all the entries to the lookup
+  channels[channel] = list;
   for(int i=0; i<list->list.size(); i++)
     {
       TigEntry *e = &list->list[i];
@@ -78,28 +100,4 @@ const TigList* TigLoader::getChannel(const std::string &name) const
   if(it == channels.end())
     return NULL;
   return it->second.get();
-}
-
-void TigLoader::reload()
-{
-  dumpData();
-
-  // Add channels back
-  for(int i=0; i<chanInfo.size(); i++)
-    addChannel(chanInfo[i]);
-}
-
-void TigLoader::clear()
-{
-  dumpData();
-  chanInfo.clear();
-}
-
-/* Dumps all data except the chanInfo list. That list is used by
-   reload() to reload data from source files.
- */
-void TigLoader::dumpData()
-{
-  channels.clear();
-  lookup.clear();
 }

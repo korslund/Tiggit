@@ -21,8 +21,8 @@ struct Repo::_Internal
   SpreadLib spread;
   std::string tmp;
 
-  _Internal(const std::string &ruleDir, const std::string &tmpDir)
-    : spread(ruleDir, tmpDir), tmp(tmpDir) {}
+  _Internal(const std::string &spreadDir, const std::string &tmpDir)
+    : spread(spreadDir, tmpDir), tmp(tmpDir) {}
 
   ~_Internal()
   { bf::remove_all(tmp); }
@@ -48,7 +48,7 @@ bool Repo::findRepo(const std::string &where)
   dir = where;
 
   if(dir == "")
-    dir = TigLibInt::findRepo();
+    dir = TigLibInt::getStoredPath();
 
   // Nothing was found. Tell the user.
   if(dir == "")
@@ -66,12 +66,12 @@ bool Repo::findRepo(const std::string &where)
 void Repo::setDirs()
 {
   assert(dir != "");
-  tigFile = getPath("spread/tigdata.dat");
+  tigFile = getPath("spread/channels/tiggit.net/tigdata.json");
+  shotDir = getPath("shots_300x260/");
   statsFile = getPath("stats.json");
-  shotDir = getPath("cache/shot300x260/");
   spreadDir = getPath("spread/");
 
-  ptr.reset(new _Internal(getPath("spread/rules/"), getPath("spread/tmp/")));
+  ptr.reset(new _Internal(spreadDir, getPath("spread/tmp/")));
 }
 
 void Repo::setRepo(const std::string &where)
@@ -87,6 +87,7 @@ std::string Repo::defaultPath() { return TigLibInt::getDefaultPath(); }
 bool Repo::initRepo(bool forceLock)
 {
   assert(ptr);
+  assert(dir != "");
 
   bf::create_directories(dir);
 
@@ -95,7 +96,12 @@ bool Repo::initRepo(bool forceLock)
     return false;
 
   // Make sure the repo format is up-to-date
-  TigLibInt::upgradeRepo(dir);
+  /*
+    TODO: There is no longer any "upgrading" or repositories. This
+    will instead be replaced by an import function that moves old data
+    into the new repo format.
+   */
+  //TigLibInt::upgradeRepo(dir);
 
   // Open config files
   conf.load(getPath("tiglib.conf"));
@@ -158,6 +164,8 @@ std::string Repo::fetchPath(const std::string &url,
   return outfile;
 }
 
+#include <iostream>
+
 struct FetchJob : Job
 {
   SpreadLib &spread;
@@ -171,13 +179,14 @@ struct FetchJob : Job
 
   void doJob()
   {
+    using namespace std;
+
     JobInfoPtr client = spread.updateFromURL("tiggit.net", ServerAPI::spreadURL_SR0());
-    if(waitClient(client)) return;
-    client = spread.install("tiggit.net", "tigdata", spreadRepo);
     if(waitClient(client)) return;
     if(shots)
       {
-        client = spread.install("tiggit.net", "shots", shotsPath);
+        std::string dest = (bf::path(shotsPath)/"tiggit.net").string();
+        client = spread.install("tiggit.net", "shots300x260", dest);
         if(waitClient(client)) return;
       }
 
@@ -210,7 +219,7 @@ JobInfoPtr Repo::fetchFiles(bool includeShots, bool async)
 void Repo::loadData()
 {
   assert(isLocked());
-  ptr->data.data.addChannel(tigFile);
+  ptr->data.data.addChannel("tiggit.net", tigFile);
 
   // Load stats, but ignore errors
   try { Stats::fromJson(ptr->data.data, statsFile); }

@@ -21,7 +21,7 @@ namespace TigLib
     { return "http://tiggit.net/api/stats.json"; }
 
     static S spreadURL_SR0()
-    { return "http://tiggit.net/api/sr0/"; }
+    { return "http://tiggit.net/client/sr0/"; }
 
     static S newsURL()
     { return "http://tiggit.net/api/news2.json"; }

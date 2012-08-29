@@ -105,7 +105,11 @@ static std::string os_getStoredPath(const std::string &vname,
 
 static std::string getHome(const std::string &aname)
 {
-  return std::string(getenv("HOME")) + "/." + aname + "/";
+  /* More and more systems and apps are using ~/.local/share/appname
+     instead of ~/.appname now. And I think that's a much less messy
+     solution.
+   */
+  return std::string(getenv("HOME")) + "/.local/share/" + aname + "/";
 }
 
 static std::string getPathFile(const std::string &aname,

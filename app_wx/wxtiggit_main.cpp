@@ -105,7 +105,7 @@ struct TigApp : wxApp
           {
             // If so, keep the user informed
             wxTigApp::JobProgress prog(this, info);
-            if(!prog.start("Downloading initial data set...\nDestination directory: " + rep.getPath("")))
+            if(!prog.start("Updating data...\nDestination directory: " + rep.getPath("")))
               {
                 if(info->isError())
                   Boxes::error("Download failed: " + info->getMessage());

@@ -50,6 +50,8 @@ static bool hasRepo(path &dir)
 // Find and return legacy repository path, if any
 static std::string findLegacyDir()
 {
+  assert(0 && "NOT IN USE IN THIS VERSION");
+
   {
     std::string dir;
     // Check first if there's a stored repository path. If so, use that.
@@ -99,8 +101,10 @@ static std::string findLegacyDir()
 
 // Upgrade a legacy repository to the new format. Returns true if an
 // upgrade was necessary.
-static bool upgradeRepo(const path &where)
+static bool doUpgradeRepo(const path &where)
 {
+  assert(0 && "NOT UPDATED YET");
+
   using namespace Misc;
 
   // New configuration files
@@ -206,32 +210,36 @@ static bool upgradeRepo(const path &where)
 
   return true;
 }
-#else
-static std::string findLegacyDir()
+#endif
+
+// -------------------- PUBLIC FUNCTIONS ---------------------
+
+std::string TigLibInt::getStoredPath()
 {
-  // Use stored directory, if any
   std::string dir;
   if(dfinder.getStoredPath(dir))
     return dir;
   return "";
 }
-#endif
 
-// -------------------- PUBLIC FUNCTIONS ---------------------
-
-/* Find repository. Will locate and convert old repositories if
-   necessary. May return "" if nothing was found.
- */
-std::string TigLibInt::findRepo()
+std::string findLegacyRepo()
 {
+  assert(0);
+
+#ifdef _WIN32
   return findLegacyDir();
+#else
+  return "";
+#endif
 }
 
 bool TigLibInt::upgradeRepo(const std::string &where)
 {
+  assert(0);
+
 #ifdef _WIN32
   if(where != "")
-    return upgradeRepo(where);
+    return doUpgradeRepo(where);
 #endif
   return false;
 }

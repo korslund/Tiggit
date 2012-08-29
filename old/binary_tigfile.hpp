@@ -4,6 +4,12 @@
 #include "tiglist.hpp"
 #include <mangle/stream/stream.hpp>
 
+/* THIS FILE IS NOT CURRENTLY USED.
+
+   Binary reading/writing is an optimization, JSON is good enough for
+   the time being.
+ */
+
 namespace BinLoader
 {
   void readBinary(const std::string &file, TigData::TigList &out);

@@ -113,7 +113,7 @@ namespace TigLib
 
     // Get install dir for a game
     std::string getInstDir(const std::string &idname) const
-    { return getPath("games/" + idname); }
+    { return getPath("gamedata/" + idname); }
 
     // Get screenshot path for a game.
     std::string getScreenshot(const std::string &idname) const;

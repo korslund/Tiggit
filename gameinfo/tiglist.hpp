@@ -8,8 +8,8 @@ namespace TigData
 {
   struct TigList
   {
-    // General tiglist info
-    std::string channel, desc, homepage;
+    // Channel name
+    std::string channel;
 
     // Entries
     std::vector<TigEntry> list;
