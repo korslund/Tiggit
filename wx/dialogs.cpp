@@ -41,7 +41,7 @@ OutputDirDialog::OutputDirDialog(wxWindow *parent, const std::string &old_dir,
 
   wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
 
-  wxString text = wxT("Select your data storage directory. All games will be installed here, and\nTiggit will also store its cache data here.");
+  wxString text = wxT("Select a data directory. This is where all games, configuration and data\nis stored.");
 
   vbox->Add(new wxStaticText(this, -1, text), 0, wxBOTTOM, 30);
 

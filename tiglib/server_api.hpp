@@ -24,7 +24,7 @@ namespace TigLib
     { return "http://tiggit.net/client/sr0/"; }
 
     static S newsURL()
-    { return "http://tiggit.net/api/news2.json"; }
+    { return "http://tiggit.net/api/news.json"; }
 
     static S brokenURL(CS hash, CS url)
     { return "http://tiggit.net/api/broken_url.php?hash=" + hash; }

@@ -5,7 +5,7 @@
 #include <spread/misc/readjson.hpp>
 #include <spread/misc/jconfig.hpp>
 
-static Misc::DirFinder dfinder("tiggit.net", "tiggit");
+static Misc::DirFinder dfinder("tiggit.net", "tiggit-data");
 
 using namespace boost::filesystem;
 
