@@ -6,9 +6,26 @@ using namespace wxTigApp;
 
 void StatusNotifier::tick()
 {
+  // If the data pointer hasn't been set yet, we aren't ready to do
+  // anything. So just exit.
   if(!data) return;
 
   std::set<GameInf*>::iterator it, itold;
+
+  // Check if we're updating the entire dataset first
+  if(updateJob && updateJob->isFinished())
+    {
+      if(updateJob->isNonSuccess())
+        {
+          // Handle failure later
+        }
+      else
+        {
+          assert(updateJob->isSuccess());
+          data->fullUpdate();
+        }
+      updateJob.reset();
+    }
 
   // How much do we need to update
   bool soft = false;

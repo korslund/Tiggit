@@ -2,6 +2,7 @@
 #define __WXAPP_NOTIFIER_HPP_
 
 #include <set>
+#include <spread/job/jobinfo.hpp>
 
 /* This is a pretty simple and unelegant notification distributor. We
    can refine it later.
@@ -16,6 +17,10 @@ namespace wxTigApp
   {
     GameData *data;
     std::set<GameInf*> watchList;
+
+    // JobInfo used for the background update thread. When this job
+    // finishes, we have to notify the main loader system.
+    Spread::JobInfoPtr updateJob;
 
     StatusNotifier() : data(0) {}
 

@@ -98,6 +98,18 @@ namespace TigLib
      */
     Spread::JobInfoPtr fetchFiles(bool includeShots=true, bool async=true);
 
+    /* Get data about the latest update. These are only valid after
+       fetchFiles() has successfully completed.
+
+       hasNewData() returns true if the latest fetch updated the data
+       set.
+
+       newProgramPath() returns the new executable path if a new
+       program version was installed. If not, it returns "".
+     */
+    bool hasNewData() const;
+    std::string newProgramPath() const;
+
     /* Load current game data from the repository files into memory.
      */
     void loadData();

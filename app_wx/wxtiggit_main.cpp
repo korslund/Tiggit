@@ -8,7 +8,6 @@
 
 /* Command line options
  */
-
 static const wxCmdLineEntryDesc cmdLineDesc[] =
   {
     { wxCMD_LINE_SWITCH, wxT("o"), wxT("offline"), wxT("Offline mode") },
@@ -98,22 +97,53 @@ struct TigApp : wxApp
               return false;
           }
 
-        Spread::JobInfoPtr info = rep.fetchFiles();
-
-        // Are we doing a larger download job here?
-        if(info)
+        // Try loading existing data
+        try
           {
-            // If so, keep the user informed
-            wxTigApp::JobProgress prog(info);
-            if(!prog.start("Updating data...\nDestination directory: " + rep.getPath("")))
+            rep.loadData();
+
+            // Check for updates in the background. The StatusNotifier
+            // in wxTigApp::notify will make sure the rest of the
+            // system is informed when the data has finished loading.
+            wxTigApp::notify.updateJob = rep.fetchFiles();
+          }
+        catch(...)
+          {
+            /* If there were any errors, assume this means the data
+               has either not been downloaded yet, or that the data
+               has changed format and we need to update the client
+               itself.
+             */
+            Spread::JobInfoPtr info = rep.fetchFiles();
+
+            if(info)
               {
-                if(info->isError())
-                  Boxes::error("Download failed: " + info->getMessage());
+                // Keep the user informed about what we're doing
+                wxTigApp::JobProgress prog(info);
+                if(!prog.start("Updating data...\nDestination directory: " + rep.getPath("")))
+                  {
+                    if(info->isError())
+                      Boxes::error("Download failed: " + info->getMessage());
+                    return false;
+                  }
+              }
+
+            if(rep.newProgramPath() != "")
+              {
+                // TODO: Launch the new updated version here
+                Boxes::error("Don't yet know how to launch " + rep.newProgramPath());
+                return false;
+              }
+
+            // If there was no new app version, then try loading the
+            // data again
+            try { rep.loadData(); }
+            catch(std::exception &e)
+              {
+                Boxes::error("Failed to load data: " + std::string(e.what()));
                 return false;
               }
           }
-
-        rep.loadData();
 
         gameData = new wxTigApp::GameData(rep);
         wxTigApp::notify.data = gameData;

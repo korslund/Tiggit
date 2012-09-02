@@ -4,6 +4,8 @@ using namespace TigData;
 using namespace wxTigApp;
 using namespace TigLib;
 
+#include <iostream>
+
 void GameNews::reload()
 {
   news.reload();
@@ -54,6 +56,23 @@ struct InstalledPick : GamePicker
 
 static FreeDemoPick freePick(true), demoPick(false);
 static InstalledPick instPick;
+
+void wxTigApp::GameData::fullUpdate()
+{
+  // Check if there was actually any new data in the repo
+  if(!repo.hasNewData())
+    {
+      std::cout << "Data update completed, no new data was available\n";
+      return;
+    }
+
+  std::cout << "FULL data update requested\n";
+
+  if(repo.newProgramPath() != "")
+    std::cout << "Also, a new program version is available.\n";
+
+  // TODO: Do actual stuff here
+}
 
 wxTigApp::GameData::GameData(Repo &rep)
   : config(rep.getPath("wxtiggit.conf")), news(&rep),

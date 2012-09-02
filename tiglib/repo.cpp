@@ -32,6 +32,10 @@ struct Repo::_Internal
   SpreadLib spread;
   std::string tmp;
 
+  // Used by fetchFiles()
+  bool newData;
+  std::string newProg;
+
   _Internal(const std::string &spreadDir, const std::string &tmpDir)
     : spread(spreadDir, tmpDir), tmp(tmpDir)
   {
@@ -186,13 +190,14 @@ std::string Repo::fetchPath(const std::string &url,
 struct FetchJob : Job
 {
   SpreadLib &spread;
-  bool shots;
-  std::string spreadRepo, shotsPath, statsFile;
+  bool shots, *newData;
+  std::string spreadRepo, shotsPath, statsFile, *newProg;
 
   FetchJob(SpreadLib &_spread, bool _shots, const std::string &_spreadRepo,
-           const std::string &_shotsPath, const std::string &_statsFile)
-    : spread(_spread), shots(_shots), spreadRepo(_spreadRepo),
-      shotsPath(_shotsPath), statsFile(_statsFile) {}
+           const std::string &_shotsPath, const std::string &_statsFile,
+           bool *_newData, std::string *_newProg)
+    : spread(_spread), shots(_shots), newData(_newData), spreadRepo(_spreadRepo),
+      shotsPath(_shotsPath), statsFile(_statsFile), newProg(_newProg) {}
 
   void doJob()
   {
@@ -200,11 +205,24 @@ struct FetchJob : Job
 
     JobInfoPtr client = spread.updateFromURL("tiggit.net", ServerAPI::spreadURL_SR0());
     if(waitClient(client)) return;
+
+    // Set newData depending on whether data was updated
+    *newData = spread.wasUpdated("tiggit.net");
+
     if(shots)
       {
         std::string dest = (bf::path(shotsPath)/"tiggit.net").string();
         client = spread.install("tiggit.net", "shots300x260", dest);
         if(waitClient(client)) return;
+      }
+
+    // TODO: Figure out how and where to update the app. We need to
+    // detect it's location, make sure we aren't overwriting our own
+    // running exe file (on windows), and set newProg IF and only if
+    // we have updated the file.
+    *newProg = "";
+    if(*newData) // Don't bother checking if there was no new data
+      {
       }
 
     /* Fetch the stats file (download counts etc), if the current file
@@ -221,8 +239,14 @@ struct FetchJob : Job
   }
 };
 
+bool Repo::hasNewData() const { return ptr->newData; }
+std::string Repo::newProgramPath() const { return ptr->newProg; }
+
 JobInfoPtr Repo::fetchFiles(bool includeShots, bool async)
 {
+  ptr->newData = false;
+  ptr->newProg = "";
+
   // If we're in offline mode, skip this entire function
   if(offline) return JobInfoPtr();
 
@@ -230,7 +254,8 @@ JobInfoPtr Repo::fetchFiles(bool includeShots, bool async)
 
   // Create and run the fetch job
   return Thread::run(new FetchJob(ptr->spread, includeShots, spreadDir,
-                                  shotDir, statsFile), async);
+                                  shotDir, statsFile, &ptr->newData, &ptr->newProg),
+                     async);
 }
 
 void Repo::loadData()

@@ -26,6 +26,13 @@ void TigLoader::addChannel(const std::string &channel,
   if(getChannel(channel) != NULL)
     fail("Channel '" + channel + "' already exists!");
 
+  /* TODO: In future versions, we may add some structure around the
+     list, maybe include the channel name and other info in the file
+     itself. It's important that we are able to catch and throw on
+     version updates, because the client relies on exceptions to
+     signal that the data is in an outdated format.
+   */
+
   // Load the JSON data
   Json::Value root = ReadJson::readJson(jsonfile);
   if(root.isNull()) return;

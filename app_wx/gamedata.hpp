@@ -38,6 +38,9 @@ namespace wxTigApp
     wxGameList &getDemos() { return *demos; }
     wxGameList &getInstalled() { return *installed; }
 
+    // Called when the entire dataset has been reloaded at runtime
+    void fullUpdate();
+
     // Called when a game has started or finished installing, or has
     // been uninstalled.
     void installStatusChanged()
