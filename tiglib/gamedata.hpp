@@ -26,6 +26,9 @@ namespace TigLib
      */
     void createLiveData(Repo *repo);
 
+    // Kill all existing data
+    void clear();
+
     LiveInfo *get(const std::string &id) const
     {
       InfoLookup::const_iterator it = lookup.find(id);

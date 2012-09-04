@@ -27,6 +27,9 @@ namespace GameInfo
     void addChannel(const std::string &channel,
                     const std::string &dataFile);
 
+    // Clear away all loaded data
+    void clear();
+
     /* Find a game based on idname ("channel/name"). Returns NULL if
        not found.
      */

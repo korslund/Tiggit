@@ -97,10 +97,14 @@ struct TigApp : wxApp
               return false;
           }
 
+        // Set up the GameData struct
+        gameData = new wxTigApp::GameData(rep);
+
         // Try loading existing data
         try
           {
-            rep.loadData();
+            // This throws on error
+            gameData->loadData();
 
             // Check for updates in the background. The StatusNotifier
             // in wxTigApp::notify will make sure the rest of the
@@ -137,7 +141,7 @@ struct TigApp : wxApp
 
             // If there was no new app version, then try loading the
             // data again
-            try { rep.loadData(); }
+            try { gameData->loadData(); }
             catch(std::exception &e)
               {
                 Boxes::error("Failed to load data: " + std::string(e.what()));
@@ -145,7 +149,14 @@ struct TigApp : wxApp
               }
           }
 
-        gameData = new wxTigApp::GameData(rep);
+        /* Start the notifier system. The notifier is a cleanup
+           procedure that polls threads regularly for status, and acts
+           on status changes. It is run in the MAIN thread at regular
+           intervals, through wxTimer.
+
+           However, it doesn't start doing anything until we have set
+           the data member.
+         */
         wxTigApp::notify.data = gameData;
 
         TigFrame *frame = new TigFrame(wxT("Tiggit"), "1", *gameData);

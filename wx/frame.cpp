@@ -7,11 +7,15 @@ using namespace wxTiggit;
 #include "alltabs.hpp"
 #include "newstab.hpp"
 
+#define myID_BUTTON_NOTICE 20230
+
 TigFrame::TigFrame(const wxString& title, const std::string &ver,
                    wxGameData &_data)
   : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(1024, 700)),
     data(_data)
 {
+  data.listener = this;
+
   Centre();
 
   wxMenu *menuFile = new wxMenu;
@@ -42,10 +46,18 @@ TigFrame::TigFrame(const wxString& title, const std::string &ver,
   CreateStatusBar();
   SetStatusText(strToWx("Welcome to Tiggit - version " + ver));
 
+  mainSizer = new wxBoxSizer(wxVERTICAL);
   wxPanel *panel = new wxPanel(this);
-  book = new wxNotebook(panel, myID_BOOK);
 
-  wxBoxSizer *mainSizer = new wxBoxSizer(wxVERTICAL);
+  noticeSizer = new wxBoxSizer(wxHORIZONTAL);
+  mainSizer->Add(noticeSizer, 0, wxGROW | wxALL, 7);
+
+  noticeSizer->Add(noticeText = new wxStaticText(panel, -1, wxT("No text")), 0, wxTOP, 5);
+  noticeSizer->Add(noticeButton = new wxButton(panel, myID_BUTTON_NOTICE, wxT("No action")), 0, wxLEFT, 10);
+
+  mainSizer->Show(noticeSizer, false);
+
+  book = new wxNotebook(panel, myID_BOOK);
   mainSizer->Add(book, 1, wxGROW | wxALL, 10);
 
   panel->SetSizer(mainSizer);
@@ -75,6 +87,9 @@ TigFrame::TigFrame(const wxString& title, const std::string &ver,
   Connect(myID_MENU_SHOW_VOTES, wxEVT_COMMAND_MENU_SELECTED,
           wxCommandEventHandler(TigFrame::onOption));
 
+  Connect(myID_BUTTON_NOTICE, wxEVT_COMMAND_BUTTON_CLICKED,
+          wxCommandEventHandler(TigFrame::onNoticeButton));
+
   Connect(myID_MENU_SETDIR, wxEVT_COMMAND_MENU_SELECTED,
           wxCommandEventHandler(TigFrame::onDataMenu));
   Connect(myID_MENU_IMPORT, wxEVT_COMMAND_MENU_SELECTED,
@@ -102,6 +117,31 @@ void TigFrame::updateTabNames()
   installedTab->updateTitle();
   newsTab->updateTitle();
 }
+
+void TigFrame::refreshNews()
+{
+  newsTab->reloadData();
+}
+
+void TigFrame::onNoticeButton(wxCommandEvent &event)
+{
+  mainSizer->Show(noticeSizer, false);
+  mainSizer->Layout();
+  data.notifyButton(noticeID);
+  noticeID = 0;
+}
+
+void TigFrame::displayNotification(const std::string &message, const std::string &button,
+                                   int id)
+{
+  noticeText->SetLabel(strToWx(message));
+  noticeButton->SetLabel(strToWx(button));
+  noticeID = id;
+
+  mainSizer->Show(noticeSizer, true);
+  mainSizer->Layout();
+}
+
 
 void TigFrame::onDataMenu(wxCommandEvent &event)
 {

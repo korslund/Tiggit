@@ -14,6 +14,12 @@ static void fail(const std::string &msg)
   throw std::runtime_error(msg);
 }
 
+void TigLoader::clear()
+{
+  lookup.clear();
+  channels.clear();
+}
+
 void TigLoader::addChannel(const std::string &channel,
                            const std::string &jsonfile)
 {

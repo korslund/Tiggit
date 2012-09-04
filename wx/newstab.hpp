@@ -16,15 +16,15 @@ namespace wxTiggit
 
     NewsTab(wxNotebook *parent, wxGameData &data);
 
+    void reloadData();
+
   private:
     // Internal functions
-    void reloadData();
     int getTitleNumber();
     void gotFocus();
 
     // Event handling
     void onWebsite(wxCommandEvent &event);
-    void onGetNews(wxCommandEvent &event);
     void onReadAll(wxCommandEvent &event);
     void onListSelect(wxListEvent &event);
     void onListDeselect(wxListEvent &event);

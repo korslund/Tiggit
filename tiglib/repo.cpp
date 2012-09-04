@@ -90,6 +90,7 @@ void Repo::setDirs()
   tigFile = getPath("spread/channels/tiggit.net/tigdata.json");
   shotDir = getPath("shots_300x260/");
   statsFile = getPath("stats.json");
+  newsFile = getPath("news.json");
   spreadDir = getPath("spread/");
 
   ptr.reset(new _Internal(spreadDir, getPath("spread/tmp/")));
@@ -191,13 +192,14 @@ struct FetchJob : Job
 {
   SpreadLib &spread;
   bool shots, *newData;
-  std::string spreadRepo, shotsPath, statsFile, *newProg;
+  std::string spreadRepo, shotsPath, statsFile, newsFile, *newProg;
 
   FetchJob(SpreadLib &_spread, bool _shots, const std::string &_spreadRepo,
            const std::string &_shotsPath, const std::string &_statsFile,
-           bool *_newData, std::string *_newProg)
+           const std::string &_newsFile, bool *_newData, std::string *_newProg)
     : spread(_spread), shots(_shots), newData(_newData), spreadRepo(_spreadRepo),
-      shotsPath(_shotsPath), statsFile(_statsFile), newProg(_newProg) {}
+      shotsPath(_shotsPath), statsFile(_statsFile), newsFile(_newsFile),
+      newProg(_newProg) {}
 
   void doJob()
   {
@@ -227,12 +229,15 @@ struct FetchJob : Job
 
     /* Fetch the stats file (download counts etc), if the current file
        is older than 24 hours.
+
+       We ignore errors, as stats are just cosmetics and not
+       critically necessary.
     */
     try { Fetch::fetchIfOlder(ServerAPI::statsURL(), statsFile, 24*60); }
-    /*
-       Ignore errors. Stats are just cosmetics, not critically
-       important.
-    */
+    catch(...) {}
+
+    // Ditto for the news file
+    try { Fetch::fetchFile(ServerAPI::newsURL(), newsFile); }
     catch(...) {}
 
     setDone();
@@ -254,19 +259,34 @@ JobInfoPtr Repo::fetchFiles(bool includeShots, bool async)
 
   // Create and run the fetch job
   return Thread::run(new FetchJob(ptr->spread, includeShots, spreadDir,
-                                  shotDir, statsFile, &ptr->newData, &ptr->newProg),
+                                  shotDir, statsFile, newsFile,
+                                  &ptr->newData, &ptr->newProg),
                      async);
+}
+
+void Repo::loadStats()
+{
+  // Always ignore errors, stats aren't critically important
+  try { Stats::fromJson(ptr->data.data, statsFile); }
+  catch(...) {}
+}
+
+void Repo::doneLoading()
+{
+  ptr->data.allList.done();
 }
 
 void Repo::loadData()
 {
   assert(isLocked());
+
+  // TODO: This kills everything. Later we might add the possiblity to
+  // selectively add and remove channels.
+  ptr->data.clear();
+  ptr->data.data.clear();
+
   ptr->data.data.addChannel("tiggit.net", tigFile);
-
-  // Load stats, but ignore errors
-  try { Stats::fromJson(ptr->data.data, statsFile); }
-  catch(...) {}
-
+  loadStats();
   ptr->data.createLiveData(this);
 }
 

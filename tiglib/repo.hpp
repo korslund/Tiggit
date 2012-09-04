@@ -16,7 +16,7 @@ namespace TigLib
     boost::shared_ptr<_Internal> ptr;
 
     std::string dir;
-    std::string tigFile, statsFile, shotDir, spreadDir;
+    std::string tigFile, statsFile, newsFile, shotDir, spreadDir;
     Misc::JConfig conf;
     int64_t lastTime;
 
@@ -110,13 +110,35 @@ namespace TigLib
     bool hasNewData() const;
     std::string newProgramPath() const;
 
-    /* Load current game data from the repository files into memory.
+    /* Load current game data from the repository files into
+       memory. Will clear out any existing data.
      */
     void loadData();
+
+    /* Call this to propagate newly loaded data into the rest of the
+       system. If you have used baseList() to build implicit
+       dependencies on the list data, and these again depend on some
+       data that has to be set up after loadData() is called (such as
+       setting the LiveInfo::extra member pointers), then you will
+       probably want to wait to call this until you have finished
+       setting up.
+    */
+    void doneLoading();
+
+    /* Load statistics data (download counts etc). This is
+       automatically invoked by loadData(), but may also be invoked
+       separately if you at some point update the stats file on disk
+       and want to refresh the numbers in memory.
+
+       The function ignores all errors and does not throw.
+     */
+    void loadStats();
 
     // Get the path of a file or directory within the repository. Only
     // valid after findRepo() has been invoked successfully.
     std::string getPath(const std::string &fname) const;
+
+    std::string getNewsFile() const { return newsFile; }
 
     // Fetch file from URL to the given location within the
     // repository. Returns the full path.

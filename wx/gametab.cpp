@@ -159,6 +159,7 @@ void GameTab::updateTags()
   using namespace std;
 
   tagList.clear();
+  lister.clearTags();
 
   vector<wxString> labels;
   labels.push_back(wxString::Format(wxT("All (%d)"), lister.size()));
@@ -319,9 +320,17 @@ void GameTab::gameSelectionChanged()
 }
 void GameTab::gameListChanged()
 {
-  gameSelectionChanged();
   updateTitle();
+
+  // Updating tags will also automatically clear tag selection
   updateTags();
+
+  // This generates the approprate event and clears the search
+  // selection
+  searchCtrl->Clear();
+
+  // Just to make sure we update the current selection
+  gameSelectionChanged();
 }
 
 void GameTab::onListRightClick(wxListEvent &event)

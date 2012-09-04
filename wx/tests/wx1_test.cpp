@@ -155,6 +155,8 @@ struct TestData : wxGameData
 
   wxGameNews &getNews() { return testNews; }
   wxGameConf &conf() { return testConf; }
+
+  void notifyButton(int id) {}
 };
 
 TestData testData;

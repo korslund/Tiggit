@@ -106,7 +106,6 @@ public:
 
 #define myID_NEWSLIST 10043
 #define myID_NEWSVIEW 10044
-#define myID_BGETNEWS 10045
 #define myID_BMARKALL 10046
 #define myID_TIGHOME  10060
 #define myID_TIGFORUM 10061
@@ -123,8 +122,6 @@ NewsTab::NewsTab(wxNotebook *parent, wxGameData &data)
 
   wxBoxSizer *buttons = new wxBoxSizer(wxHORIZONTAL);
   buttons->Add(new wxButton(this, myID_BMARKALL, wxT("Mark all as read")),
-               0, wxLEFT | wxTOP | wxBOTTOM, 5);
-  buttons->Add(new wxButton(this, myID_BGETNEWS, wxT("Refresh list")),
                0, wxLEFT | wxTOP | wxBOTTOM, 5);
   buttons->Add(new wxStaticText(this, wxID_ANY, wxT("       Visit:")),
                0, wxLEFT | wxTOP, 11);
@@ -154,8 +151,6 @@ NewsTab::NewsTab(wxNotebook *parent, wxGameData &data)
 
   Connect(myID_BMARKALL, wxEVT_COMMAND_BUTTON_CLICKED,
           wxCommandEventHandler(NewsTab::onReadAll));
-  Connect(myID_BGETNEWS, wxEVT_COMMAND_BUTTON_CLICKED,
-          wxCommandEventHandler(NewsTab::onGetNews));
 
   Connect(myID_TIGHOME, wxEVT_COMMAND_BUTTON_CLICKED,
           wxCommandEventHandler(NewsTab::onWebsite));
@@ -170,6 +165,7 @@ NewsTab::NewsTab(wxNotebook *parent, wxGameData &data)
 void NewsTab::reloadData()
 {
   list->updateNews();
+  updateTitle();
 }
 
 void NewsTab::onWebsite(wxCommandEvent &event)
@@ -183,11 +179,6 @@ void NewsTab::onWebsite(wxCommandEvent &event)
   if(id == myID_TIGBLOG) url = wxT("http://tiggit.net/blog");
 
   wxLaunchDefaultBrowser(url);
-}
-
-void NewsTab::onGetNews(wxCommandEvent &event)
-{
-  reloadData();
 }
 
 void NewsTab::onReadAll(wxCommandEvent &event)

@@ -92,6 +92,7 @@ namespace wxTiggit
     virtual void markAllAsRead() = 0;
   };
 
+  struct wxAppListener;
   struct wxGameData
   {
     virtual wxGameList &getLatest() = 0;
@@ -101,9 +102,35 @@ namespace wxTiggit
 
     virtual wxGameConf &conf() = 0;
     virtual wxGameNews &getNews() = 0;
+
+    virtual void notifyButton(int id) = 0;
+
+    wxAppListener *listener;
+    wxGameData() : listener(NULL) {}
   };
 
-  // Callback
+  // Callbacks
+  struct wxAppListener
+  {
+    wxAppListener() : _data(NULL) {}
+    virtual ~wxAppListener()
+    {
+      if(_data) _data->listener = NULL;
+    }
+    wxGameData *_data;
+
+    // Called when the app needs to reload and redisplay the news
+    virtual void refreshNews() = 0;
+
+    /* Called when the app should present the user with a
+       notification, and an associated button (if set). When the
+       button is clicked, wxGameData::notifyButton(id) should be
+       called.
+    */
+    virtual void displayNotification(const std::string &message, const std::string &button,
+                                     int id) = 0;
+  };
+
   struct wxGameListener
   {
     wxGameListener() : list(NULL) {}

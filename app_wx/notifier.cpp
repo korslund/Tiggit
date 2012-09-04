@@ -15,15 +15,14 @@ void StatusNotifier::tick()
   // Check if we're updating the entire dataset first
   if(updateJob && updateJob->isFinished())
     {
-      if(updateJob->isNonSuccess())
-        {
-          // Handle failure later
-        }
-      else
+      if(updateJob->isSuccess())
         {
           assert(updateJob->isSuccess());
-          data->fullUpdate();
+          data->updateReady();
         }
+
+      // If the update job failed, just ignore it. The update will be
+      // attempted again later.
       updateJob.reset();
     }
 

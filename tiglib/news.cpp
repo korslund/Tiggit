@@ -1,7 +1,6 @@
 #include "news.hpp"
 #include <spread/misc/readjson.hpp>
 #include "repo.hpp"
-#include "server_api.hpp"
 
 #include <assert.h>
 #include <set>
@@ -42,7 +41,7 @@ void NewsReader::reload()
 
   try
     {
-      std::string file = repo->fetchPath(ServerAPI::newsURL(), "news.json");
+      std::string file = repo->getNewsFile();
 
       Value root = ReadJson::readJson(file);
       if(!root.isObject())

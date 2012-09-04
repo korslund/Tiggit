@@ -7,11 +7,19 @@
 
 namespace wxTiggit
 {
-  class TigFrame : public wxFrame
+  struct NewsTab;
+
+  class TigFrame : public wxFrame, public wxAppListener
   {
     wxNotebook *book;
-    TabBase *newGamesTab, *freewareTab, *demosTab, *installedTab, *newsTab;
+    TabBase *newGamesTab, *freewareTab, *demosTab, *installedTab;
+    NewsTab *newsTab;
     wxGameData &data;
+    wxSizer *mainSizer, *noticeSizer;
+
+    wxStaticText *noticeText;
+    wxButton *noticeButton;
+    int noticeID;
 
   public:
     TigFrame(const wxString& title, const std::string &ver,
@@ -21,7 +29,13 @@ namespace wxTiggit
     void updateTabNames();
     void focusTab();
 
+    // From wxAppListener
+    void refreshNews();
+    void displayNotification(const std::string &message, const std::string &button,
+                             int id);
+
     // Event handling
+    void onNoticeButton(wxCommandEvent &event);
     void onExit(wxCommandEvent &event) { Close(); }
     void onSpecialKey(wxCommandEvent &event);
     void onOption(wxCommandEvent &event);

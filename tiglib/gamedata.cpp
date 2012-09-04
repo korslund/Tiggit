@@ -4,15 +4,24 @@
 
 using namespace TigLib;
 
-void GameData::createLiveData(Repo *repo)
+void GameData::clear()
 {
-  // Output list
   List::PtrList &out = allList.fillList();
 
   // Delete old objects
   for(int i=0; i<out.size(); i++)
     delete (LiveInfo*)out[i];
   lookup.clear();
+
+  out.resize(0);
+}
+
+void GameData::createLiveData(Repo *repo)
+{
+  clear();
+
+  // Output list
+  List::PtrList &out = allList.fillList();
 
   // Source list
   using namespace GameInfo;
@@ -49,8 +58,14 @@ void GameData::createLiveData(Repo *repo)
         }
     }
 
-  // TODO: Apply rating info
-
   // Signal child lists that data has changed
-  allList.done();
+  //allList.done();
+
+  /* Update: this was a bad idea. Because systems further down stream
+     may rely on the LiveInfo::extra member to be set, which of course
+     isn't the case at this point.
+
+     So do NOT signal child lists that we have changed. Leave that to
+     the caller.
+   */
 }

@@ -1,10 +1,10 @@
 #include "gamedata.hpp"
 
+#include "wx/boxes.hpp"
+
 using namespace TigData;
 using namespace wxTigApp;
 using namespace TigLib;
-
-#include <iostream>
 
 void GameNews::reload()
 {
@@ -57,29 +57,105 @@ struct InstalledPick : GamePicker
 static FreeDemoPick freePick(true), demoPick(false);
 static InstalledPick instPick;
 
-void wxTigApp::GameData::fullUpdate()
+void wxTigApp::GameData::updateReady()
 {
+  if(!listener) return;
+
+  // Load the updated news file and refresh the display
+  listener->refreshNews();
+
   // Check if there was actually any new data in the repo
   if(!repo.hasNewData())
     {
-      std::cout << "Data update completed, no new data was available\n";
+      // Just update the stats
+      repo.loadStats();
+      updateDisplayStatus();
       return;
     }
 
-  std::cout << "FULL data update requested\n";
+  /* If we got here, a full data update is necessary.
+
+     However, we might have gotten a program update as well, which
+     trumps data updates, and instead issues a request to restart the
+     entire program. (Restarting reloads the data too, of course.)
+   */
 
   if(repo.newProgramPath() != "")
-    std::cout << "Also, a new program version is available.\n";
+    /* If a new version is available, notify the user so they can
+       restart. No further action is needed, any restart at this point
+       (even a crash) will work.
 
-  // TODO: Do actual stuff here
+       When the user presses the displayed button, notifyButton() is
+       invoked, and the program is restarted.
+
+       If a new version is available, we do NOT reload the data. This
+       is because the new data may be packaged in a new format that
+       the current version doesn't know how to handle.
+
+       This is by design, so that we can update the client and data
+       simultaneously, without worrying about cross-version
+       compatibility.
+     */
+    listener->displayNotification("A new version of Tiggit has been installed", "Restart now", 2);
+
+  else
+    {
+      /* Just a data update. Don't ask the user, just do it
+         immediately.
+
+         TODO: Worry about in-progress installs here.
+      */
+      loadData();
+    }
 }
 
-wxTigApp::GameData::GameData(Repo &rep)
-  : config(rep.getPath("wxtiggit.conf")), news(&rep),
-    repo(rep)
+// TODO: This could return true/false, so the notification could stay
+// in place if the user tried to restart while downloading games.
+void wxTigApp::GameData::notifyButton(int id)
 {
+  assert(id == 2);
+
+  // TODO: restart the newly installed app
+}
+
+void wxTigApp::GameData::killData()
+{
+  const InfoLookup &lst = repo.getList();
+  InfoLookup::const_iterator it;
+  for(it=lst.begin(); it!=lst.end(); it++)
+    {
+      LiveInfo *li = it->second;
+      GameInf *gi = (GameInf*)(li->extra);
+      if(gi) delete gi;
+      li->extra = NULL;
+    }
+}
+
+void wxTigApp::GameData::loadData()
+{
+  using namespace std;
+
+  // TODO: Status check: we can't be downloading anything, or do
+  // anything else that relies on GameInf pointers.
+
+  // First, kill any existing data structures
+  killData();
+
+  // Then, load the data
+  try { repo.loadData(); }
+  catch(std::exception &e)
+    {
+      Boxes::error(e.what());
+      return;
+    }
+  catch(...)
+    {
+      Boxes::error("Unknown error while loading data");
+      return;
+    }
+
   // Create GameInf structs attached to all the LiveInfo structs
-  const InfoLookup &lst = rep.getList();
+  const InfoLookup &lst = repo.getList();
   InfoLookup::const_iterator it;
   for(it=lst.begin(); it!=lst.end(); it++)
     {
@@ -88,14 +164,23 @@ wxTigApp::GameData::GameData(Repo &rep)
       li->extra = new GameInf(li, &config);
     }
 
-  // TODO: When updating the list, make sure to clean up and kill all
-  // the GameInfs as well.
+  /* This has to be called AFTER the GameInf structures are set up,
+     otherwise
+   */
+  repo.doneLoading();
+
+  // Notify every list that the data has been reloaded
+  notifyReloaded();
+}
+
+wxTigApp::GameData::GameData(Repo &rep)
+  : config(rep.getPath("wxtiggit.conf")), news(&rep),
+    repo(rep)
+{
   latest = new GameList(rep.baseList(), NULL);
   freeware = new GameList(rep.baseList(), &freePick);
   demos = new GameList(rep.baseList(), &demoPick);
   installed = new GameList(rep.baseList(), &instPick);
-
-  //freeware->lister.dumpTags();
 }
 
 wxTigApp::GameData::~GameData()
@@ -104,4 +189,6 @@ wxTigApp::GameData::~GameData()
   delete freeware;
   delete demos;
   delete installed;
+
+  killData();
 }
