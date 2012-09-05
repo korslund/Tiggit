@@ -8,6 +8,8 @@
 #include "list/mainlist.hpp"
 #include "gamedata.hpp"
 
+namespace Spread { struct SpreadLib; }
+
 namespace TigLib
 {
   class Repo
@@ -98,17 +100,10 @@ namespace TigLib
      */
     Spread::JobInfoPtr fetchFiles(bool includeShots=true, bool async=true);
 
-    /* Get data about the latest update. These are only valid after
-       fetchFiles() has successfully completed.
-
-       hasNewData() returns true if the latest fetch updated the data
-       set.
-
-       newProgramPath() returns the new executable path if a new
-       program version was installed. If not, it returns "".
+    /* Returns true if the latest fetch updated the data set. Only
+       valid after the fetchFiles() job has successfully completed.
      */
     bool hasNewData() const;
-    std::string newProgramPath() const;
 
     /* Load current game data from the repository files into
        memory. Will clear out any existing data.
@@ -160,6 +155,10 @@ namespace TigLib
     // Start uninstalling a game
     Spread::JobInfoPtr startUninstall(const std::string &idname, bool async=true);
    
+    // Get access to the Spread repository instance used internally by
+    // Repo
+    Spread::SpreadLib &getSpread() const;
+
     // Main lookup list of all games
     const InfoLookup &getList() const;
 

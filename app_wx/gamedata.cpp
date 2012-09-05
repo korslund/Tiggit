@@ -81,7 +81,7 @@ void wxTigApp::GameData::updateReady()
      entire program. (Restarting reloads the data too, of course.)
    */
 
-  if(repo.newProgramPath() != "")
+  if(updater.hasNewUpdate)
     /* If a new version is available, notify the user so they can
        restart. No further action is needed, any restart at this point
        (even a crash) will work.
@@ -97,7 +97,7 @@ void wxTigApp::GameData::updateReady()
        simultaneously, without worrying about cross-version
        compatibility.
      */
-    listener->displayNotification("A new version of Tiggit has been installed", "Restart now", 2);
+    listener->displayNotification("Tiggit has been updated to version " + updater.newVersion, "Restart now", 2);
 
   else
     {
@@ -179,7 +179,7 @@ void wxTigApp::GameData::loadData()
 
 wxTigApp::GameData::GameData(Repo &rep)
   : config(rep.getPath("wxtiggit.conf")), news(&rep),
-    repo(rep)
+    repo(rep), updater(rep)
 {
   latest = new GameList(rep.baseList(), NULL);
   freeware = new GameList(rep.baseList(), &freePick);

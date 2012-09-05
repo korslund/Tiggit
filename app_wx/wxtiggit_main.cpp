@@ -109,7 +109,7 @@ struct TigApp : wxApp
             // Check for updates in the background. The StatusNotifier
             // in wxTigApp::notify will make sure the rest of the
             // system is informed when the data has finished loading.
-            wxTigApp::notify.updateJob = rep.fetchFiles();
+            wxTigApp::notify.updateJob = gameData->updater.startJob();
           }
         catch(...)
           {
@@ -118,7 +118,7 @@ struct TigApp : wxApp
                has changed format and we need to update the client
                itself.
              */
-            Spread::JobInfoPtr info = rep.fetchFiles();
+            Spread::JobInfoPtr info = gameData->updater.startJob();
 
             if(info)
               {
@@ -132,10 +132,10 @@ struct TigApp : wxApp
                   }
               }
 
-            if(rep.newProgramPath() != "")
+            if(gameData->updater.hasNewUpdate)
               {
                 // TODO: Launch the new updated version here
-                Boxes::error("Don't yet know how to launch " + rep.newProgramPath());
+                Boxes::error("Don't yet know how to launch " + gameData->updater.newExePath);
                 return false;
               }
 

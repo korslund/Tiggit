@@ -5,6 +5,7 @@
 #include "tiglib/repo.hpp"
 #include "gameconf.hpp"
 #include "tiglib/news.hpp"
+#include "appupdate.hpp"
 
 namespace wxTigApp
 {
@@ -29,6 +30,8 @@ namespace wxTigApp
     GameConf config;
     GameNews news;
     TigLib::Repo &repo;
+
+    AppUpdater updater;
 
     GameData(TigLib::Repo &rep);
     ~GameData();
