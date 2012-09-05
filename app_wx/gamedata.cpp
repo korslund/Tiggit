@@ -1,6 +1,7 @@
 #include "gamedata.hpp"
 
 #include "wx/boxes.hpp"
+#include "notifier.hpp"
 
 using namespace TigData;
 using namespace wxTigApp;
@@ -100,22 +101,17 @@ void wxTigApp::GameData::updateReady()
 
   else
     {
-      /* Just a data update. Don't ask the user, just do it
-         immediately.
-
-         TODO: Worry about in-progress installs here.
+      /* Data update but no program update. Don't ask the user, just
+         do it immediately.
       */
       loadData();
     }
 }
 
-// TODO: This could return true/false, so the notification could stay
-// in place if the user tried to restart while downloading games.
 void wxTigApp::GameData::notifyButton(int id)
 {
   assert(id == 2);
-
-  // TODO: restart the newly installed app
+  // TODO: launch the newly installed executable
 }
 
 void wxTigApp::GameData::killData()
@@ -134,9 +130,6 @@ void wxTigApp::GameData::killData()
 void wxTigApp::GameData::loadData()
 {
   using namespace std;
-
-  // TODO: Status check: we can't be downloading anything, or do
-  // anything else that relies on GameInf pointers.
 
   // First, kill any existing data structures
   killData();
@@ -164,8 +157,19 @@ void wxTigApp::GameData::loadData()
       li->extra = new GameInf(li, &config);
     }
 
-  /* This has to be called AFTER the GameInf structures are set up,
-     otherwise
+  /* Transfer existing install jobs, if any, over to the new LiveInfo
+     structs. Installs-in-progress will thus "survive" a data reload
+     uninterrupted.
+
+     The StatusNotifier (notify) does all the grunt work of looking up
+     the structures based on idname.
+  */
+  notify.reassignJobs();
+
+  /* Propagate update notifications down the list hierarchy. This has
+     to be called AFTER the GameInf structures are set up, otherwise
+     the wx display classes will get update notifications before there
+     is any data to update from.
    */
   repo.doneLoading();
 

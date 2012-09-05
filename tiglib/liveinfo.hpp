@@ -46,6 +46,14 @@ namespace TigLib
     // uninitialized shared_ptr if no job is active.
     Spread::JobInfoPtr getStatus() const { return installJob; }
 
+    /* Used to assign an existing install job to this game after a
+       data reload. When data is reloaded from disk, all existing
+       LiveInfo structures are deleted and new ones are created.
+       However, you may want to keep around already running jobs, and
+       reassign them to the corresponding new LiveInfos.
+    */
+    void setStatus(Spread::JobInfoPtr info) { installJob = info; }
+
     /* Install game into the repository. Returns the JobInfo
        associated with the installer job.
 

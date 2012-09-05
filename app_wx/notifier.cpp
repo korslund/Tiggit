@@ -1,16 +1,59 @@
 #include "notifier.hpp"
 #include "gamedata.hpp"
 #include "wx/boxes.hpp"
+#include <assert.h>
 
 using namespace wxTigApp;
+using namespace Spread;
+
+void StatusNotifier::watchMe(GameInf *p)
+{
+  assert(p);
+
+  const std::string &idname = p->info.ent->idname;
+  JobInfoPtr info = p->info.getStatus();
+
+  if(!info) return;
+
+  watchList[idname] = info;
+  statusChanged();
+}
+
+static GameInf* getFromId(const TigLib::Repo &repo, const std::string &idname)
+{
+  using namespace TigLib;
+
+  const InfoLookup &look = repo.getList();
+  InfoLookup::const_iterator it = look.find(idname);
+  if(it == look.end()) return NULL;
+
+  return (GameInf*)(it->second->extra);
+}
+
+void StatusNotifier::reassignJobs()
+{
+  if(!data) return;
+
+  WatchList::iterator it;
+  for(it = watchList.begin(); it != watchList.end(); it++)
+    {
+      GameInf *inf = getFromId(data->repo, it->first);
+
+      // Ignore unknown jobs
+      if(!inf) continue;
+
+      JobInfoPtr job = it->second;
+
+      if(job != inf->info.getStatus())
+        inf->info.setStatus(job);
+    }
+}
 
 void StatusNotifier::tick()
 {
   // If the data pointer hasn't been set yet, we aren't ready to do
   // anything. So just exit.
   if(!data) return;
-
-  std::set<GameInf*>::iterator it, itold;
 
   // Check if we're updating the entire dataset first
   if(updateJob && updateJob->isFinished())
@@ -30,29 +73,37 @@ void StatusNotifier::tick()
   bool soft = false;
   bool hard = false;
 
+  WatchList::iterator it, itold;
   for(it = watchList.begin(); it != watchList.end();)
     {
-      // If there are any elements being installed, update the
-      // displays.
+      // If there are any elements being installed at all, always
+      // update the displays.
       soft = true;
 
-      // Get the GameInf pointer. Then increase the iterator, since we
-      // might erase it from the list below, invalidating the current
-      // position.
+      // Increase the iterator, since we might erase it from the
+      // list below, invalidating the current position.
       itold = it++;
-      GameInf *inf = *itold;
+
+      // Get the GameInf pointer
+      GameInf* inf = getFromId(data->repo, itold->first);
+      if(!inf) continue;
+
+      // Get the stored job
+      JobInfoPtr job = itold->second;
+
+      // Check that we have the right job attached
+      assert(job == inf->info.getStatus());
 
       // If we are no longer working, update main status and remove
       // ourselves from the list
-      if(!inf->isWorking())
+      if(job->isFinished())
         {
           watchList.erase(itold);
           hard = true;
 
           // Report errors to the user
-          Spread::JobInfoPtr info = inf->info.getStatus();
-          if(info->isError())
-            Boxes::error(info->getMessage());
+          if(job->isError())
+            Boxes::error(job->getMessage());
         }
 
       // Update the object status
@@ -60,7 +111,7 @@ void StatusNotifier::tick()
     }
 
   /* A 'hard' update means totally refresh the 'installed' list, and
-     tell all tabs to update game data - screenshot, butten
+     tell all tabs to update game data - screenshot, button
      information etc - in case the currently selected game has changed
      status.
   */
