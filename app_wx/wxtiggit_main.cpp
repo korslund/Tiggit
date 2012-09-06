@@ -83,6 +83,14 @@ struct TigApp : wxApp
               }
           }
 
+        // Check if there is a newer version installed in the repo. If
+        // there is, lauch it and exit.
+        {
+          wxTigApp::AppUpdater upd(rep);
+          if(upd.launchCorrectExe())
+            return false;
+        }
+
         if(!rep.initRepo())
           {
             if(Boxes::ask("Failed to lock repository: " + rep.getPath("") + "\n\nThis usually means that a previous instance of Tiggit crashed. But it MIGHT also mean you are running two instances of Tiggit at once.\n\nAre you SURE you want to continue? If two programs access the repository at the same, data loss may occur!"))
@@ -132,12 +140,8 @@ struct TigApp : wxApp
                   }
               }
 
-            if(gameData->updater.hasNewUpdate)
-              {
-                // TODO: Launch the new updated version here
-                Boxes::error("Don't yet know how to launch " + gameData->updater.newExePath);
-                return false;
-              }
+            if(gameData->updater.launchIfNew())
+              return false;
 
             // If there was no new app version, then try loading the
             // data again

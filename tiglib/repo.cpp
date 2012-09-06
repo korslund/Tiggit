@@ -191,8 +191,6 @@ std::string Repo::fetchPath(const std::string &url,
   return outfile;
 }
 
-#include <iostream>
-
 struct FetchJob : Job
 {
   SpreadLib &spread;
