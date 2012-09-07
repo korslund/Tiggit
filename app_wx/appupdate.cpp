@@ -154,8 +154,8 @@ struct UpdateJob : Job
         std::string dest = swt.getOther();
         newExe = swt.getOther("tiggit.exe");
 
-        log("Installing " + package + " into " + dest);
-        log("  (Current EXE is: " + Misc::DirFinder::getExePath() + ")");
+        log("New EXE: " + newExe);
+        log("Current EXE: " + Misc::DirFinder::getExePath());
 
         if(isCurrentExe(newExe))
           {
@@ -164,22 +164,26 @@ struct UpdateJob : Job
             return;
           }
 
-        client = repo->getSpread().install("tiggit.net", package, dest);
-        if(waitClient(client))
-          {
-            if(info->isAbort()) log("App update aborted");
-            else log("App update failed: " + info->getMessage());
-            return;
-          }
-        log("Wrote new EXE: " + newExe);
+        log("Current version: " + std::string(TIGGIT_VERSION));
+        newVer = repo->getSpread().getPackVersion("tiggit.net", package);
+        log("New version: " + newVer);
 
-        /* TODO: Load version file, compare version with this version,
-           set hasNew accordingly. Log everything.
-         */
+        // Figure out if we've got a new version
+        hasNew = (newVer != "" && newVer != TIGGIT_VERSION);
 
         if(hasNew)
           {
-            log("NEW version detected. Restart required.");
+            log("NEW version detected!");
+            log("Installing tiggit.net/" + package + " into " + dest);
+            client = repo->getSpread().install("tiggit.net", package, dest);
+            if(waitClient(client))
+              {
+                if(info->isAbort()) log("Install aborted");
+                else log("Install failed: " + info->getMessage());
+                return;
+              }
+
+            log("Install complete. Switching to new directory.");
             swt.doSwitch();
           }
         else log("Existing version detected.");
@@ -225,12 +229,13 @@ bool AppUpdater::launchNew()
 {
   assert(current && current->isSuccess());
   assert(hasNewUpdate);
-  assert(newExePath != "");
   return launch();
 }
 
 bool AppUpdater::launch()
 {
+  assert(newExePath != "");
+
   Logger log(repo.getPath("launch.log"));
   log("launch() newExePath=" + newExePath);
 
@@ -244,7 +249,6 @@ bool AppUpdater::launch()
       return false;
     }
 
-#ifdef _WIN32
   log("Current EXE: " + Misc::DirFinder::getExePath());
 
   // Are we already running the EXE we are supposed to launch?
@@ -254,6 +258,19 @@ bool AppUpdater::launch()
       return false;
     }
 
+  // Is there an override file?
+  {
+    std::string override =
+      (bf::path(Misc::DirFinder::getExePath()).parent_path() / "override").string();
+    log("Checking for override file: " + override);
+    if(bf::exists(override))
+      {
+        log("Override found, aborting.");
+        return false;
+      }
+  }
+
+#ifdef _WIN32
   // Everything seems to be in order. Run the exe.
   try
     {
@@ -267,7 +284,7 @@ bool AppUpdater::launch()
       log << "ERROR: " << e.what() << endl;
     }
 #else
-  log("Only implemented on Windows");
+  log("Launching only implemented for Windows");
 #endif
   return false;
 }

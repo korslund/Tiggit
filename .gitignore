@@ -9,7 +9,6 @@ response.txt
 *.exe
 *~
 resources.res
-override
 fix_json
 */tests/*_test
 *_test

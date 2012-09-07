@@ -165,6 +165,7 @@ struct TigApp : wxApp
 
         TigFrame *frame = new TigFrame(wxT("Tiggit"), "1", *gameData);
         frame->Show(true);
+        gameData->frame = frame;
         return true;
       }
     catch(std::exception &e)

@@ -31,6 +31,8 @@ namespace wxTigApp
     GameNews news;
     TigLib::Repo &repo;
 
+    wxWindow *frame;
+
     AppUpdater updater;
 
     GameData(TigLib::Repo &rep);

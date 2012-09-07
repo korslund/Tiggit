@@ -111,7 +111,11 @@ void wxTigApp::GameData::updateReady()
 void wxTigApp::GameData::notifyButton(int id)
 {
   assert(id == 2);
-  // TODO: launch the newly installed executable
+  if(updater.launchNew())
+    {
+      assert(frame);
+      frame->Close();
+    }
 }
 
 void wxTigApp::GameData::killData()
