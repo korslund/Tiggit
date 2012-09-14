@@ -5,6 +5,16 @@
 #include "jobprogress.hpp"
 #include "wx/dialogs.hpp"
 #include <wx/cmdline.h>
+#include "version.hpp"
+
+//#define PRINT_DEBUG
+
+#ifdef PRINT_DEBUG
+#include <iostream>
+#define PRINT(a) std::cout << a << "\n"
+#else
+#define PRINT(a)
+#endif
 
 /* Command line options
  */
@@ -50,17 +60,24 @@ struct TigApp : wxApp
     // Use to test offline mode
     rep.offline = param_offline;
 
+    PRINT("Offline mode: " << (rep.offline?"YES":"NO"));
+
     SetAppName(wxT("Tiggit"));
     wxInitAllImageHandlers();
 
     try
       {
         if(param_repo != "")
-          rep.setRepo(param_repo);
+          {
+            PRINT("Setting repo dir=" << param_repo);
+            rep.setRepo(param_repo);
+          }
         else if(!rep.findRepo())
           {
             std::string dir = rep.defaultPath();
             bool failed = false;
+
+            PRINT("Trying default dir " << dir);
 
             // Unable to find a repository. Ask the user.
             while(true)
@@ -81,16 +98,26 @@ struct TigApp : wxApp
                 // If not, continue asking, and tell the user why.
                 failed = true;
               }
+
+            PRINT("Set repo dir " << dir);
           }
+
+        PRINT("Final repo dir: " << rep.getPath());
 
         // Check if there is a newer version installed in the repo. If
         // there is, lauch it and exit.
         {
           wxTigApp::AppUpdater upd(rep);
+          PRINT("Checking for newer EXE");
           if(upd.launchCorrectExe())
-            return false;
+            {
+              PRINT("New EXE launched. Exiting.");
+              return false;
+            }
+          PRINT("No new EXE found.");
         }
 
+        PRINT("Initializing repository");
         if(!rep.initRepo())
           {
             if(Boxes::ask("Failed to lock repository: " + rep.getPath("") + "\n\nThis usually means that a previous instance of Tiggit crashed. But it MIGHT also mean you are running two instances of Tiggit at once.\n\nAre you SURE you want to continue? If two programs access the repository at the same, data loss may occur!"))
@@ -111,16 +138,21 @@ struct TigApp : wxApp
         // Try loading existing data
         try
           {
+            PRINT("Trying to load data");
+
             // This throws on error
             gameData->loadData();
 
             // Check for updates in the background. The StatusNotifier
             // in wxTigApp::notify will make sure the rest of the
             // system is informed when the data has finished loading.
+            PRINT("Success. Starting background update job");
             wxTigApp::notify.updateJob = gameData->updater.startJob();
           }
         catch(...)
           {
+            PRINT("Load failed. Doing foreground update.");
+
             /* If there were any errors, assume this means the data
                has either not been downloaded yet, or that the data
                has changed format and we need to update the client
@@ -140,8 +172,12 @@ struct TigApp : wxApp
                   }
               }
 
+            PRINT("Checking for new EXE");
             if(gameData->updater.launchIfNew())
-              return false;
+              {
+                PRINT("Found and launched. Exit.");
+                return false;
+              }
 
             // If there was no new app version, then try loading the
             // data again
@@ -161,11 +197,13 @@ struct TigApp : wxApp
            However, it doesn't start doing anything until we have set
            the data member.
          */
+        PRINT("Starting notification loop");
         wxTigApp::notify.data = gameData;
 
-        TigFrame *frame = new TigFrame(wxT("Tiggit"), "1", *gameData);
+        TigFrame *frame = new TigFrame(wxT("Tiggit"), TIGGIT_VERSION, *gameData);
         frame->Show(true);
         gameData->frame = frame;
+
         return true;
       }
     catch(std::exception &e)

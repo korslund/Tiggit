@@ -7,6 +7,15 @@ using namespace TigData;
 using namespace wxTigApp;
 using namespace TigLib;
 
+//#define PRINT_DEBUG
+
+#ifdef PRINT_DEBUG
+#include <iostream>
+#define PRINT(a) std::cout << a << "\n"
+#else
+#define PRINT(a)
+#endif
+
 void GameNews::reload()
 {
   news.reload();
@@ -60,6 +69,12 @@ static InstalledPick instPick;
 
 void wxTigApp::GameData::updateReady()
 {
+  PRINT("GameData::updateReady()");
+  PRINT("  repo.hasNewData():  " << repo.hasNewData());
+  PRINT("  hasNewUpdate:       " << updater.hasNewUpdate);
+  PRINT("  newExePath:         " << updater.newExePath);
+  PRINT("  newVersion:         " << updater.newVersion);
+
   if(!listener) return;
 
   // Load the updated news file and refresh the display
@@ -68,6 +83,8 @@ void wxTigApp::GameData::updateReady()
   // Check if there was actually any new data in the repo
   if(!repo.hasNewData())
     {
+      PRINT("No new data available");
+
       // Just update the stats
       repo.loadStats();
       updateDisplayStatus();
@@ -82,44 +99,66 @@ void wxTigApp::GameData::updateReady()
    */
 
   if(updater.hasNewUpdate)
-    /* If a new version is available, notify the user so they can
-       restart. No further action is needed, any restart at this point
-       (even a crash) will work.
+    {
+      /* If a new version is available, notify the user so they can
+         restart. No further action is needed, any restart at this
+         point (even a crash) will work.
 
-       When the user presses the displayed button, notifyButton() is
-       invoked, and the program is restarted.
+         When the user presses the displayed button, notifyButton() is
+         invoked, and the program is restarted.
 
-       If a new version is available, we do NOT reload the data. This
-       is because the new data may be packaged in a new format that
-       the current version doesn't know how to handle.
+         If a new version is available, we do NOT reload the
+         data. This is because the new data may be packaged in a new
+         format that the current version doesn't know how to handle.
 
-       This is by design, so that we can update the client and data
-       simultaneously, without worrying about cross-version
-       compatibility.
-     */
-    listener->displayNotification("Tiggit has been updated to version " + updater.newVersion, "Restart now", 2);
+         This is by design, so that we can update the client and data
+         simultaneously, without worrying about cross-version
+         compatibility.
+      */
+      PRINT("New version available: " << updater.newVersion << ", notifying user.");
+
+      listener->displayNotification("Tiggit has been updated to version " + updater.newVersion, "Restart now", 2);
+    }
 
   else
     {
       /* Data update but no program update. Don't ask the user, just
          do it immediately.
       */
-      loadData();
+      PRINT("Pure data update. Reloading data.");
+      try { loadData(); }
+      catch(std::exception &e)
+        {
+          Boxes::error(e.what());
+        }
+      catch(...)
+        {
+          Boxes::error("Unknown error while loading data");
+        }
     }
 }
 
 void wxTigApp::GameData::notifyButton(int id)
 {
+  PRINT("notifyButton(" << id << ")");
+
   assert(id == 2);
   if(updater.launchNew())
     {
+      PRINT("Launched another executable. Exiting now.");
       assert(frame);
       frame->Close();
+    }
+  else
+    {
+      PRINT("No process launched. Continuing this one instead.");
     }
 }
 
 void wxTigApp::GameData::killData()
 {
+  PRINT("GameData::killData()");
+
   const InfoLookup &lst = repo.getList();
   InfoLookup::const_iterator it;
   for(it=lst.begin(); it!=lst.end(); it++)
@@ -133,23 +172,18 @@ void wxTigApp::GameData::killData()
 
 void wxTigApp::GameData::loadData()
 {
+  PRINT("loadData()");
+
   using namespace std;
 
   // First, kill any existing data structures
   killData();
 
   // Then, load the data
-  try { repo.loadData(); }
-  catch(std::exception &e)
-    {
-      Boxes::error(e.what());
-      return;
-    }
-  catch(...)
-    {
-      Boxes::error("Unknown error while loading data");
-      return;
-    }
+  PRINT("Loading data now");
+  repo.loadData();
+
+  PRINT("Attaching GameInf structures");
 
   // Create GameInf structs attached to all the LiveInfo structs
   const InfoLookup &lst = repo.getList();
@@ -175,9 +209,11 @@ void wxTigApp::GameData::loadData()
      the wx display classes will get update notifications before there
      is any data to update from.
    */
+  PRINT("Calling repo.doneLoading()");
   repo.doneLoading();
 
   // Notify every list that the data has been reloaded
+  PRINT("Notifying all lists");
   notifyReloaded();
 }
 

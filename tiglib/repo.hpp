@@ -130,8 +130,9 @@ namespace TigLib
     void loadStats();
 
     // Get the path of a file or directory within the repository. Only
-    // valid after findRepo() has been invoked successfully.
-    std::string getPath(const std::string &fname) const;
+    // valid after findRepo() has been invoked successfully. Use
+    // without parameter to get the repo directory itself.
+    std::string getPath(const std::string &fname = "") const;
 
     std::string getNewsFile() const { return newsFile; }
 

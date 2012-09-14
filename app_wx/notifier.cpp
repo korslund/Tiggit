@@ -6,6 +6,15 @@
 using namespace wxTigApp;
 using namespace Spread;
 
+//#define PRINT_DEBUG
+
+#ifdef PRINT_DEBUG
+#include <iostream>
+#define PRINT(a) std::cout << a << "\n"
+#else
+#define PRINT(a)
+#endif
+
 void StatusNotifier::watchMe(GameInf *p)
 {
   assert(p);
@@ -15,6 +24,7 @@ void StatusNotifier::watchMe(GameInf *p)
 
   if(!info) return;
 
+  PRINT("Watching " << idname);
   watchList[idname] = info;
   statusChanged();
 }
@@ -33,6 +43,8 @@ static GameInf* getFromId(const TigLib::Repo &repo, const std::string &idname)
 void StatusNotifier::reassignJobs()
 {
   if(!data) return;
+
+  PRINT("Reassigning " << watchList.size() << " jobs");
 
   WatchList::iterator it;
   for(it = watchList.begin(); it != watchList.end(); it++)
@@ -60,12 +72,20 @@ void StatusNotifier::tick()
     {
       if(updateJob->isSuccess())
         {
-          assert(updateJob->isSuccess());
+          PRINT("Update job successful");
           data->updateReady();
         }
+      else
+        {
+          /* TODO: If the job failed, but the base Spread update
+             succeeded, then the update will not be attempted again
+             until the next release. This means we might be sitting on
+             a partially updated repo and it won't be fixed.
+           */
 
-      // If the update job failed, just ignore it. The update will be
-      // attempted again later.
+          PRINT("Update job FAILED: " << updateJob->getMessage());
+        }
+
       updateJob.reset();
     }
 

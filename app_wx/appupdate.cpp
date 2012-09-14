@@ -11,6 +11,15 @@
 #include <mangle/stream/servers/outfile_stream.hpp>
 #include "launcher/run.hpp"
 
+//#define PRINT_DEBUG
+
+#ifdef PRINT_DEBUG
+#include <iostream>
+#define PRINT(a) std::cout << a << "\n"
+#else
+#define PRINT(a)
+#endif
+
 using namespace wxTigApp;
 using namespace Spread;
 namespace bf = boost::filesystem;
@@ -44,6 +53,8 @@ struct Switch
           cur = '2';
       }
     else cur = '2';
+
+    PRINT("Loaded switch " << base << ", cur=" << cur);
   }
 
   ~Switch() { if(!bf::exists(curFile)) write(); }
@@ -61,10 +72,12 @@ struct Switch
   {
     assert(cur == '1' || cur == '2');
     MS::OutFileStream::Write(curFile, &cur, 1);
+    PRINT("Wrote switch value " << cur);
   }
 
   void doSwitch()
   {
+    PRINT("doSwitch()");
     if(cur == '1') cur = '2';
     else cur = '1';
     write();
@@ -89,6 +102,7 @@ struct Logger
 
   void operator()(const std::string &msg)
   {
+    PRINT("LOG: " << msg);
     char buf[100];
     time_t now = std::time(NULL);
     std::strftime(buf, 100, "%Y-%m-%d %H:%M:%S", gmtime(&now));
@@ -148,7 +162,7 @@ struct UpdateJob : Job
         log("New data was available");
 
         Switch swt(repo->getPath("run"));
-        std::string package = "wxtiggit-win32-1";
+        std::string package = "wxtiggit1-win32";
 
         // Install into the non-current directory
         std::string dest = swt.getOther();
@@ -198,6 +212,8 @@ struct UpdateJob : Job
 Spread::JobInfoPtr AppUpdater::startJob()
 {
   if(repo.offline) return JobInfoPtr();
+
+  PRINT("AppUpdater::startJob()");
 
   assert(!current || current->isFinished());
 
