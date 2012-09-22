@@ -4,6 +4,8 @@
 #include "tabbase.hpp"
 #include "wxgamedata.hpp"
 
+class wxListEvent;
+
 namespace wxTiggit
 {
   struct NewsList;

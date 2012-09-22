@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include <set>
+#include <ctime>
 
 using namespace TigLib;
 
@@ -26,7 +27,7 @@ static void add(std::vector<NewsItem> &list,
 void error(std::vector<NewsItem> &list,
            const std::string &body)
 {
-  add(list, "", time(NULL), "Error", body, true);
+  add(list, "", std::time(NULL), "Error", body, true);
 }
 
 struct DateSorter

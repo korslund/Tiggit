@@ -62,6 +62,9 @@ static bool hasRepo(path &dir)
 static std::string findLegacyDir()
 {
   assert(0 && "NOT IN USE IN THIS VERSION");
+  return "NOT IN USE";
+
+  /*
 
   {
     std::string dir;
@@ -70,7 +73,7 @@ static std::string findLegacyDir()
       return dir;
   }
 
-  path exeDir = finder.getExePath();
+  path exeDir = dfinder.getExePath();
   exeDir = exeDir.parent_path();
 
   // Check for a paths.json co-located with the exe.
@@ -108,6 +111,7 @@ static std::string findLegacyDir()
 
   // Nothing found
   return "";
+  */
 }
 
 // Upgrade a legacy repository to the new format. Returns true if an

@@ -118,8 +118,8 @@ static bool isCurrentExe(const std::string &newExe)
 {
 #ifdef _WIN32
   std::string thisExe = Misc::DirFinder::getExePath();
-  if(thisExe == newExePath ||
-     (bf::exists(newExePath) && bf::equivalent(thisExe, newExePath)))
+  if(thisExe == newExe ||
+     (bf::exists(newExe) && bf::equivalent(thisExe, newExe)))
     return true;
 #endif
   return false;
@@ -297,7 +297,7 @@ bool AppUpdater::launch()
     }
   catch(std::exception &e)
     {
-      log << "ERROR: " << e.what() << endl;
+      log("ERROR: " + std::string(e.what()));
     }
 #else
   log("Launching only implemented for Windows");
