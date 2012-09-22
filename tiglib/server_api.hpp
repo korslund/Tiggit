@@ -18,13 +18,13 @@ namespace TigLib
     typedef const S& CS;
 
     static S statsURL()
-    { return "http://tiggit.net/api/stats.json"; }
+    { return "http://tiggit.net/api/stats_json.php"; }
 
     static S spreadURL_SR0()
     { return "http://tiggit.net/client/sr0/"; }
 
     static S newsURL()
-    { return "http://tiggit.net/api/news.json"; }
+    { return "http://tiggit.net/api/news_json.php"; }
 
     static S brokenURL(CS hash, CS url)
     { return "http://tiggit.net/api/broken_url.php?hash=" + hash; }
