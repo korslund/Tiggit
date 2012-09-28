@@ -70,14 +70,19 @@ TigFrame::TigFrame(const wxString& title, const std::string &ver,
 
   updateTabNames();
 
-  // Select starting tab
-  freewareTab->select();
+  // Select starting tab. Start off on the "Latest" tab if there are
+  // any new games (this will probably be user-configured later.)
+  if(!newGamesTab->isEmpty())
+    newGamesTab->select();
 
-  /* TODO:
-     - 'latest' tab if there are any new games added
-     - 'installed' tab if there are installed games
-     - 'freeware' tab if there are neither
-   */
+  // If there aren't any new games, select the Installed tab instead,
+  // if any games are installed.
+  else if(!installedTab->isEmpty())
+    installedTab->select();
+
+  // Otherwise just select the freeware tab.
+  else
+    freewareTab->select();
 
   Connect(wxID_EXIT, wxEVT_COMMAND_MENU_SELECTED,
           wxCommandEventHandler(TigFrame::onExit));

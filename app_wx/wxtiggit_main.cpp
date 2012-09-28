@@ -22,6 +22,7 @@ static const wxCmdLineEntryDesc cmdLineDesc[] =
   {
     { wxCMD_LINE_SWITCH, wxT("o"), wxT("offline"), wxT("Offline mode") },
     { wxCMD_LINE_OPTION, wxT("r"), wxT("repo"), wxT("Use repository dir. Will not use or set the default repository location."), wxCMD_LINE_VAL_STRING },
+    { wxCMD_LINE_SWITCH, wxT("s"), wxT("reset"), wxT("Reset the repository location. Will act as if this is an initial install, and will let you select the repository location") },
     { wxCMD_LINE_SWITCH, wxT("h"), wxT("help"), wxT("Display this help"),
       wxCMD_LINE_VAL_NONE, wxCMD_LINE_OPTION_HELP },
     { wxCMD_LINE_NONE }
@@ -33,7 +34,7 @@ struct TigApp : wxApp
   wxTigApp::GameData *gameData;
 
   std::string param_repo;
-  bool param_offline;
+  bool param_offline, param_reset;
 
   void OnInitCmdLine(wxCmdLineParser& parser)
   {
@@ -44,6 +45,8 @@ struct TigApp : wxApp
   bool OnCmdLineParsed(wxCmdLineParser& parser)
   {
     param_offline = parser.Found(wxT("o"));
+
+    param_reset = parser.Found(wxT("s"));
 
     wxString str;
     if(parser.Found(wxT("r"), &str))
@@ -85,9 +88,10 @@ struct TigApp : wxApp
             PRINT("Setting repo dir=" << param_repo);
             rep.setRepo(param_repo);
           }
-        else if(!rep.findRepo())
+        else if(param_reset || !rep.findRepo())
           {
-            // We were unable to find a repository. Ask the user.
+            // We were unable to find a repository (or the user wanted
+            // to reset the location.) Ask the user.
 
             // Check if there are any legacy locations to import
             legacy_dir = rep.findLegacyDir();

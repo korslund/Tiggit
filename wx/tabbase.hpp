@@ -22,6 +22,8 @@ namespace wxTiggit
       gotFocus();
     }
 
+    bool isEmpty() { return getTitleNumber() == 0; }
+
   protected:
     // Override to return tab title. Will by default display "tabName
     // (number)".
