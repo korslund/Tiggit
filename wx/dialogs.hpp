@@ -29,6 +29,10 @@ namespace wxTiggit
        old_dir    - old directory (in case of moving), or suggestion for new
                     directory (in case of a fresh install)
 
+       legacy_dir - If non-empty, prompt the user if they want to
+                    import from the given directory. The answer is
+                    recorded in doImport.
+
        writeFailed - display a message saying that the previously selected directory was not                      writable
 
        freshInstall - treat this as a fresh install, where the user gets to select the
@@ -38,9 +42,10 @@ namespace wxTiggit
   struct OutputDirDialog : BrowseDialog
   {
     OutputDirDialog(wxWindow *parent, const std::string &old_dir,
+                    const std::string &legacy_dir = "",
                     bool writeFailed=false, bool freshInstall=false);
 
-    bool ok, move, changed;
+    bool ok, move, changed, doImport;
     std::string path;
   };
 

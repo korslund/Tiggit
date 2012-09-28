@@ -26,9 +26,9 @@ static bool hasRepo(path &dir)
   /* Legacy installations may have depended on UAC virtualization to
      store data in places normally not allowed.
 
-     Once we have disabled virtualization for this app by including
-     a manifest, those paths will stop working. We will therefore
-     have to go hunting for that data on our own.
+     Since we have disabled virtualization for this app by including a
+     manifest, those paths will stop working. We will therefore have
+     to go hunting for that data on our own.
   */
 
   // Get the relative version of the path, eg.:
@@ -47,30 +47,17 @@ static bool hasRepo(path &dir)
   return false;
 }
 
-/*
-  We are no longer going to update repos in place. Instead we will
-  import them, and we'll make a separate function for that later. Some
-  notes:
-
-  - games => gamedata
-  - kill all_games.json and tigfiles
-  - cache/shot300x260/tiggit.net/ => shots_300x260/tiggit.net/
-  - everything you're already doing below
- */
-
 // Find and return legacy repository path, if any
 static std::string findLegacyDir()
 {
-  assert(0 && "NOT IN USE IN THIS VERSION");
-  return "NOT IN USE";
-
-  /*
-
   {
+    // Check first if there's a stored repository path under the old
+    // name (tiggit instead of tiggit-data).
+    Misc::DirFinder dfinder("tiggit.net", "tiggit");
     std::string dir;
-    // Check first if there's a stored repository path. If so, use that.
-    if(dfinder.getStoredPath(dir))
-      return dir;
+    if(find.getStoredPath(dir))
+      if(hasRepo(dir))
+        return dir;
   }
 
   path exeDir = dfinder.getExePath();
@@ -101,7 +88,8 @@ static std::string findLegacyDir()
   }
 
   // Check standard appdata location
-  p = dfinder.getAppData();
+  path p = dfinder.getAppData();
+  p /= "tiggit";
   if(hasRepo(p)) return p.string();
 
   // Last ditch effort: Check for a repository in the data/ folder
@@ -111,120 +99,8 @@ static std::string findLegacyDir()
 
   // Nothing found
   return "";
-  */
 }
 
-// Upgrade a legacy repository to the new format. Returns true if an
-// upgrade was necessary.
-static bool doUpgradeRepo(const path &where)
-{
-  assert(0 && "NOT UPDATED YET");
-
-  using namespace Misc;
-
-  // New configuration files
-  JConfig conf, inst, news;
-  conf.load((where/"tiglib.conf").string());
-  inst.load((where/"tiglib_installed.conf").string());
-  news.load((where/"tiglib_news.conf").string());
-  path rateConf = where/"tiglib_rates.conf";
-
-  // Is there an old config file?
-  path oldcfg = where/"config";
-  if(exists(oldcfg))
-    try
-      {
-        // Open the old config file to convert the values
-        JConfig in(oldcfg.string());
-
-        // Convert wxTiggit-specific options
-        if(in.has("vote_count"))
-          {
-            path tmp = where/"wxtiggit.conf";
-            if(!exists(tmp))
-              {
-                JConfig out(tmp.string());
-                out.setBool("show_votes", in.getBool("vote_count"));
-              }
-          }
-
-        // Move last_time over to the new config.
-        if(in.has("last_time") && !conf.has("last_time"))
-          {
-            uint32_t oldTime = in.getInt("last_time");
-            conf.setInt64("last_time", oldTime);
-          }
-
-        // Kill the old file
-        remove(oldcfg);
-
-        /* Convert any other data we can find as well.
-        */
-
-        // Rename the ratings file
-        oldcfg = where/"ratings.json";
-        if(exists(oldcfg) && !exists(rateConf))
-          rename(oldcfg, rateConf);
-
-        // Convert list of read news
-        oldcfg = where/"readnews.json";
-        if(exists(oldcfg))
-          {
-            // Convert JSON array to config values
-            Json::Value root = ReadJson::readJson(oldcfg.string());
-            for(int i=0; i<root.size(); i++)
-              {
-                // The old values were ints, now we are using strings.
-                int val = root[i].asInt();
-                char buf[10];
-                snprintf(buf, 10, "%d", val);
-                std::string key(buf);
-                news.setBool(key, true);
-              }
-
-            remove(oldcfg);
-          }
-
-        // Convert the list of installed games
-        oldcfg = where/"installed.json";
-        if(exists(oldcfg))
-          {
-            JConfig old(oldcfg.string());
-            std::vector<std::string> list = old.getNames();
-
-            for(int i=0; i<list.size(); i++)
-              if(!inst.has(list[i]))
-                inst.setInt(list[i], 2);
-
-            remove(oldcfg);
-          }
-
-        // Find and rename screenshot images (add .png to filenames)
-        directory_iterator iter(where/"cache/shot300x260/tiggit.net/"), end;
-        for(; iter != end; ++iter)
-          {
-            path p = iter->path();
-            if(!is_regular_file(p)) continue;
-
-            // Check file ending
-            std::string name = p.string();
-            if(name.size() > 4 && name.substr(name.size()-4, 1) == ".")
-              continue;
-
-            // Rename to .png
-            rename(name, name+".png");
-          }
-
-        // In some really old repos, the games may be installed into
-        // "data/" instead of "games/". If so, rename it.
-        if(exists(where/"data/") && !exists(where/"games"))
-          rename(where/"data", where/"games");
-      }
-    catch(...) {}
-  else return false;
-
-  return true;
-}
 #endif
 
 // -------------------- PUBLIC FUNCTIONS ---------------------
@@ -237,26 +113,13 @@ std::string TigLibInt::getStoredPath()
   return "";
 }
 
-std::string findLegacyRepo()
+std::string TigLibInt::findLegacyRepo()
 {
-  assert(0);
-
 #ifdef _WIN32
   return findLegacyDir();
 #else
   return "";
 #endif
-}
-
-bool TigLibInt::upgradeRepo(const std::string &where)
-{
-  assert(0);
-
-#ifdef _WIN32
-  if(where != "")
-    return doUpgradeRepo(where);
-#endif
-  return false;
 }
 
 /* Set stored path, will be retrieved the next time findRepo is

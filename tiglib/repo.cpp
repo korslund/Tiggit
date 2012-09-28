@@ -2,6 +2,7 @@
 #include "fetch.hpp"
 #include "server_api.hpp"
 #include "repo_locator.hpp"
+#include "repo_import.hpp"
 #include "misc/lockfile.hpp"
 #include "gameinfo/stats_json.hpp"
 #include <spread/job/thread.hpp>
@@ -103,6 +104,15 @@ void Repo::setRepo(const std::string &where)
   setDirs();
 }
 
+std::string Repo::findLegacyDir() { return TigLibInt::findLegacyRepo(); }
+
+Spread::JobInfoPtr Repo::importFrom(const std::string &where, bool async)
+{
+  assert(dir != "");
+  assert(!isLocked());
+  return TigLibInt::importRepo(where, dir, async);
+}
+
 Spread::SpreadLib &Repo::getSpread() const
 {
   assert(ptr);
@@ -121,14 +131,6 @@ bool Repo::initRepo(bool forceLock)
   // Lock the repo before we start writing to it
   if(!ptr->lock.lock(getPath("lock"), forceLock))
     return false;
-
-  // Make sure the repo format is up-to-date
-  /*
-    TODO: There is no longer any "upgrading" or repositories. This
-    will instead be replaced by an import function that moves old data
-    into the new repo format.
-   */
-  //TigLibInt::upgradeRepo(dir);
 
   // Open config files
   conf.load(getPath("tiglib.conf"));

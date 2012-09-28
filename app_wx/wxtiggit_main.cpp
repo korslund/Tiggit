@@ -57,6 +57,16 @@ struct TigApp : wxApp
     if(!wxApp::OnInit())
       return false;
 
+    /* TODO: Use this to test the dialog boxes
+    {
+      wxTiggit::OutputDirDialog dlg1(NULL, "c:\\default\\location", "", false, true);
+    }
+    {
+      wxTiggit::OutputDirDialog dlg1(NULL, "c:\\default\\location", "c:\\user\\you\\appdata\\old\\location", false, true);
+    }
+    return false;
+    */
+
     // Use to test offline mode
     rep.offline = param_offline;
 
@@ -67,6 +77,9 @@ struct TigApp : wxApp
 
     try
       {
+        // This is set if we found a legacy directory
+        std::string legacy_dir;
+
         if(param_repo != "")
           {
             PRINT("Setting repo dir=" << param_repo);
@@ -74,17 +87,26 @@ struct TigApp : wxApp
           }
         else if(!rep.findRepo())
           {
-            std::string dir = rep.defaultPath();
+            // We were unable to find a repository. Ask the user.
+
+            // Check if there are any legacy locations to import
+            legacy_dir = rep.findLegacyDir();
+            PRINT("Legacy directory: " << legacy_dir);
+
+            // Use the legacy dir as the initial suggestion as well,
+            // if it is set. If not, use the default location.
+            std::string dir;
+            if(legacy_dir != "") dir = legacy_dir;
+            else dir = rep.defaultPath();
+
+            PRINT("Suggested default dir: " << dir);
+
             bool failed = false;
-
-            PRINT("Trying default dir " << dir);
-
-            // Unable to find a repository. Ask the user.
             while(true)
               {
-                wxTiggit::OutputDirDialog dlg(NULL, dir, failed, true);
+                wxTiggit::OutputDirDialog dlg(NULL, dir, legacy_dir, failed, true);
 
-                // Exit when the user has had enough
+                // Exit when the user presses Cancel
                 if(!dlg.ok)
                   return false;
 
@@ -93,7 +115,12 @@ struct TigApp : wxApp
                 // We're done when the given path is an acceptible
                 // repo path.
                 if(rep.findRepo(dir))
-                  break;
+                  {
+                    // Blank out the legacy location if the user
+                    // doesn't want us to use it
+                    if(!dlg.doImport) legacy_dir = "";
+                    break;
+                  }
 
                 // If not, continue asking, and tell the user why.
                 failed = true;
@@ -117,10 +144,36 @@ struct TigApp : wxApp
           PRINT("No new EXE found.");
         }
 
+        // If there was a legacy location, import it now
+        if(legacy_dir != "")
+          {
+            PRINT("Importing from " << legacy_dir);
+            Spread::JobInfoPtr info = rep.importFrom(legacy_dir);
+
+            if(info)
+              {
+                // Keep the user informed about what we're doing
+                wxTigApp::JobProgress prog(info);
+                if(!prog.start("Importing from " + legacy_dir + "\nto " + rep.getPath()))
+                  {
+                    if(info->isError())
+                      {
+                        if(!Boxes::ask("Import failed: " + info->getMessage() + "\n\nContinue without importing?"))
+                          return false;
+                      }
+                    else
+                      {
+                        if(!Boxes::ask("Import aborted. Continue without importing?"))
+                          return false;
+                      }
+                  }
+              }
+          }
+
         PRINT("Initializing repository");
         if(!rep.initRepo())
           {
-            if(Boxes::ask("Failed to lock repository: " + rep.getPath("") + "\n\nThis usually means that a previous instance of Tiggit crashed. But it MIGHT also mean you are running two instances of Tiggit at once.\n\nAre you SURE you want to continue? If two programs access the repository at the same, data loss may occur!"))
+            if(Boxes::ask("Failed to lock repository: " + rep.getPath() + "\n\nThis usually means that a previous instance of Tiggit crashed. But it MIGHT also mean you are running two instances of Tiggit at once.\n\nAre you SURE you want to continue? If two programs access the repository at the same, data loss may occur!"))
               {
                 if(!rep.initRepo(true))
                   {
@@ -164,7 +217,7 @@ struct TigApp : wxApp
               {
                 // Keep the user informed about what we're doing
                 wxTigApp::JobProgress prog(info);
-                if(!prog.start("Updating data...\nDestination directory: " + rep.getPath("")))
+                if(!prog.start("Updating data...\nDestination directory: " + rep.getPath()))
                   {
                     if(info->isError())
                       Boxes::error("Download failed: " + info->getMessage());

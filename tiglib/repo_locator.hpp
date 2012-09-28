@@ -10,20 +10,8 @@ namespace TigLibInt
   std::string getStoredPath();
 
   /* Find legacy repository loctions, if any was found. Otherwise returns "".
-
-     TODO: Temporarily disabled
   */
   std::string findLegacyRepo();
-
-  /* Upgrade a repository path from a legacy format, if necessary.
-     Always call this before you start using a repository. Will change
-     files in-place.
-
-     Returns false if no upgrade was needed.
-
-     TODO: Temporarily disabled
-   */
-  bool upgradeRepo(const std::string &where);
 
   /* Set stored path, will be retrieved the next time getStoredPath is
      called. May return false if the given path was not usable.
@@ -35,5 +23,4 @@ namespace TigLibInt
   */
   std::string getDefaultPath();
 }
-
 #endif

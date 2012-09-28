@@ -34,6 +34,7 @@ void BrowseDialog::onBrowse(wxCommandEvent &event)
 }
 
 OutputDirDialog::OutputDirDialog(wxWindow *parent, const std::string &old_dir,
+                                 const std::string &legacy_dir,
                                  bool writeFailed, bool freshInstall)
   : BrowseDialog(parent, wxT("Select Data Directory"), 430, 256)
 {
@@ -43,9 +44,9 @@ OutputDirDialog::OutputDirDialog(wxWindow *parent, const std::string &old_dir,
 
   wxString text = wxT("Select a data directory. This is where all games, configuration and data\nis stored.");
 
-  vbox->Add(new wxStaticText(this, -1, text), 0, wxBOTTOM, 30);
+  vbox->Add(new wxStaticText(this, -1, text), 0, wxBOTTOM, 15);
 
-  vbox->Add(new wxStaticText(this, -1, wxT("Data directory:")));
+  vbox->Add(new wxStaticText(this, -1, wxT("Data directory:")), 0, wxBOTTOM, 3);
   addTo(vbox,old);
   if(writeFailed)
     {
@@ -60,13 +61,17 @@ OutputDirDialog::OutputDirDialog(wxWindow *parent, const std::string &old_dir,
     text = wxT("Already installed games and data will be MOVED to this directory");
   vbox->Add(new wxStaticText(this, -1, text),0, wxTOP, 12);
 
-  /*
-  wxRadioButton *moverb = new wxRadioButton(this, -1, wxT("Move game files"),
-                                            wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
-  vbox->Add(moverb, 0, wxTOP, 15);
-  vbox->Add(new wxRadioButton(this, -1, wxT("Keep games in ") + old));
-  */
-  vbox->Add(CreateButtonSizer(wxOK | wxCANCEL), 0, wxALIGN_CENTER | wxTOP, 25);
+  wxCheckBox *import = NULL;
+  if(legacy_dir != "")
+    {
+      assert(freshInstall);
+
+      import = new wxCheckBox(this, -1, strToWx("Import games from " + legacy_dir + "\n(files are moved to the new directory)"));
+      import->SetValue(true);
+      vbox->Add(import, 0, wxTOP, 10);
+    }
+
+  vbox->Add(CreateButtonSizer(wxOK | wxCANCEL), 0, wxALIGN_CENTER | wxTOP, 20);
 
   wxBoxSizer *main = new wxBoxSizer(wxVERTICAL);
   main->Add(vbox, 0, wxALL, 15);
@@ -81,6 +86,11 @@ OutputDirDialog::OutputDirDialog(wxWindow *parent, const std::string &old_dir,
   // Run and fetch info
   ok = ShowModal() == wxID_OK;
   //move = moverb->GetValue();
+
+  doImport = false;
+  if(legacy_dir != "" && import)
+    doImport = import->GetValue();
+
   move = true;
   path = std::string(edit->GetValue().mb_str());
   changed = old_dir != path;
