@@ -174,6 +174,9 @@ struct TigApp : wxApp
               }
           }
 
+        // TODO
+        return false;
+
         PRINT("Initializing repository");
         if(!rep.initRepo())
           {

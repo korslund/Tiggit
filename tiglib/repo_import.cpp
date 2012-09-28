@@ -10,6 +10,19 @@ namespace bf = boost::filesystem;
 using namespace Spread;
 using namespace Misc;
 
+// Uncommenting this disables all file moves and deletes in the source
+// repository. It might still create files and directories in the
+// output repo.
+#define DRY_RUN
+#define PRINT_DEBUG
+
+#ifdef PRINT_DEBUG
+#include <iostream>
+#define PRINT(a) std::cout << a << "\n"
+#else
+#define PRINT(a)
+#endif
+
 struct ImportJob : Job
 {
   bf::path fromDir, toDir;
@@ -33,9 +46,6 @@ struct ImportJob : Job
             uint32_t oldTime = in.getInt("last_time");
             conf.setInt64("last_time", oldTime);
           }
-
-        // Kill the input file
-        bf::remove(file);
       }
     catch(...) {}
   }
@@ -50,9 +60,6 @@ struct ImportJob : Job
         JConfig in(file.string());
         if(in.has("last_time") && !conf.has("last_time"))
           conf.setInt64("last_time", in.getInt64("last_time"));
-
-        // Kill the input file
-        bf::remove(file);
       }
     catch(...) {}
   }
@@ -67,8 +74,6 @@ struct ImportJob : Job
         JConfig in(file.string());
         if(in.has("show_votes") && !wxconf.has("show_votes"))
           wxconf.setBool("show_votes", in.getBool("show_votes"));
-
-        bf::remove(file);
       }
     catch(...) {}
   }
@@ -91,8 +96,6 @@ struct ImportJob : Job
             std::string key(buf);
             news.setBool(key, true);
           }
-
-        bf::remove(file);
       }
     catch(...) {}
   }
@@ -109,8 +112,6 @@ struct ImportJob : Job
         std::vector<std::string> names = in.getNames();
         for(int i=0; i<names.size(); i++)
           news.setBool(names[i], true);
-
-        bf::remove(file);
       }
     catch(...) {}
   }
@@ -147,8 +148,6 @@ struct ImportJob : Job
             if(rate < 0 || rate > 5) continue;
             rates.setInt(outkey, rate);
           }
-
-        bf::remove(file);
       }
     catch(...) {}
   }
@@ -199,6 +198,7 @@ struct ImportJob : Job
     for(; iter != end; ++iter)
       {
         path source = iter->path();
+        PRINT("\nSHOT: input=" << source);
         if(!is_regular_file(source)) continue;
 
         // Get file name
@@ -208,13 +208,19 @@ struct ImportJob : Job
         if(name.size() <= 4 || name[name.size()-4] != '.')
           name += ".png";
 
+        PRINT("name=" << name);
+
         path dest = destDir/name;
 
         // Don't overwrite files
         if(exists(dest)) continue;
 
+        PRINT("Moving to: " << dest);
+
         // Move the file
+#ifndef DRY_RUN
         rename(source, dest);
+#endif
       }
     } catch(...) {}
   }
@@ -238,6 +244,8 @@ struct ImportJob : Job
         // Game id, eg. "tiggit.net/dwarf-fortress"
         const std::string &id = names[i];
 
+        PRINT("\nGAME: id=" << id);
+
         // May need to convert slashes, since they were mangled in
         // previous versions for some reason.
         std::string idname;
@@ -249,15 +257,23 @@ struct ImportJob : Job
             idname += c;
           }
 
+        PRINT("idname=" << idname);
+
         path
           src = srcDir / idname,
           dst = dstDir / idname;
 
+        PRINT("src=" << src << " dst=" << dst);
+
         // Does the source dir exist?
         if(!(exists(src) && is_directory(src))) continue;
 
+        PRINT("Source existed");
+
         // Does the destination exist? (We won't overwrite it)
         if(exists(dst)) continue;
+
+        PRINT("Destination did not exist. ADDED!");
 
         // Add the source path to our copy list
         games.push_back(src.string());
@@ -266,6 +282,7 @@ struct ImportJob : Job
 
   void moveGame(const std::string &src, JConfig &inst)
   {
+    PRINT("\nMOVING game " << src);
     try
       {
         using namespace boost::filesystem;
@@ -274,15 +291,20 @@ struct ImportJob : Job
         path dest = src;
         const std::string &idname = "tiggit.net/" + dest.filename().string();
 
+        PRINT("idname=" << idname);
+
         // If the entry already exists in the destination config,
         // don't do anything.
         if(inst.has(idname) && inst.getInt(idname) != 0) return;
 
         dest = toDir / "gamedata" / idname;
-
         create_directories(dest.parent_path());
 
+        PRINT("Moving to: " << dest);
+
+#ifndef DRY_RUN
         rename(src, dest);
+#endif
 
         // Add the entry to the config.
         inst.setInt(idname, 2);
@@ -321,7 +343,13 @@ struct ImportJob : Job
         try
           {
             bf::path p = fromDir/file;
-            if(bf::exists(p)) bf::remove_all(p);
+            if(bf::exists(p))
+              {
+                PRINT("Deleting " << p);
+#ifndef DRY_RUN
+                bf::remove_all(p);
+#endif
+              }
           }
         catch(...) {}
       }
@@ -330,6 +358,7 @@ struct ImportJob : Job
   void doJob()
   {
     setBusy("Importing " + fromDir.string() + " into " + toDir.string());
+    PRINT("Importing " << fromDir << " into " << toDir);
 
     // Make sure destionation exists
     create_directories(toDir);
@@ -347,6 +376,7 @@ struct ImportJob : Job
     // legacy data.
     bool toSelf = (fromDir == toDir) || bf::equivalent(fromDir, toDir);
 
+    PRINT("Converting config files");
     readOldConf(conf, wxconf);
     readOldNews(news);
     readOldRates(rates);
@@ -385,6 +415,8 @@ struct ImportJob : Job
     // copy-not-move import later, but we don't need it yet.
     deleteEverything();
     setProgress(games.size() + 2);
+
+    PRINT("Import done!");
 
     setDone();
   }
