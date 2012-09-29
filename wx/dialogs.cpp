@@ -42,7 +42,7 @@ OutputDirDialog::OutputDirDialog(wxWindow *parent, const std::string &old_dir,
 
   wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
 
-  wxString text = wxT("Select a data directory. This is where all games, configuration and data\nis stored.");
+  wxString text = wxT("Select a data directory. This is where all games, configuration and data\nwill be stored.");
 
   vbox->Add(new wxStaticText(this, -1, text), 0, wxBOTTOM, 15);
 
@@ -66,7 +66,7 @@ OutputDirDialog::OutputDirDialog(wxWindow *parent, const std::string &old_dir,
     {
       assert(freshInstall);
 
-      import = new wxCheckBox(this, -1, strToWx("Import games from " + legacy_dir + "\n(files are moved to the new directory)"));
+      import = new wxCheckBox(this, -1, strToWx("Import games from " + legacy_dir + " \n(files are moved to the new directory)"));
       import->SetValue(true);
       vbox->Add(import, 0, wxTOP, 10);
     }

@@ -15,7 +15,7 @@ using namespace Misc;
 // repository. It might still create files and directories in the
 // output repo.
 //#define DRY_RUN
-#define PRINT_DEBUG
+//#define PRINT_DEBUG
 
 #ifdef PRINT_DEBUG
 #include <iostream>
