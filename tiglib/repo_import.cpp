@@ -13,7 +13,7 @@ using namespace Misc;
 // Uncommenting this disables all file moves and deletes in the source
 // repository. It might still create files and directories in the
 // output repo.
-#define DRY_RUN
+//#define DRY_RUN
 #define PRINT_DEBUG
 
 #ifdef PRINT_DEBUG
@@ -47,7 +47,8 @@ struct ImportJob : Job
             conf.setInt64("last_time", oldTime);
           }
       }
-    catch(...) {}
+    catch(std::exception &e) { PRINT("ERROR: " << e.what()); }
+    catch(...) { PRINT("ERROR: Unknown"); }
   }
 
   void readNewConf(JConfig &conf)
@@ -61,7 +62,8 @@ struct ImportJob : Job
         if(in.has("last_time") && !conf.has("last_time"))
           conf.setInt64("last_time", in.getInt64("last_time"));
       }
-    catch(...) {}
+    catch(std::exception &e) { PRINT("ERROR: " << e.what()); }
+    catch(...) { PRINT("ERROR: Unknown"); }
   }
 
   void readNewWx(JConfig &wxconf)
@@ -75,7 +77,8 @@ struct ImportJob : Job
         if(in.has("show_votes") && !wxconf.has("show_votes"))
           wxconf.setBool("show_votes", in.getBool("show_votes"));
       }
-    catch(...) {}
+    catch(std::exception &e) { PRINT("ERROR: " << e.what()); }
+    catch(...) { PRINT("ERROR: Unknown"); }
   }
 
   void readOldNews(JConfig &news)
@@ -97,7 +100,8 @@ struct ImportJob : Job
             news.setBool(key, true);
           }
       }
-    catch(...) {}
+    catch(std::exception &e) { PRINT("ERROR: " << e.what()); }
+    catch(...) { PRINT("ERROR: Unknown"); }
   }
 
   void readNewNews(JConfig &news)
@@ -113,7 +117,8 @@ struct ImportJob : Job
         for(int i=0; i<names.size(); i++)
           news.setBool(names[i], true);
       }
-    catch(...) {}
+    catch(std::exception &e) { PRINT("ERROR: " << e.what()); }
+    catch(...) { PRINT("ERROR: Unknown"); }
   }
 
   void readRates(const std::string &name, JConfig &rates)
@@ -149,7 +154,8 @@ struct ImportJob : Job
             rates.setInt(outkey, rate);
           }
       }
-    catch(...) {}
+    catch(std::exception &e) { PRINT("ERROR: " << e.what()); }
+    catch(...) { PRINT("ERROR: Unknown"); }
   }
 
   void readOldRates(JConfig &rates)
@@ -222,7 +228,9 @@ struct ImportJob : Job
         rename(source, dest);
 #endif
       }
-    } catch(...) {}
+    }
+    catch(std::exception &e) { PRINT("ERROR: " << e.what()); }
+    catch(...) { PRINT("ERROR: Unknown"); }
   }
 
   std::vector<std::string> games;
@@ -309,7 +317,8 @@ struct ImportJob : Job
         // Add the entry to the config.
         inst.setInt(idname, 2);
       }
-    catch(...) {}
+    catch(std::exception &e) { PRINT("ERROR: " << e.what()); }
+    catch(...) { PRINT("ERROR: Unknown"); }
   }
 
   void deleteEverything()
@@ -318,40 +327,41 @@ struct ImportJob : Job
      */
     const char* files[] =
       {
-        // Legacy repo files
-        "all_games.json", "auth.json", "config", "installed.json", "latest.tig",
-        "news.json", "promo.json", "ratings.json", "readnews.json", "cache",
-        "data", "games", "incoming", "tigfiles",
+	// Legacy repo files
+	"all_games.json", "auth.json", "config", "installed.json", "latest.tig",
+	"news.json", "promo.json", "ratings.json", "readnews.json", "cache",
+	"data", "games", "incoming", "tigfiles",
 
-        // Current repo files
-        "gamedata", "launch.log", "launch.log.old", "run", "shots_300x260",
-        "spread", "stats.json", "tiglib.conf", "tiglib.conf.old",
-        "tiglib_installed.conf", "tiglib_installed.conf.old", "tiglib_news.conf",
-        "tiglib_news.conf.old", "tiglib_rates.conf", "tiglib_rates.conf.old",
-        "update.log", "update.log.old", "wxtiggit.conf", "wxtiggit.conf.old",
+	// Current repo files
+	"gamedata", "launch.log", "launch.log.old", "run", "shots_300x260",
+	"spread", "stats.json", "tiglib.conf", "tiglib.conf.old",
+	"tiglib_installed.conf", "tiglib_installed.conf.old", "tiglib_news.conf",
+	"tiglib_news.conf.old", "tiglib_rates.conf", "tiglib_rates.conf.old",
+	"update.log", "update.log.old", "wxtiggit.conf", "wxtiggit.conf.old",
 
-        // Terminator
-        ""
+	// Terminator
+	""
       };
 
     int i = 0;
     while(true)
       {
-        const std::string &file = files[i++];
-        if(file == "") break;
+	const std::string &file = files[i++];
+	if(file == "") break;
 
-        try
-          {
-            bf::path p = fromDir/file;
-            if(bf::exists(p))
-              {
-                PRINT("Deleting " << p);
+	try
+	  {
+	    bf::path p = fromDir/file;
+	    if(bf::exists(p))
+	      {
+		PRINT("Deleting " << p);
 #ifndef DRY_RUN
-                bf::remove_all(p);
+		bf::remove_all(p);
 #endif
-              }
-          }
-        catch(...) {}
+	      }
+	  }
+        catch(std::exception &e) { PRINT("ERROR: " << e.what()); }
+        catch(...) { PRINT("ERROR: Unknown"); }
       }
   }
 

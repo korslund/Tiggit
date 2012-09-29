@@ -53,11 +53,14 @@ static std::string findLegacyDir()
   {
     // Check first if there's a stored repository path under the old
     // name (tiggit instead of tiggit-data).
-    Misc::DirFinder dfinder("tiggit.net", "tiggit");
-    std::string dir;
-    if(find.getStoredPath(dir))
-      if(hasRepo(dir))
-        return dir;
+    Misc::DirFinder find("tiggit.net", "tiggit");
+    std::string dr;
+    if(find.getStoredPath(dr))
+      {
+	path dir = dr;
+	if(hasRepo(dir))
+	  return dir.string();
+      }
   }
 
   path exeDir = dfinder.getExePath();
