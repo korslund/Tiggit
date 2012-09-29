@@ -5,6 +5,7 @@
 #include <spread/job/thread.hpp>
 #include <boost/filesystem.hpp>
 #include <cstdio>
+#include <misc/dircopy.hpp>
 
 namespace bf = boost::filesystem;
 using namespace Spread;
@@ -13,7 +14,7 @@ using namespace Misc;
 // Uncommenting this disables all file moves and deletes in the source
 // repository. It might still create files and directories in the
 // output repo.
-#define DRY_RUN
+//#define DRY_RUN
 #define PRINT_DEBUG
 
 #ifdef PRINT_DEBUG
@@ -188,13 +189,18 @@ struct ImportJob : Job
     try {
     using namespace boost::filesystem;
 
+    path srcDir = fromDir/dir;
+
+    if(!exists(srcDir) || !is_directory(srcDir))
+      return;
+
     path destDir = toDir/"shots_300x260/tiggit.net/";
 
     // Make sure destination directory exists
     create_directories(destDir);
 
     // Move all the screenshot files
-    directory_iterator iter(fromDir/dir), end;
+    directory_iterator iter(srcDir), end;
     for(; iter != end; ++iter)
       {
         path source = iter->path();
@@ -219,7 +225,7 @@ struct ImportJob : Job
 
         // Move the file
 #ifndef DRY_RUN
-        rename(source, dest);
+        DirCopy::moveFile(source.string(), dest.string());
 #endif
       }
     } catch(...) {}
@@ -303,7 +309,7 @@ struct ImportJob : Job
         PRINT("Moving to: " << dest);
 
 #ifndef DRY_RUN
-        rename(src, dest);
+        DirCopy::moveDir(src, dest.string());
 #endif
 
         // Add the entry to the config.
