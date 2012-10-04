@@ -219,10 +219,10 @@ void AppUpdater::cacheLocalExeDir()
   exePath = exePath.parent_path();
 
   // Traverse it and cache all the files in it
-  directory_iterator iter(exePath), end;
+  bf::directory_iterator iter(exePath), end;
   for(; iter != end; ++iter)
     {
-      path file = iter->path();
+      bf::path file = iter->path();
 
       // Ignore errors, this is just an optimization anyway.
       try { spread.cacheFile(file.string()); }
