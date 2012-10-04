@@ -40,6 +40,13 @@ namespace wxTigApp
     bool launchNew();
     bool launchIfNew() { return hasNewUpdate && launchNew(); }
 
+    /* Call this to add the current running exe, and all DLLs and
+       other files in the same directory, to the Spread cache.
+
+       Currently only works on Windows.
+     */
+    void cacheLocalExeDir();
+
   private:
     TigLib::Repo &repo;
     Spread::JobInfoPtr current;

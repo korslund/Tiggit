@@ -210,6 +210,19 @@ struct TigApp : wxApp
           {
             PRINT("Load failed. Doing foreground update.");
 
+            /* Getting here is the normal case for fresh installs.
+
+               A fresh install will put the exe and dlls into a
+               separate directory, then proceed to install the updated
+               version from the net. However, since in most cases the
+               DLLs will not have changed, we can save some download
+               time by adding the local dll files (we add all the
+               files in the exe dir) to the Spread cache. The Spread
+               library will then find and automatically use these
+               instead of re- downloading.
+             */
+            gameData->updater.cacheLocalExeDir();
+
             /* If there were any errors, assume this means the data
                has either not been downloaded yet, or that the data
                has changed format and we need to update the client

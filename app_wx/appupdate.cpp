@@ -209,6 +209,28 @@ struct UpdateJob : Job
   }
 };
 
+void AppUpdater::cacheLocalExeDir()
+{
+#ifdef _WIN32
+  SpreadLib &spread = repo.getSpread();
+
+  // Get the directory containing the current running exe
+  bf::path exePath = Misc::DirFinder::getExePath();
+  exePath = exePath.parent_path();
+
+  // Traverse it and cache all the files in it
+  directory_iterator iter(exePath), end;
+  for(; iter != end; ++iter)
+    {
+      path file = iter->path();
+
+      // Ignore errors, this is just an optimization anyway.
+      try { spread.cacheFile(file.string()); }
+      catch(...) {}
+    }
+#endif
+}
+
 Spread::JobInfoPtr AppUpdater::startJob()
 {
   if(repo.offline) return JobInfoPtr();

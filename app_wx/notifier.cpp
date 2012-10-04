@@ -167,4 +167,4 @@ struct MyTimer : wxTimer
   }
 };
 
-static MyTimer timer(300);
+static MyTimer timer(700);
