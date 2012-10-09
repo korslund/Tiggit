@@ -31,7 +31,7 @@ void GameData::createLiveData(Repo *repo)
   // Set up new objects
   out.resize(list.size());
   int index = 0;
-  int64_t maxTime = -1;
+  int64_t maxTime = 0;
   for(it = list.begin(); it != list.end(); it++)
     {
       const TigData::TigEntry *ent = it->second;

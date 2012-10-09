@@ -8,7 +8,6 @@
 #include "version.hpp"
 
 //#define PRINT_DEBUG
-
 #ifdef PRINT_DEBUG
 #include <iostream>
 #define PRINT(a) std::cout << a << "\n"
@@ -273,6 +272,8 @@ struct TigApp : wxApp
         TigFrame *frame = new TigFrame(wxT("Tiggit"), TIGGIT_VERSION, *gameData);
         frame->Show(true);
         gameData->frame = frame;
+
+        PRINT("last_time: " << rep.getLastTime());
 
         return true;
       }

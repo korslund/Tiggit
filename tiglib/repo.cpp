@@ -139,7 +139,7 @@ bool Repo::initRepo(bool forceLock)
   rates.load(getPath("tiglib_rates.conf"));
 
   // Load config options
-  lastTime = conf.getInt64("last_time", 0xffffffffffff);
+  lastTime = conf.getInt64("last_time", -1);
 
   return true;
 }
