@@ -1,3 +1,6 @@
+#ifndef __APPWX_APPUPDATE_HPP_
+#define __APPWX_APPUPDATE_HPP_
+
 #include "tiglib/repo.hpp"
 
 namespace wxTigApp
@@ -53,3 +56,4 @@ namespace wxTigApp
     bool launch();
   };
 }
+#endif

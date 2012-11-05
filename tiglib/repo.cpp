@@ -2,7 +2,6 @@
 #include "fetch.hpp"
 #include "server_api.hpp"
 #include "repo_locator.hpp"
-#include "repo_import.hpp"
 #include "misc/lockfile.hpp"
 #include "gameinfo/stats_json.hpp"
 #include <spread/job/thread.hpp>
@@ -105,13 +104,6 @@ void Repo::setRepo(const std::string &where)
 }
 
 std::string Repo::findLegacyDir() { return TigLibInt::findLegacyRepo(); }
-
-Spread::JobInfoPtr Repo::importFrom(const std::string &where, bool async)
-{
-  assert(dir != "");
-  assert(!isLocked());
-  return TigLibInt::importRepo(where, dir, async);
-}
 
 Spread::SpreadLib &Repo::getSpread() const
 {

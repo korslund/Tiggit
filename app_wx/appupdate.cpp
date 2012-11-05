@@ -10,6 +10,7 @@
 #include <mangle/stream/servers/file_stream.hpp>
 #include <mangle/stream/servers/outfile_stream.hpp>
 #include "launcher/run.hpp"
+#include "misc/logger.hpp"
 
 //#define PRINT_DEBUG
 
@@ -84,34 +85,6 @@ struct Switch
   }
 };
 
-struct Logger
-{
-  std::ofstream log;
-
-  Logger(const std::string &file)
-  {
-    if(bf::exists(file))
-      {
-        std::string old = file + ".old";
-        if(bf::exists(old))
-          bf::remove(old);
-        bf::rename(file, old);
-      }
-    log.open(file.c_str());
-  }
-
-  void operator()(const std::string &msg)
-  {
-    PRINT("LOG: " << msg);
-    char buf[100];
-    time_t now = std::time(NULL);
-    std::strftime(buf, 100, "%Y-%m-%d %H:%M:%S", gmtime(&now));
-    log << buf << ":   " << msg << "\n";
-    // Flush after each line in case of crashes
-    log.flush();
-  }
-};
-
 // Returns true if the given path is the same as the current exe. Only
 // works on Windows, always returns false on other platforms.
 static bool isCurrentExe(const std::string &newExe)
@@ -134,6 +107,9 @@ struct UpdateJob : Job
   void doJob()
   {
     Logger log(repo->getPath("update.log"));
+#ifdef PRINT_DEBUG
+    log.print = true;
+#endif
 
     bool &hasNew = *hasNewUpdate;
     std::string &newExe = *newExePath;

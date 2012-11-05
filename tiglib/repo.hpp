@@ -68,17 +68,6 @@ namespace TigLib
      */
     static std::string findLegacyDir();
 
-    /* Import from a given repository. All games and relevant data
-       files are moved or copied from the given path into the current
-       repository.
-
-       If async=true, the import is done in a worker thread, and
-       thread control struct is returned.
-
-       Must be called BEFORE initRepo() is called.
-     */
-    Spread::JobInfoPtr importFrom(const std::string &where, bool async=true);
-
     /* Set the repository directory directly. This is an alternative
        to findRepo() that doesn't use or update the global stored
        config settings.

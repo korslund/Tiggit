@@ -1,7 +1,7 @@
 #ifndef __WXAPP_JOBPROG_HPP_
 #define __WXAPP_JOBPROG_HPP_
 
-#include "wx/progress_holder.hpp"
+#include "../wx/progress_holder.hpp"
 #include <spread/job/jobinfo.hpp>
 
 namespace wxTigApp

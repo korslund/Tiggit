@@ -69,7 +69,6 @@ struct TigApp : wxApp
     return false;
     */
 
-    // Use to test offline mode
     rep.offline = param_offline;
 
     PRINT("Offline mode: " << (rep.offline?"YES":"NO"));
