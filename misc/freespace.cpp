@@ -62,22 +62,21 @@ void Misc::getDiskSpace(const std::string &filePath, int64_t &free, int64_t &tot
   ULARGE_INTEGER Lfree,Ltotal;
   if(!::GetDiskFreeSpaceEx(dirStr.c_str(), &Lfree, &Ltotal, NULL))
     throwError("Unable to calculate disk space for " + filePath);
-  if ( !bRes ) return false;
 
   free = Lfree.QuadPart;
   total = Ltotal.QuadPart;
 
 #else //linux
 
-    struct stat stst;
-    struct statfs stfs;
+  struct stat stst;
+  struct statfs stfs;
 
-    std::string dirStr = dir.string();
-    if ( ::stat(dirStr.c_str(),&stst) == -1 ||
-         ::statfs(dirStr.c_str(),&stfs) == -1 )
-      fail("Unable to stat " + dirStr);
+  std::string dirStr = dir.string();
+  if ( ::stat(dirStr.c_str(),&stst) == -1 ||
+       ::statfs(dirStr.c_str(),&stfs) == -1 )
+    fail("Unable to stat " + dirStr);
 
-    free = stfs.f_bavail * stst.st_blksize;
-    total = stfs.f_blocks * stst.st_blksize;
+  free = stfs.f_bavail * stst.st_blksize;
+  total = stfs.f_blocks * stst.st_blksize;
 #endif // _WIN32
 }
