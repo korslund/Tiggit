@@ -34,3 +34,6 @@ set(MANGLE ${MDIR}/stream/clients/io_stream.cpp)
 
 add_executable(import_copy_test import_copy_test.cpp ${MIDIR}/logger.cpp ${AWDIR}/importer_backend.cpp ${MANGLE} ${MIDIR}/freespace.cpp)
 target_link_libraries(import_copy_test Spread ${LIBS})
+
+add_executable(import_config_test import_config_test.cpp ${MIDIR}/logger.cpp ${AWDIR}/importer_backend.cpp ${MANGLE} ${MIDIR}/freespace.cpp)
+target_link_libraries(import_config_test Spread ${LIBS})

@@ -2,6 +2,7 @@
 
 #include "../misc/freespace.hpp"
 #include <spread/misc/readjson.hpp>
+#include <spread/misc/jconfig.hpp>
 #include <stdexcept>
 #include <sstream>
 #include <assert.h>
@@ -245,7 +246,7 @@ void Import::importConfig(const std::string &from, const std::string &to,
 
       log("Converting " + infile + " => " + outfile);
 
-      if(bf::exists(file))
+      if(bf::exists(infile))
         {
           JConfig in(infile);
           JConfig rates(outfile);
