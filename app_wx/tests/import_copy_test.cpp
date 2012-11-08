@@ -1,9 +1,10 @@
-#include "importer.hpp"
+#include "importer_backend.hpp"
 #include <iostream>
 #include <boost/filesystem.hpp>
+#include "print_dir.hpp"
 
 using namespace std;
-using namespace wxTigApp;
+using namespace Import;
 
 int main()
 {
@@ -17,19 +18,22 @@ int main()
   Misc::Logger logger("_import1.log");
   logger.print = true;
 
-  copyTest("input1", "_output1", false, &spread, info, &logger);
+  copyTest("input1", "_output1", false, &spread, info, logger);
 
   if(info)
     cout << "Progress: " << info->getCurrent() << " / " << info->getTotal() << endl;
 
   cout << "Copying non-existing source:\n";
-  try { copyTest("nothing", "_output2", false, &spread, info, &logger); }
+  try { copyTest("nothing", "_output2", false, &spread, info, logger); }
   catch(exception &e) { cout << "GOT: " << e.what() << endl; }
   cout << "Copying to non-writable destination:\n";
-  try { copyTest("input1", "/blah", false, &spread, info, &logger); }
+  try { copyTest("input1", "/blah", false, &spread, info, logger); }
   catch(exception &e) { cout << "GOT: " << e.what() << endl; }
 
-  copyTest("input1", "_output3", true, &spread, info, &logger);
+  copyTest("input1", "_output3", true, &spread, info, logger);
+
+  printDir("_output1");
+  printDir("_output3");
 
   return 0;
 }

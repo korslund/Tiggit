@@ -2,6 +2,7 @@
 #include "gamedata.hpp"
 #include "notifier.hpp"
 #include "wx/boxes.hpp"
+#include "importer_gui.hpp"
 #include "jobprogress.hpp"
 #include "wx/dialogs.hpp"
 #include <wx/cmdline.h>
@@ -150,26 +151,8 @@ struct TigApp : wxApp
         if(legacy_dir != "")
           {
             PRINT("Importing from " << legacy_dir);
-            Spread::JobInfoPtr info = rep.importFrom(legacy_dir);
-
-            if(info)
-              {
-                // Keep the user informed about what we're doing
-                wxTigApp::JobProgress prog(info);
-                if(!prog.start("Importing from " + legacy_dir + "\nto " + rep.getPath()))
-                  {
-                    if(info->isError())
-                      {
-                        if(!Boxes::ask("Import failed: " + info->getMessage() + "\n\nContinue without importing?"))
-                          return false;
-                      }
-                    else
-                      {
-                        if(!Boxes::ask("Import aborted. Continue without importing?"))
-                          return false;
-                      }
-                  }
-              }
+            if(!ImportGui::importRepoGui(legacy_dir, rep.getPath(), &rep.getSpread()))
+              return false;
           }
 
         PRINT("Initializing repository");

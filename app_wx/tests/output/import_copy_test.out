@@ -1,0 +1,41 @@
+_import1.log: copyFiles FROM=input1 TO=_output1
+_import1.log:   Indexing /home/mortennk/koding/tigflow/app_wx/tests/input1
+_import1.log:   Found 3 files, total 36 bytes
+_import1.log:   Free disk space: 2194169856 bytes
+_import1.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input1/file.png => /home/mortennk/koding/tigflow/app_wx/tests/_output1/file.png
+_import1.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input1/dir/file2 => /home/mortennk/koding/tigflow/app_wx/tests/_output1/dir/file2
+_import1.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input1/file1 => /home/mortennk/koding/tigflow/app_wx/tests/_output1/file1
+Copying non-existing source:
+_import1.log: copyFiles FROM=nothing TO=_output2
+_import1.log: ERROR: COPY: Source directory nothing not found!
+
+GOT: COPY: Source directory nothing not found!
+
+Copying to non-writable destination:
+_import1.log: copyFiles FROM=input1 TO=/blah
+_import1.log:   Indexing /home/mortennk/koding/tigflow/app_wx/tests/input1
+_import1.log:   Found 3 files, total 36 bytes
+GOT: boost::filesystem::create_directory: Permission denied: "/blah"
+_import1.log: copyFiles FROM=input1 TO=_output3
+_import1.log:   Indexing /home/mortennk/koding/tigflow/app_wx/tests/input1
+_import1.log:   Found 3 files, total 36 bytes
+_import1.log:   Free disk space: 2194141184 bytes
+_import1.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input1/file.png => /home/mortennk/koding/tigflow/app_wx/tests/_output3/file.png
+_import1.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input1/dir/file2 => /home/mortennk/koding/tigflow/app_wx/tests/_output3/dir/file2.png
+_import1.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input1/file1 => /home/mortennk/koding/tigflow/app_wx/tests/_output3/file1.png
+
+Directory: _output1
+00                                                 dir
+ApABPtFmLtoQK-4USigv_gPSJrTdkTTCUcazvm1p1uwV       dir/file2
+47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU        file.png
+C32RGTucD1zAHUAzKhDPHtM4pBZAvX8EXxCHYowdepsP       file1
+Total 4 elements
+Hash: -NzcNVLDxdEhAGcMtbe1HIm347-oOQJdflmI0A74ag7J
+
+Directory: _output3
+00                                                 dir
+ApABPtFmLtoQK-4USigv_gPSJrTdkTTCUcazvm1p1uwV       dir/file2.png
+47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU        file.png
+C32RGTucD1zAHUAzKhDPHtM4pBZAvX8EXxCHYowdepsP       file1.png
+Total 4 elements
+Hash: SGz-oQnSjf6Aqtvq9Lqjm1jZMU1YCD5O8yRnZ2wO1dDR

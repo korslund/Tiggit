@@ -248,6 +248,26 @@ JobInfoPtr Repo::fetchFiles(bool includeShots, bool async)
                                   &ptr->newData), async);
 }
 
+std::string Repo::getGameDir(const std::string &idname)
+{
+  if(inst.has(idname))
+    {
+      std::string val = inst.get(idname);
+
+      // Check for old int values
+      std::string newVal = val;
+      if(val == "0") newVal = "";
+      else if(val == "2") newVal = getDefGameDir(idname);
+
+      // Update the stored value if it was altered
+      if(newVal != val)
+        inst.set(idname, newVal);
+
+      return newVal;
+    }
+  return "";
+}
+
 void Repo::loadStats()
 {
   // Always ignore errors, stats aren't critically important
@@ -284,7 +304,7 @@ struct InstallJob : Job
 {
   std::string sendOnDone;
   JobInfoPtr client;
-  std::string idname;
+  std::string idname, where;
   Misc::JConfig *inst;
 
   void doJob()
@@ -292,7 +312,7 @@ struct InstallJob : Job
     if(waitClient(client)) return;
 
     // Set config status
-    inst->setInt(idname, 2);
+    inst->set(idname, where);
 
     // Notify the server that the game was downloaded
     Fetch::fetchString(sendOnDone, true);
@@ -303,14 +323,16 @@ struct InstallJob : Job
 
 // Start installing or upgrading a game
 JobInfoPtr Repo::startInstall(const std::string &idname, const std::string &urlname,
-                              bool async)
+                              std::string where, bool async)
 {
-  // Ignore offline mode for game installs, since they are user-initiated.
-
-  JobInfoPtr client = ptr->spread.install("tiggit.net", idname, getInstDir(idname));
+  // Ignore offline mode for game installs, since they are user
+  // initiated events.
+  where = bf::absolute(where).string();
+  JobInfoPtr client = ptr->spread.install("tiggit.net", idname, where);
   InstallJob *job = new InstallJob;
   job->client = client;
   job->sendOnDone = ServerAPI::dlCountURL(urlname);
+  job->where = where;
   job->idname = idname;
   job->inst = &inst;
   return Thread::run(job,async);
@@ -333,9 +355,13 @@ struct RemoveJob : Job
 // Start uninstalling a game
 JobInfoPtr Repo::startUninstall(const std::string &idname, bool async)
 {
+  // Get the game's install dir
+  std::string dir = getGameDir(idname);
+  if(dir == "") return JobInfoPtr();
+
   // Mark the game as uninstalled immediately
-  inst.setInt(idname, 0);
+  inst.set(idname, "");
 
   // Kill the installation directory
-  return Thread::run(new RemoveJob(getInstDir(idname)), async);
+  return Thread::run(new RemoveJob(dir), async);
 }

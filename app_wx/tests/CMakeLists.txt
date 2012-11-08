@@ -32,5 +32,5 @@ set(AWDIR ${TIG}/app_wx)
 
 set(MANGLE ${MDIR}/stream/clients/io_stream.cpp)
 
-add_executable(import_copy_test import_copy_test.cpp ${MIDIR}/logger.cpp ${AWDIR}/importer.cpp ${MANGLE} ${MIDIR}/freespace.cpp)
+add_executable(import_copy_test import_copy_test.cpp ${MIDIR}/logger.cpp ${AWDIR}/importer_backend.cpp ${MANGLE} ${MIDIR}/freespace.cpp)
 target_link_libraries(import_copy_test Spread ${LIBS})

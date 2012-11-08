@@ -1,8 +1,7 @@
-#include "importer.hpp"
+#include "importer_backend.hpp"
 
-#include "../misc/logger.hpp"
 #include "../misc/freespace.hpp"
-#include <spread/spread.hpp>
+#include <spread/misc/readjson.hpp>
 #include <stdexcept>
 #include <sstream>
 #include <assert.h>
@@ -142,169 +141,157 @@ struct Copy
   }
 };
 
-void wxTigApp::copyTest(const std::string &from, const std::string &to, bool addPng,
-                        SpreadLib *spread, JobInfoPtr info,
-                        Misc::Logger *logger)
+void Import::copyTest(const std::string &from, const std::string &to, bool addPng,
+                      SpreadLib *spread, JobInfoPtr info,
+                      Misc::Logger &logger)
 {
   Copy cpy;
   cpy.spread = spread;
   cpy.info = info;
-  cpy.logger = logger;
+  cpy.logger = &logger;
   cpy.copyFiles(from, to, addPng);
+}
+
+void Import::importConfig(const std::string &from, const std::string &to,
+                          Misc::Logger &log)
+{
+  log("Converting config options from " + from + " to " + to);
+
+  bf::path fromDir = from;
+  bf::path toDir = to;
+
+  using namespace Misc;
+  using namespace std;
+
+  // Convert main config file
+  try
+    {
+      string infile = (fromDir/"config").string();
+      string outlib = (toDir/"tiglib.conf").string();
+      string outwx = (toDir/"wxtiggit.conf").string();
+
+      log("Converting " + infile + " => " + outlib + ", " + outwx);
+
+      if(bf::exists(infile))
+        {
+          JConfig in(infile);
+          JConfig conf(outlib);
+          JConfig wxconf(outwx);
+
+          // Convert wxTiggit-specific options
+          if(in.has("vote_count") && !wxconf.has("show_votes"))
+            wxconf.setBool("show_votes", in.getBool("vote_count"));
+
+          // Move over the timestamp of the last seen game to the new
+          // config file, if necessary
+          if(in.has("last_time"))
+            {
+              int oldTime = in.getInt("last_time");
+
+              // Check the new time
+              int64_t newTime = 0;
+              if(conf.has("last_time"))
+                newTime = conf.getInt64("last_time");
+
+              log("  oldTime=" + toStr(oldTime) + " newTime=" + toStr(newTime));
+
+              // Update the time to the highest of the two
+              if(oldTime > newTime)
+                conf.setInt64("last_time", oldTime);
+            }
+          log("  Done");
+        }
+      else log("  No input file found, skipping.");
+    }
+  catch(std::exception &e) { log("ERROR: " + string(e.what())); }
+  catch(...) { log("ERROR: Unknown"); }
+
+  // Merge in list of read news items, so old items don't show up as
+  // unread
+  try
+    {
+      string infile = (fromDir/"readnews.json").string();
+      string outfile = (toDir/"tiglib_news.conf").string();
+
+      log("Converting " + infile + " => " + outfile);
+
+      if(bf::exists(infile))
+        {
+          JConfig news(outfile);
+
+          // Convert JSON array to config values
+          Json::Value root = ReadJson::readJson(infile);
+          for(int i=0; i<root.size(); i++)
+            {
+              // The old values were arrays of ints. We are now using
+              // string:bool.
+              int val = root[i].asInt();
+              std::string key = toStr(val);
+              news.setBool(key, true);
+            }
+          log("  Done");
+        }
+      else log("  No input file found, skipping.");
+    }
+  catch(std::exception &e) { log("ERROR: " + string(e.what())); }
+  catch(...) { log("ERROR: Unknown"); }
+
+  // Finally convert the list of games the user has rated, and their
+  // ratings, so the new UI reflects this
+  try
+    {
+      string infile = (fromDir/"ratings.json").string();
+      string outfile = (toDir/"tiglib_rates.conf").string();
+
+      log("Converting " + infile + " => " + outfile);
+
+      if(bf::exists(file))
+        {
+          JConfig in(infile);
+          JConfig rates(outfile);
+
+          vector<string> names = in.getNames();
+          for(int i=0; i<names.size(); i++)
+            {
+              const string &key = names[i];
+
+              /* May need to convert slashes, since they were mangled
+                 in previous versions for some reason. Game id names
+                 are internal identifiers and have nothing to do with
+                 file system names. They should therefore always use
+                 forward (/) slashes.
+              */
+              string outkey;
+              outkey.reserve(key.size());
+              for(int i=0; i<key.size(); i++)
+                {
+                  char c = key[i];
+                  if(c == '\\') c = '/';
+                  outkey += c;
+                }
+
+              // Don't overwrite existing values
+              if(rates.has(outkey)) continue;
+
+              int rate = in.getInt(key);
+              if(rate < 0 || rate > 5) continue;
+              rates.setInt(outkey, rate);
+            }
+          log("  Done");
+        }
+      else log("  No input file found, skipping.");
+    }
+  catch(std::exception &e) { log("ERROR: " + string(e.what())); }
+  catch(...) { log("ERROR: Unknown"); }
 }
 
 // Old code:
 /*
-void readOldConf(JConfig &conf, JConfig &wxconf)
-{
-  try
-    {
-      bf::path file = fromDir/"config";
-      if(!bf::exists(file)) return;
-
-      JConfig in(file.string());
-
-      // Convert wxTiggit-specific options
-      if(in.has("vote_count") && !wxconf.has("show_votes"))
-        wxconf.setBool("show_votes", in.getBool("vote_count"));
-
-      // Move last_time over to the new config.
-      if(in.has("last_time") && !conf.has("last_time"))
-        {
-          uint32_t oldTime = in.getInt("last_time");
-          conf.setInt64("last_time", oldTime);
-        }
-    }
-  catch(std::exception &e) { PRINT("ERROR: " << e.what()); }
-  catch(...) { PRINT("ERROR: Unknown"); }
-}
-
-void readNewConf(JConfig &conf)
-{
-  try
-    {
-      bf::path file = fromDir/"tiglib.conf";
-      if(!bf::exists(file)) return;
-
-      JConfig in(file.string());
-      if(in.has("last_time") && !conf.has("last_time"))
-        conf.setInt64("last_time", in.getInt64("last_time"));
-    }
-  catch(std::exception &e) { PRINT("ERROR: " << e.what()); }
-  catch(...) { PRINT("ERROR: Unknown"); }
-}
-
-void readNewWx(JConfig &wxconf)
-{
-  try
-    {
-      bf::path file = fromDir/"wxtiggit.conf";
-      if(!bf::exists(file)) return;
-
-      JConfig in(file.string());
-      if(in.has("show_votes") && !wxconf.has("show_votes"))
-        wxconf.setBool("show_votes", in.getBool("show_votes"));
-    }
-  catch(std::exception &e) { PRINT("ERROR: " << e.what()); }
-  catch(...) { PRINT("ERROR: Unknown"); }
-}
-
-void readOldNews(JConfig &news)
-{
-  try
-    {
-      bf::path file = fromDir/"readnews.json";
-      if(!bf::exists(file)) return;
-
-      // Convert JSON array to config values
-      Json::Value root = ReadJson::readJson(file.string());
-      for(int i=0; i<root.size(); i++)
-        {
-          // The old values were ints, we are now using strings.
-          int val = root[i].asInt();
-          char buf[10];
-          std::snprintf(buf, 10, "%d", val);
-          std::string key(buf);
-          news.setBool(key, true);
-        }
-    }
-  catch(std::exception &e) { PRINT("ERROR: " << e.what()); }
-  catch(...) { PRINT("ERROR: Unknown"); }
-}
-
-void readNewNews(JConfig &news)
-{
-  try
-    {
-      bf::path file = fromDir/"tiglib_news.conf";
-      if(!bf::exists(file)) return;
-
-      JConfig in(file.string());
-
-      std::vector<std::string> names = in.getNames();
-      for(int i=0; i<names.size(); i++)
-        news.setBool(names[i], true);
-    }
-  catch(std::exception &e) { PRINT("ERROR: " << e.what()); }
-  catch(...) { PRINT("ERROR: Unknown"); }
-}
-
-void readRates(const std::string &name, JConfig &rates)
-{
-  try
-    {
-      bf::path file = fromDir/name;
-      if(!bf::exists(file)) return;
-
-      JConfig in(file.string());
-
-      std::vector<std::string> names = in.getNames();
-      for(int i=0; i<names.size(); i++)
-        {
-          const std::string &key = names[i];
-
-          // May need to convert slashes, since they were mangled in
-          // previous versions for some reason.
-          std::string outkey;
-          outkey.reserve(key.size());
-          for(int i=0; i<key.size(); i++)
-            {
-              char c = key[i];
-              if(c == '\\') c = '/';
-              outkey += c;
-            }
-
-          // Don't overwrite values
-          if(rates.has(outkey)) continue;
-
-          int rate = in.getInt(key);
-          if(rate < 0 || rate > 5) continue;
-          rates.setInt(outkey, rate);
-        }
-    }
-  catch(std::exception &e) { PRINT("ERROR: " << e.what()); }
-  catch(...) { PRINT("ERROR: Unknown"); }
-}
-
-void readOldRates(JConfig &rates)
-{
-  readRates("ratings.json", rates);
-}
-
-void readNewRates(JConfig &rates)
-{
-  readRates("tiglib_rates.conf", rates);
-}
 
 void listOldGames()
 {
   listGames("games", "installed.json");
   listGames("data", "installed.json");
-}
-
-void listNewGames()
-{
-  listGames("gamedata", "tiglib_installed.conf");
 }
 
 struct ImportJob : Job
@@ -505,11 +492,7 @@ struct ImportJob : Job
 
     // Open destination config files
     JConfig conf, inst, news, rates, wxconf;
-    conf.load((toDir/"tiglib.conf").string());
     inst.load((toDir/"tiglib_installed.conf").string());
-    news.load((toDir/"tiglib_news.conf").string());
-    rates.load((toDir/"tiglib_rates.conf").string());
-    wxconf.load((toDir/"wxtiggit.conf").string());
 
     // We are allowed to import into ourselves (when upgrading a
     // repository), but in that case we only allow upgrading from

@@ -19,7 +19,7 @@ namespace TigLib
 
     std::string dir;
     std::string tigFile, statsFile, newsFile, shotDir, spreadDir;
-    Misc::JConfig conf;
+    Misc::JConfig conf, inst;
     int64_t lastTime;
 
     void setDirs();
@@ -33,7 +33,7 @@ namespace TigLib
     // connect to the net if this is set.
     bool offline;
 
-    Misc::JConfig inst, news, rates;
+    Misc::JConfig news, rates;
 
     // Check if the repository is locked. If not, we are not allowed
     // to write to it.
@@ -154,8 +154,16 @@ namespace TigLib
     std::string fetchPath(const std::string &url,
                           const std::string &fname);
 
-    // Get install dir for a game
-    std::string getInstDir(const std::string &idname) const
+    // Returns idnames of all games that are or have been installed.
+    // Use getGameDir() to check actual install status of the game.
+    std::vector<std::string> getGameList() { return inst.getNames(); }
+
+    // Get actuall install dir for a game. Returns "" if the game is
+    // not registered as installed.
+    std::string getGameDir(const std::string &idname);
+
+    // Get default install dir for a game
+    std::string getDefGameDir(const std::string &idname) const
     { return getPath("gamedata/" + idname); }
 
     // Get screenshot path for a game.
@@ -164,6 +172,7 @@ namespace TigLib
     // Start installing a game
     Spread::JobInfoPtr startInstall(const std::string &idname,
                                     const std::string &urlname,
+                                    std::string where,
                                     bool async=true); 
 
     // Start uninstalling a game

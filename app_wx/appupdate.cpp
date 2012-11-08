@@ -106,7 +106,7 @@ struct UpdateJob : Job
 
   void doJob()
   {
-    Logger log(repo->getPath("update.log"));
+    Misc::Logger log(repo->getPath("update.log"));
 #ifdef PRINT_DEBUG
     log.print = true;
 #endif
@@ -250,7 +250,7 @@ bool AppUpdater::launch()
 {
   assert(newExePath != "");
 
-  Logger log(repo.getPath("launch.log"));
+  Misc::Logger log(repo.getPath("launch.log"));
   log("launch() newExePath=" + newExePath);
 
   if(!bf::exists(newExePath))

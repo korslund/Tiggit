@@ -55,7 +55,7 @@ void LiveInfo::markAsInstalled()
 std::string LiveInfo::getInstallDir() const
 {
   assert(isInstalled());
-  return repo->getInstDir(ent->idname);
+  return repo->getGameDir(ent->idname);
 }
 
 int LiveInfo::getMyRating()
@@ -81,8 +81,16 @@ void LiveInfo::setMyRating(int i)
 Spread::JobInfoPtr LiveInfo::install(bool async)
 {
   if(isUninstalled())
-    // Ask the repository to start the install process
-    installJob = repo->startInstall(ent->idname, ent->urlname, async);
+    {
+      // Pick installation directory. Uses default for now. TODO: We
+      // should take this as a parameter, so we can ask the user where
+      // to install each game.
+
+      std::string instDir = repo->getDefGameDir(ent->idname);
+
+      // Ask the repository to start the install process
+      installJob = repo->startInstall(ent->idname, ent->urlname, instDir, async);
+    }
 
   return installJob;
 }
@@ -97,7 +105,10 @@ Spread::JobInfoPtr LiveInfo::install(bool async)
  */
 Spread::JobInfoPtr LiveInfo::update(bool async)
 {
-  return repo->startInstall(ent->idname, ent->urlname, async);
+  assert(isInstalled());
+  std::string instDir = repo->getGameDir(ent->idname);
+  assert(instDir != "");
+  return repo->startInstall(ent->idname, ent->urlname, instDir, async);
 }
 
 Spread::JobInfoPtr LiveInfo::uninstall(bool async)

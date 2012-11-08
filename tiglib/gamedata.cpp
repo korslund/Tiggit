@@ -47,11 +47,11 @@ void GameData::createLiveData(Repo *repo)
   repo->setLastTime(maxTime);
 
   // Apply install status
-  std::vector<std::string> games = repo->inst.getNames();
+  std::vector<std::string> games = repo->getGameList();
   for(int i=0; i<games.size(); i++)
     {
       const std::string &id = games[i];
-      if(repo->inst.getInt(id) == 2)
+      if(repo->getGameDir(id) != "")
         {
           LiveInfo *l = get(id);
           if(l) l->markAsInstalled();
