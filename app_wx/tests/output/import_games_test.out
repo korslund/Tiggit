@@ -1,0 +1,109 @@
+Scanning input_full for games:
+_games.log: Reading game list from input_full/installed.json
+_games.log: 6 games listed as installed:
+_games.log:   Found: dummy/dir/subdir
+_games.log:   Found: tiggit.net/already_exists
+_games.log:   Found: tiggit.net/doesntexist
+_games.log:   Found: tiggit.net/game1
+_games.log:   Found: tiggit.net/game2
+_games.log:   Found: tiggit.net\backslash
+_games.log:     Converted to: tiggit.net/backslash
+Found:
+  dummy/dir/subdir
+  tiggit.net/already_exists
+  tiggit.net/doesntexist
+  tiggit.net/game1
+  tiggit.net/game2
+  tiggit.net/backslash
+
+Importing 'dummy/dir/subdir':
+_games.log: Importing dummy/dir/subdir from input_full to _out_games
+_games.log:   fromDir1=input_full/data/dummy/dir/subdir
+_games.log:   fromDir2=input_full/games/dummy/dir/subdir
+_games.log:   toDir=_out_games/gamedata/dummy/dir/subdir
+_games.log: Picked source dir input_full/games/dummy/dir/subdir
+_games.log: FINAL IN: /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/dummy/dir/subdir
+_games.log: FINAL OUT: /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/dummy/dir/subdir
+_games.log: copyFiles FROM=/home/mortennk/koding/tigflow/app_wx/tests/input_full/games/dummy/dir/subdir TO=/home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/dummy/dir/subdir
+_games.log:   Indexing /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/dummy/dir/subdir
+_games.log:   Found 1 files, total 35 bytes
+_games.log:   Free disk space: 1630621696 bytes
+_games.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/dummy/dir/subdir/somefile => /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/dummy/dir/subdir/somefile
+
+Importing 'tiggit.net/already_exists':
+_games.log: Importing tiggit.net/already_exists from input_full to _out_games
+_games.log:   fromDir1=input_full/data/tiggit.net/already_exists
+_games.log:   fromDir2=input_full/games/tiggit.net/already_exists
+_games.log:   toDir=_out_games/gamedata/tiggit.net/already_exists
+_games.log: Destination already exists. Abort.
+
+Importing 'tiggit.net/doesntexist':
+_games.log: Importing tiggit.net/doesntexist from input_full to _out_games
+_games.log:   fromDir1=input_full/data/tiggit.net/doesntexist
+_games.log:   fromDir2=input_full/games/tiggit.net/doesntexist
+_games.log:   toDir=_out_games/gamedata/tiggit.net/doesntexist
+_games.log: No source directory found. Abort.
+
+Importing 'tiggit.net/game1':
+_games.log: Importing tiggit.net/game1 from input_full to _out_games
+_games.log:   fromDir1=input_full/data/tiggit.net/game1
+_games.log:   fromDir2=input_full/games/tiggit.net/game1
+_games.log:   toDir=_out_games/gamedata/tiggit.net/game1
+_games.log: Picked source dir input_full/games/tiggit.net/game1
+_games.log: FINAL IN: /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/game1
+_games.log: FINAL OUT: /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/game1
+_games.log: copyFiles FROM=/home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/game1 TO=/home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/game1
+_games.log:   Indexing /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/game1
+_games.log:   Found 3 files, total 57 bytes
+_games.log:   Free disk space: 1630605312 bytes
+_games.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/game1/file1.txt => /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/game1/file1.txt
+_games.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/game1/dir/file3.png => /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/game1/dir/file3.png
+_games.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/game1/file2 => /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/game1/file2
+
+Importing 'tiggit.net/game2':
+_games.log: Importing tiggit.net/game2 from input_full to _out_games
+_games.log:   fromDir1=input_full/data/tiggit.net/game2
+_games.log:   fromDir2=input_full/games/tiggit.net/game2
+_games.log:   toDir=_out_games/gamedata/tiggit.net/game2
+_games.log: Picked source dir input_full/data/tiggit.net/game2
+_games.log: FINAL IN: /home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/game2
+_games.log: FINAL OUT: /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/game2
+_games.log: copyFiles FROM=/home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/game2 TO=/home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/game2
+_games.log:   Indexing /home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/game2
+_games.log:   Found 1 files, total 24 bytes
+_games.log:   Free disk space: 1630580736 bytes
+_games.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/game2/file_in_game2 => /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/game2/file_in_game2
+
+Importing 'tiggit.net/backslash':
+_games.log: Importing tiggit.net/backslash from input_full to _out_games
+_games.log:   fromDir1=input_full/data/tiggit.net/backslash
+_games.log:   fromDir2=input_full/games/tiggit.net/backslash
+_games.log:   toDir=_out_games/gamedata/tiggit.net/backslash
+_games.log: Picked source dir input_full/data/tiggit.net/backslash
+_games.log: FINAL IN: /home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/backslash
+_games.log: FINAL OUT: /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/backslash
+_games.log: copyFiles FROM=/home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/backslash TO=/home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/backslash
+_games.log:   Indexing /home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/backslash
+_games.log:   Found 1 files, total 0 bytes
+_games.log:   Free disk space: 1630572544 bytes
+_games.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/backslash/test => /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/backslash/test
+
+Directory: _out_games
+00                                                 gamedata
+00                                                 gamedata/dummy
+00                                                 gamedata/dummy/dir
+00                                                 gamedata/dummy/dir/subdir
+ujPsFpQM5Th6MNpHHci_Jjo9Z_7Of3rr-By3uzIhCWwj       gamedata/dummy/dir/subdir/somefile
+00                                                 gamedata/tiggit.net
+00                                                 gamedata/tiggit.net/already_exists
+00                                                 gamedata/tiggit.net/backslash
+47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU        gamedata/tiggit.net/backslash/test
+00                                                 gamedata/tiggit.net/game1
+00                                                 gamedata/tiggit.net/game1/dir
+06ISSHlFYBtm6Byhx95ovV17xCFS5bLY0bVqs5zooU4e       gamedata/tiggit.net/game1/dir/file3.png
+_YgjiSnf9WKAg5dRoPLJbvAGUKux2UKK0dfiq4JvO6Qb       gamedata/tiggit.net/game1/file1.txt
+47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU        gamedata/tiggit.net/game1/file2
+00                                                 gamedata/tiggit.net/game2
+-24vIJ0XC5ZlZomzG4zciR9wea0FbHm9dmEtM_OF9tEY       gamedata/tiggit.net/game2/file_in_game2
+Total 16 elements
+Hash: BdOlF3JkWSLncbE5MkfOJ17v7MEFDsKJLl5X7TXsc65eB

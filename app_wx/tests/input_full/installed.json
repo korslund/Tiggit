@@ -1,0 +1,8 @@
+{
+  "tiggit.net/game1" : 0,
+  "tiggit.net/game2" : 1,
+  "dummy/dir/subdir" : true,
+  "tiggit.net\\backslash" : "yeahboiii!",
+  "tiggit.net/doesntexist" : "itreallydoesnt",
+  "tiggit.net/already_exists" : "wontbecopied"
+}

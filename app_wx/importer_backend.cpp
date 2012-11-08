@@ -3,6 +3,7 @@
 #include "../misc/freespace.hpp"
 #include <spread/misc/readjson.hpp>
 #include <spread/misc/jconfig.hpp>
+#include <spread/job/thread.hpp>
 #include <stdexcept>
 #include <sstream>
 #include <assert.h>
@@ -142,15 +143,167 @@ struct Copy
   }
 };
 
-void Import::copyTest(const std::string &from, const std::string &to, bool addPng,
-                      SpreadLib *spread, JobInfoPtr info,
-                      Misc::Logger &logger)
+void Import::copyFiles(const std::string &from, const std::string &to, bool addPng,
+                       SpreadLib *spread, JobInfoPtr info,
+                       Misc::Logger &logger)
 {
   Copy cpy;
   cpy.spread = spread;
   cpy.info = info;
   cpy.logger = &logger;
   cpy.copyFiles(from, to, addPng);
+}
+
+void Import::getGameList(std::vector<std::string> &games, const std::string &from,
+                         Misc::Logger &log)
+{
+  using namespace std;
+
+  string infile = (bf::path(from)/"installed.json").string();
+  log("Reading game list from " + infile);
+
+  JConfig conf(infile);
+  vector<string> names = conf.getNames();
+  games.reserve(names.size());
+  log(toStr(names.size()) + " games listed as installed:");
+  for(int i=0; i<names.size(); i++)
+    {
+      // Game id, eg. "tiggit.net/dwarf-fortress"
+      const std::string &id = names[i];
+      log("  Found: " + id);
+
+      // May need to convert slashes, since they were mangled in
+      // previous versions for some reason.
+      std::string idname;
+      idname.reserve(id.size());
+      for(int i=0; i<id.size(); i++)
+        {
+          char c = id[i];
+          if(c == '\\') c = '/';
+          idname += c;
+        }
+
+      if(idname != id)
+        log("    Converted to: " + idname);
+
+      // Store it
+      games.push_back(idname);
+    }
+}
+
+struct CopyJob : Spread::Job
+{
+  std::string fromDir, toDir, idname, outConf;
+  Logger *log;
+  SpreadLib *spread;
+  bool addPng;
+
+  void doJob()
+  {
+    setBusy("Copying files");
+    Import::copyFiles(fromDir, toDir, addPng, spread, info, *log);
+    if(checkStatus()) return;
+
+    // Success. Write the entry to the output config file, if any.
+    if(outConf != "" && idname != "")
+      {
+        assert(!addPng);
+        (*log)("Updating " + outConf + " with " + idname + "=" + toDir);
+        JConfig conf(outConf);
+        conf.set(idname, toDir);
+      }
+
+    setDone();
+  }
+};
+
+JobInfoPtr Import::importGame(const std::string &game,
+                              const std::string &from, const std::string &to,
+                              SpreadLib *spread, Misc::Logger &log, bool async)
+{
+  using namespace std;
+
+  log("Importing " + game + " from " + from + " to " + to);
+
+  string fromDir1 = (bf::path(from)/"data"/game).string();
+  string fromDir2 = (bf::path(from)/"games"/game).string();
+  string toDir = (bf::path(to)/"gamedata"/game).string();
+  JobInfoPtr info;
+
+  log("  fromDir1=" + fromDir1);
+  log("  fromDir2=" + fromDir2);
+  log("  toDir=" + toDir);
+
+  bool isOk = true;
+
+  // Don't do anything if the destination exists
+  if(bf::exists(toDir))
+    {
+      log("Destination already exists. Abort.");
+      return info;
+    }
+
+  // Check destination config
+  std::string outConf = (bf::path(to)/"tiglib_installed.conf").string();
+  {
+    JConfig conf(outConf);
+    if(conf.has(game))
+      {
+        log("Game already registered in " + outConf + ". Abort.");
+        return info;
+      }
+  }
+
+  if(!bf::exists(fromDir1) || !bf::is_directory(fromDir1))
+    {
+      if(!bf::exists(fromDir2) || !bf::is_directory(fromDir2))
+        {
+          log("No source directory found. Abort.");
+          return info;
+        }
+
+      fromDir1 = fromDir2;
+    }
+
+  log("Picked source dir " + fromDir1);
+
+  // Make sure to absolute() paths. If we are running in a thread, we
+  // may risk changing the programs working directory while we are
+  // working.
+  fromDir1 = bf::absolute(fromDir1).string();
+  toDir = bf::absolute(toDir).string();
+  log("FINAL IN: " + fromDir1);
+  log("FINAL OUT: " + toDir);
+
+  CopyJob *job = new CopyJob;
+  job->fromDir = fromDir1;
+  job->toDir = toDir;
+  job->idname = game;
+  job->outConf = outConf;
+  job->log = &log;
+  job->spread = spread;
+  job->addPng = false;
+  return Thread::run(job, async);
+}
+
+JobInfoPtr Import::importShots(const std::string &from, const std::string &to,
+                               Spread::SpreadLib *spread, Misc::Logger &log,
+                               bool async)
+{
+  /*
+    List:
+    - base this on the same job as importGame uses, just with slightly
+      different parameters
+
+    - integrate old code from below
+   */
+  assert(0);
+}
+
+void Import::cleanup(const std::string &from, std::vector<std::string> &games,
+                     Misc::Logger &log)
+{
+  assert(0);
 }
 
 void Import::importConfig(const std::string &from, const std::string &to,
@@ -286,31 +439,10 @@ void Import::importConfig(const std::string &from, const std::string &to,
   catch(...) { log("ERROR: Unknown"); }
 }
 
-// Old code:
 /*
-
-void listOldGames()
-{
-  listGames("games", "installed.json");
-  listGames("data", "installed.json");
-}
-
-struct ImportJob : Job
-{
-  bf::path fromDir, toDir;
-
-  void moveOldShots()
-  {
-    moveShots("cache/shot300x260/tiggit.net/");
-  }
-
-  void moveNewShots()
-  {
-    moveShots("shots_300x260/tiggit.net/");
-  }
-
   void moveShots(const std::string &dir)
   {
+    moveShots("cache/shot300x260/tiggit.net/");
     try {
       using namespace boost::filesystem;
 
@@ -358,90 +490,6 @@ struct ImportJob : Job
 
   std::vector<std::string> games;
 
-  void listGames(const std::string &dir, const std::string &confFile)
-  {
-    using namespace boost::filesystem;
-    JConfig conf((fromDir/confFile).string());
-
-    path srcDir = fromDir/dir;
-    path dstDir = toDir/"gamedata";
-
-    assert(srcDir != dstDir);
-
-    // Traverse the list of installed games in the source repo
-    std::vector<std::string> names = conf.getNames();
-    for(int i=0; i<names.size(); i++)
-      {
-        // Game id, eg. "tiggit.net/dwarf-fortress"
-        const std::string &id = names[i];
-
-        PRINT("\nGAME: id=" << id);
-
-        // May need to convert slashes, since they were mangled in
-        // previous versions for some reason.
-        std::string idname;
-        idname.reserve(id.size());
-        for(int i=0; i<id.size(); i++)
-          {
-            char c = id[i];
-            if(c == '\\') c = '/';
-            idname += c;
-          }
-
-        PRINT("idname=" << idname);
-
-        path
-          src = srcDir / idname,
-          dst = dstDir / idname;
-
-        PRINT("src=" << src << " dst=" << dst);
-
-        // Does the source dir exist?
-        if(!(exists(src) && is_directory(src))) continue;
-
-        PRINT("Source existed");
-
-        // Does the destination exist? (We won't overwrite it)
-        if(exists(dst)) continue;
-
-        PRINT("Destination did not exist. ADDED!");
-
-        // Add the source path to our copy list
-        games.push_back(src.string());
-      }
-  }
-
-  void moveGame(const std::string &src, JConfig &inst)
-  {
-    PRINT("\nMOVING game " << src);
-    try
-      {
-        using namespace boost::filesystem;
-        assert(exists(src) && is_directory(src));
-
-        path dest = src;
-        const std::string &idname = "tiggit.net/" + dest.filename().string();
-
-        PRINT("idname=" << idname);
-
-        // If the entry already exists in the destination config,
-        // don't do anything.
-        if(inst.has(idname) && inst.getInt(idname) != 0) return;
-
-        dest = toDir / "gamedata" / idname;
-        create_directories(dest.parent_path());
-
-        PRINT("Moving to: " << dest);
-
-        DirCopy::moveDir(src, dest.string());
-
-        // Add the entry to the config.
-        inst.setInt(idname, 2);
-      }
-    catch(std::exception &e) { PRINT("ERROR: " << e.what()); }
-    catch(...) { PRINT("ERROR: Unknown"); }
-  }
-
   void deleteEverything()
   {
     // Delete everything we know about from the imported directory
@@ -482,76 +530,4 @@ struct ImportJob : Job
         catch(...) { PRINT("ERROR: Unknown"); }
       }
   }
-
-  void doJob()
-  {
-    setBusy("Importing " + fromDir.string() + " into " + toDir.string());
-    PRINT("Importing " << fromDir << " into " << toDir);
-
-    // Make sure destionation exists
-    create_directories(toDir);
-
-    // Open destination config files
-    JConfig conf, inst, news, rates, wxconf;
-    inst.load((toDir/"tiglib_installed.conf").string());
-
-    // We are allowed to import into ourselves (when upgrading a
-    // repository), but in that case we only allow upgrading from
-    // legacy data.
-    bool toSelf = (fromDir == toDir) || bf::equivalent(fromDir, toDir);
-
-    PRINT("Converting config files");
-    readOldConf(conf, wxconf);
-    readOldNews(news);
-    readOldRates(rates);
-    listOldGames();
-    if(!toSelf)
-      {
-        readNewConf(conf);
-        readNewWx(wxconf);
-        readNewNews(news);
-        readNewRates(rates);
-        listNewGames();
-      }
-
-    // list*Games() has now built lists of game directories we need to
-    // move. The lists only contain confirmed moves, ie. moves where
-    // we know the source exists and the destination does not. This
-    // gives us a good basis for the progress reports as well.
-
-    setProgress(0, games.size() + 2);
-
-    // Move over all the screenshots
-    moveOldShots();
-    if(!toSelf)
-      moveNewShots();
-
-    setProgress(1);
-
-    for(int i=0; i<games.size(); i++)
-      {
-        moveGame(games[i], inst);
-        setProgress(i+1);
-      }
-
-    // Clean out the entire imported directory. We might create a
-    // copy-not-move import later, but we don't need it yet.
-    deleteEverything();
-    setProgress(games.size() + 2);
-
-    PRINT("Import done!");
-
-    setDone();
-  }
-};
-
-JobInfoPtr TigLibInt::importRepo(const std::string &input,
-                                 const std::string &output,
-                                 bool async)
-{
-  ImportJob *job = new ImportJob;
-  job->fromDir = input;
-  job->toDir = output;
-  return Thread::run(job,async);
-}
 */

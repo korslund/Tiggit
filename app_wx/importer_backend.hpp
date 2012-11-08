@@ -14,17 +14,18 @@ namespace Import
 
   Spread::JobInfoPtr importGame(const std::string &game,
                                 const std::string &from, const std::string &to,
-                                Spread::SpreadLib *spread, Misc::Logger &logger);
+                                Spread::SpreadLib *spread, Misc::Logger &logger,
+                                bool async=true);
 
   Spread::JobInfoPtr importShots(const std::string &from, const std::string &to,
-                                 Spread::SpreadLib *spread, Misc::Logger &logger);
+                                 Spread::SpreadLib *spread, Misc::Logger &logger,
+                                 bool async=true);
 
   void cleanup(const std::string &from, std::vector<std::string> &games,
                Misc::Logger &logger);
 
-  // Used for unit testing of internal functions.
-  void copyTest(const std::string &from, const std::string &to, bool addPng,
-                Spread::SpreadLib *spread, Spread::JobInfoPtr info, Misc::Logger &logger);
+  void copyFiles(const std::string &from, const std::string &to, bool addPng,
+                 Spread::SpreadLib *spread, Spread::JobInfoPtr info, Misc::Logger &logger);
 }
 
 #endif

@@ -1,0 +1,53 @@
+_out_conf/noconf.log: Converting config options from input_conf/noconf to _out_conf/noconf
+_out_conf/noconf.log: Converting input_conf/noconf/config => _out_conf/noconf/tiglib.conf, _out_conf/noconf/wxtiggit.conf
+_out_conf/noconf.log:   No input file found, skipping.
+_out_conf/noconf.log: Converting input_conf/noconf/readnews.json => _out_conf/noconf/tiglib_news.conf
+_out_conf/noconf.log:   No input file found, skipping.
+_out_conf/noconf.log: Converting input_conf/noconf/ratings.json => _out_conf/noconf/tiglib_rates.conf
+_out_conf/noconf.log:   No input file found, skipping.
+_out_conf/invalid_conf.log: Converting config options from input_conf/invalid_conf to _out_conf/invalid_conf
+_out_conf/invalid_conf.log: Converting input_conf/invalid_conf/config => _out_conf/invalid_conf/tiglib.conf, _out_conf/invalid_conf/wxtiggit.conf
+_out_conf/invalid_conf.log: ERROR: Value is not convertible to bool.
+_out_conf/invalid_conf.log: Converting input_conf/invalid_conf/readnews.json => _out_conf/invalid_conf/tiglib_news.conf
+_out_conf/invalid_conf.log: ERROR: * Line 1, Column 1
+  Syntax error: value, object or array expected.
+ (reading input_conf/invalid_conf/readnews.json)
+_out_conf/invalid_conf.log: Converting input_conf/invalid_conf/ratings.json => _out_conf/invalid_conf/tiglib_rates.conf
+_out_conf/invalid_conf.log:   Done
+_out_conf/normal.log: Converting config options from input_conf/normal to _out_conf/normal
+_out_conf/normal.log: Converting input_conf/normal/config => _out_conf/normal/tiglib.conf, _out_conf/normal/wxtiggit.conf
+_out_conf/normal.log:   oldTime=12345 newTime=0
+_out_conf/normal.log:   Done
+_out_conf/normal.log: Converting input_conf/normal/readnews.json => _out_conf/normal/tiglib_news.conf
+_out_conf/normal.log:   Done
+_out_conf/normal.log: Converting input_conf/normal/ratings.json => _out_conf/normal/tiglib_rates.conf
+_out_conf/normal.log:   Done
+
+Directory: _out_conf/normal
+zsb_dyTqQOuCHQ1clgMOYLpyyq1mfh7yLG3lP3mCdHwh       tiglib.conf
+rrV1st8a_YHQHi4YZ7RblnnK8lQYB2HiNgw1c5sVxGQ4       tiglib_news.conf
+T268godX5B5r3YvCjusnxQyUiwyfXgAZ7E-AoRifNh0r       tiglib_news.conf.old
+gufbdItnJRnOUHuX5AlHobF3qN5vvY1sQ67uXfQ3rpgr       tiglib_rates.conf
+SRnzymJaXfcUAiMykOiOabTEVlzilvGqOP4lQHVVVNIX       tiglib_rates.conf.old
+5V5DKM0iIRfodzzRvcAdwvCG6SynR20s7eX1OSGcUEEa       wxtiggit.conf
+Total 6 elements
+Hash: M0jl3XhEGEaNlsfu8kVpC-8S8r1LHaMn5v0BwfVa6W9mAQ
+_out_conf/normal.log: Converting config options from input_conf/normal to _out_conf/normal
+_out_conf/normal.log: Converting input_conf/normal/config => _out_conf/normal/tiglib.conf, _out_conf/normal/wxtiggit.conf
+_out_conf/normal.log:   oldTime=12345 newTime=12345
+_out_conf/normal.log:   Done
+_out_conf/normal.log: Converting input_conf/normal/readnews.json => _out_conf/normal/tiglib_news.conf
+_out_conf/normal.log:   Done
+_out_conf/normal.log: Converting input_conf/normal/ratings.json => _out_conf/normal/tiglib_rates.conf
+_out_conf/normal.log:   Done
+
+Directory: _out_conf/normal
+zsb_dyTqQOuCHQ1clgMOYLpyyq1mfh7yLG3lP3mCdHwh       tiglib.conf
+rrV1st8a_YHQHi4YZ7RblnnK8lQYB2HiNgw1c5sVxGQ4       tiglib_news.conf
+rrV1st8a_YHQHi4YZ7RblnnK8lQYB2HiNgw1c5sVxGQ4       tiglib_news.conf.old
+gufbdItnJRnOUHuX5AlHobF3qN5vvY1sQ67uXfQ3rpgr       tiglib_rates.conf
+SRnzymJaXfcUAiMykOiOabTEVlzilvGqOP4lQHVVVNIX       tiglib_rates.conf.old
+5V5DKM0iIRfodzzRvcAdwvCG6SynR20s7eX1OSGcUEEa       wxtiggit.conf
+Total 6 elements
+Hash: Yp0-P8Mv4h-oGK5-QHwqjlNu-K4Ay1fMhB4twh7AfgpmAQ
+Program done!

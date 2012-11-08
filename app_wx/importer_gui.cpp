@@ -57,7 +57,7 @@ bool ImportGui::importRepoGui(const string &from, const string &to, SpreadLib *s
             }
         }
       else
-        log("No import needed");
+        log("No import needed or game not found");
     }
 
   // Import screenshots
