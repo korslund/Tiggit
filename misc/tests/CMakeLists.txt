@@ -14,7 +14,6 @@ set(WLIBS ${wxWidgets_LIBRARIES} ${LIBS})
 set(MIDIR ../../misc)
 set(FIND ${MIDIR}/dirfinder.cpp)
 set(LOCK ${MIDIR}/lockfile.cpp)
-set(DIRC ${MIDIR}/dircopy.cpp)
 set(FREE ${MIDIR}/freespace.cpp)
 
 set(LIBDIR ../../libs)
@@ -39,9 +38,6 @@ target_link_libraries(wx_test ${WLIBS})
 
 add_executable(lock_test lock_test.cpp ${LOCK})
 target_link_libraries(lock_test ${LIBS})
-
-add_executable(dircopy_test dircopy_test.cpp ${DIRC})
-target_link_libraries(dircopy_test ${LIBS})
 
 add_executable(freespace freespace.cpp ${FREE})
 target_link_libraries(freespace ${LIBS})

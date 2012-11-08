@@ -11,12 +11,14 @@
 
 using namespace Spread;
 using namespace Misc;
+using namespace std;
+
 namespace bf = boost::filesystem;
 
 template <typename X>
-static std::string toStr(X i)
+static string toStr(X i)
 {
-  std::stringstream str;
+  stringstream str;
   str << i;
   return str.str();
 }
@@ -29,15 +31,15 @@ struct Copy
 
   Copy() : spread(NULL), logger(NULL) {}
 
-  void log(const std::string &msg)
+  void log(const string &msg)
   {
     if(logger) (*logger)(msg);
   }
 
-  void fail(const std::string &msg)
+  void fail(const string &msg)
   {
     log("ERROR: " + msg);
-    throw std::runtime_error(msg);
+    throw runtime_error(msg);
   }
 
   void prog(int64_t cur, int64_t tot)
@@ -45,7 +47,7 @@ struct Copy
     if(info) info->setProgress(cur, tot);
   }
 
-  void copyFiles(const std::string &from, const std::string &to, bool addPng=false)
+  void copyFiles(const string &from, const string &to, bool addPng=false)
   {
     log("copyFiles FROM=" + from + " TO=" + to);
 
@@ -61,10 +63,10 @@ struct Copy
     path dstDir = absolute(to);
 
     // Base path without slash
-    std::string base = (srcDir/"tmp").parent_path().string();
+    string base = (srcDir/"tmp").parent_path().string();
     int curlen = base.size() + 1;
 
-    std::vector<std::string> fromList, toList;
+    vector<string> fromList, toList;
     int64_t totalSize = 0;
 
     // Recurse the directory
@@ -83,9 +85,9 @@ struct Copy
            =>
            local = some-file\in-here\somewhere.txt
         */
-        std::string infile = p.string();
-        std::string local = infile.substr(curlen);
-        std::string outfile = (dstDir/local).string();
+        string infile = p.string();
+        string local = infile.substr(curlen);
+        string outfile = (dstDir/local).string();
 
         // Add PNG extension to screenshots
         if(addPng)
@@ -127,8 +129,8 @@ struct Copy
         if(info && info->checkStatus())
           return;
 
-        const std::string &src = fromList[i];
-        const std::string &dst = toList[i];
+        const string &src = fromList[i];
+        const string &dst = toList[i];
 
         log("  Copying " + src + " => " + dst);
 
@@ -143,7 +145,7 @@ struct Copy
   }
 };
 
-void Import::copyFiles(const std::string &from, const std::string &to, bool addPng,
+void Import::copyFiles(const string &from, const string &to, bool addPng,
                        SpreadLib *spread, JobInfoPtr info,
                        Misc::Logger &logger)
 {
@@ -154,11 +156,9 @@ void Import::copyFiles(const std::string &from, const std::string &to, bool addP
   cpy.copyFiles(from, to, addPng);
 }
 
-void Import::getGameList(std::vector<std::string> &games, const std::string &from,
+void Import::getGameList(vector<string> &games, const string &from,
                          Misc::Logger &log)
 {
-  using namespace std;
-
   string infile = (bf::path(from)/"installed.json").string();
   log("Reading game list from " + infile);
 
@@ -169,12 +169,12 @@ void Import::getGameList(std::vector<std::string> &games, const std::string &fro
   for(int i=0; i<names.size(); i++)
     {
       // Game id, eg. "tiggit.net/dwarf-fortress"
-      const std::string &id = names[i];
+      const string &id = names[i];
       log("  Found: " + id);
 
       // May need to convert slashes, since they were mangled in
       // previous versions for some reason.
-      std::string idname;
+      string idname;
       idname.reserve(id.size());
       for(int i=0; i<id.size(); i++)
         {
@@ -193,7 +193,7 @@ void Import::getGameList(std::vector<std::string> &games, const std::string &fro
 
 struct CopyJob : Spread::Job
 {
-  std::string fromDir, toDir, idname, outConf;
+  string fromDir, toDir, idname, outConf;
   Logger *log;
   SpreadLib *spread;
   bool addPng;
@@ -207,7 +207,6 @@ struct CopyJob : Spread::Job
     // Success. Write the entry to the output config file, if any.
     if(outConf != "" && idname != "")
       {
-        assert(!addPng);
         (*log)("Updating " + outConf + " with " + idname + "=" + toDir);
         JConfig conf(outConf);
         conf.set(idname, toDir);
@@ -217,12 +216,10 @@ struct CopyJob : Spread::Job
   }
 };
 
-JobInfoPtr Import::importGame(const std::string &game,
-                              const std::string &from, const std::string &to,
+JobInfoPtr Import::importGame(const string &game,
+                              const string &from, const string &to,
                               SpreadLib *spread, Misc::Logger &log, bool async)
 {
-  using namespace std;
-
   log("Importing " + game + " from " + from + " to " + to);
 
   string fromDir1 = (bf::path(from)/"data"/game).string();
@@ -244,7 +241,7 @@ JobInfoPtr Import::importGame(const std::string &game,
     }
 
   // Check destination config
-  std::string outConf = (bf::path(to)/"tiglib_installed.conf").string();
+  string outConf = (bf::path(to)/"tiglib_installed.conf").string();
   {
     JConfig conf(outConf);
     if(conf.has(game))
@@ -286,27 +283,112 @@ JobInfoPtr Import::importGame(const std::string &game,
   return Thread::run(job, async);
 }
 
-JobInfoPtr Import::importShots(const std::string &from, const std::string &to,
+JobInfoPtr Import::importShots(const string &from, const string &to,
                                Spread::SpreadLib *spread, Misc::Logger &log,
                                bool async)
 {
-  /*
-    List:
-    - base this on the same job as importGame uses, just with slightly
-      different parameters
+  log("Importing screenshots from " + from + " to " + to);
 
-    - integrate old code from below
-   */
-  assert(0);
+  string fromDir = (bf::path(from)/"cache/shot300x260/tiggit.net").string();
+  string toDir = (bf::path(to)/"shots_300x260/tiggit.net").string();
+  JobInfoPtr info;
+
+  if(!bf::exists(fromDir) || !bf::is_directory(fromDir))
+    {
+      log(fromDir + " not found. Nothing to do.");
+      return info;
+    }
+
+  // Make sure to absolute() paths. If we are running in a thread, we
+  // may risk changing the programs working directory while we are
+  // working.
+  fromDir = bf::absolute(fromDir).string();
+  toDir = bf::absolute(toDir).string();
+  log("FINAL IN: " + fromDir);
+  log("FINAL OUT: " + toDir);
+
+  CopyJob *job = new CopyJob;
+  job->fromDir = fromDir;
+  job->toDir = toDir;
+  job->log = &log;
+  job->spread = spread;
+  job->addPng = true;
+  return Thread::run(job, async);
 }
 
-void Import::cleanup(const std::string &from, std::vector<std::string> &games,
+void Import::cleanup(const string &from, const vector<string> &games,
                      Misc::Logger &log)
 {
-  assert(0);
+  bf::path fromDir = bf::absolute(from);
+  log("Cleaning up " + fromDir.string());
+
+  // Fixed file names to delete from the old repo
+  const char* files[] =
+    {
+      "all_games.json", "auth.json", "config", "installed.json", "latest.tig",
+      "news.json", "promo.json", "ratings.json", "readnews.json", "cache",
+      "incoming", "tigfiles",
+
+      // Terminator
+      ""
+    };
+
+  vector<bf::path> kill;
+  kill.reserve(games.size() + 12);
+
+  // Add the fixed list from above
+  {
+    int i = 0;
+    while(true)
+      {
+	const string &file = files[i++];
+	if(file == "") break;
+
+        kill.push_back(fromDir/file);
+      }
+  }
+
+  /*
+    Add games from parameter list.
+
+    We do NOT remove the "games" and "data" directories themselves,
+    since these might contain games that failed to import, and we
+    don't want to just kill the user's savegames and data without
+    asking.
+  */
+  for(int i=0; i<games.size(); i++)
+    {
+      bf::path dir = fromDir / "games" / games[i];
+      if(!bf::exists(dir))
+        {
+          dir = fromDir / "data" / games[i];
+          if(!bf::exists(dir))
+            {
+              log("WARNING: Cleanup: Could not find requested game: " + games[i]);
+              continue;
+            }
+        }
+      kill.push_back(dir);
+    }
+
+  // Kill all the files and directories found.
+  for(int i=0; i<kill.size(); i++)
+    {
+      const bf::path &p = kill[i];
+      log("Deleting " + p.string());
+      try
+        {
+          if(bf::exists(p))
+            bf::remove_all(p);
+          else
+            log("  Not found, ignoring.");
+        }
+      catch(exception &e) { log("  Failed: " + string(e.what())); }
+      catch(...) { log("  Failed: Unknown error"); }
+    }
 }
 
-void Import::importConfig(const std::string &from, const std::string &to,
+void Import::importConfig(const string &from, const string &to,
                           Misc::Logger &log)
 {
   log("Converting config options from " + from + " to " + to);
@@ -315,7 +397,6 @@ void Import::importConfig(const std::string &from, const std::string &to,
   bf::path toDir = to;
 
   using namespace Misc;
-  using namespace std;
 
   // Convert main config file
   try
@@ -357,7 +438,7 @@ void Import::importConfig(const std::string &from, const std::string &to,
         }
       else log("  No input file found, skipping.");
     }
-  catch(std::exception &e) { log("ERROR: " + string(e.what())); }
+  catch(exception &e) { log("ERROR: " + string(e.what())); }
   catch(...) { log("ERROR: Unknown"); }
 
   // Merge in list of read news items, so old items don't show up as
@@ -380,14 +461,14 @@ void Import::importConfig(const std::string &from, const std::string &to,
               // The old values were arrays of ints. We are now using
               // string:bool.
               int val = root[i].asInt();
-              std::string key = toStr(val);
+              string key = toStr(val);
               news.setBool(key, true);
             }
           log("  Done");
         }
       else log("  No input file found, skipping.");
     }
-  catch(std::exception &e) { log("ERROR: " + string(e.what())); }
+  catch(exception &e) { log("ERROR: " + string(e.what())); }
   catch(...) { log("ERROR: Unknown"); }
 
   // Finally convert the list of games the user has rated, and their
@@ -435,99 +516,6 @@ void Import::importConfig(const std::string &from, const std::string &to,
         }
       else log("  No input file found, skipping.");
     }
-  catch(std::exception &e) { log("ERROR: " + string(e.what())); }
+  catch(exception &e) { log("ERROR: " + string(e.what())); }
   catch(...) { log("ERROR: Unknown"); }
 }
-
-/*
-  void moveShots(const std::string &dir)
-  {
-    moveShots("cache/shot300x260/tiggit.net/");
-    try {
-      using namespace boost::filesystem;
-
-      path srcDir = fromDir/dir;
-
-      if(!exists(srcDir) || !is_directory(srcDir))
-        return;
-
-      path destDir = toDir/"shots_300x260/tiggit.net/";
-
-      // Make sure destination directory exists
-      create_directories(destDir);
-
-      // Move all the screenshot files
-      directory_iterator iter(srcDir), end;
-      for(; iter != end; ++iter)
-        {
-          path source = iter->path();
-          PRINT("\nSHOT: input=" << source);
-          if(!is_regular_file(source)) continue;
-
-          // Get file name
-          std::string name = source.filename().string();
-
-          // Check if the file has an extension, or add one if necessary
-          if(name.size() <= 4 || name[name.size()-4] != '.')
-            name += ".png";
-
-          PRINT("name=" << name);
-
-          path dest = destDir/name;
-
-          // Don't overwrite files
-          if(exists(dest)) continue;
-
-          PRINT("Moving to: " << dest);
-
-          // Move the file
-          DirCopy::moveFile(source.string(), dest.string());
-        }
-    }
-    catch(std::exception &e) { PRINT("ERROR: " << e.what()); }
-    catch(...) { PRINT("ERROR: Unknown"); }
-  }
-
-  std::vector<std::string> games;
-
-  void deleteEverything()
-  {
-    // Delete everything we know about from the imported directory
-    const char* files[] =
-      {
-	// Legacy repo files
-	"all_games.json", "auth.json", "config", "installed.json", "latest.tig",
-	"news.json", "promo.json", "ratings.json", "readnews.json", "cache",
-	"data", "games", "incoming", "tigfiles",
-
-	// Current repo files
-	"gamedata", "launch.log", "launch.log.old", "run", "shots_300x260",
-	"spread", "stats.json", "tiglib.conf", "tiglib.conf.old",
-	"tiglib_installed.conf", "tiglib_installed.conf.old", "tiglib_news.conf",
-	"tiglib_news.conf.old", "tiglib_rates.conf", "tiglib_rates.conf.old",
-	"update.log", "update.log.old", "wxtiggit.conf", "wxtiggit.conf.old",
-
-	// Terminator
-	""
-      };
-
-    int i = 0;
-    while(true)
-      {
-	const std::string &file = files[i++];
-	if(file == "") break;
-
-	try
-	  {
-	    bf::path p = fromDir/file;
-	    if(bf::exists(p))
-	      {
-		PRINT("Deleting " << p);
-		bf::remove_all(p);
-	      }
-	  }
-        catch(std::exception &e) { PRINT("ERROR: " << e.what()); }
-        catch(...) { PRINT("ERROR: Unknown"); }
-      }
-  }
-*/

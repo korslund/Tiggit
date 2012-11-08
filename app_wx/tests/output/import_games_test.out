@@ -24,11 +24,13 @@ _games.log:   toDir=_out_games/gamedata/dummy/dir/subdir
 _games.log: Picked source dir input_full/games/dummy/dir/subdir
 _games.log: FINAL IN: /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/dummy/dir/subdir
 _games.log: FINAL OUT: /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/dummy/dir/subdir
+Waiting for job to finish...
 _games.log: copyFiles FROM=/home/mortennk/koding/tigflow/app_wx/tests/input_full/games/dummy/dir/subdir TO=/home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/dummy/dir/subdir
 _games.log:   Indexing /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/dummy/dir/subdir
 _games.log:   Found 1 files, total 35 bytes
-_games.log:   Free disk space: 1630621696 bytes
+_games.log:   Free disk space: 1640546304 bytes
 _games.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/dummy/dir/subdir/somefile => /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/dummy/dir/subdir/somefile
+_games.log: Updating _out_games/tiglib_installed.conf with dummy/dir/subdir=/home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/dummy/dir/subdir
 
 Importing 'tiggit.net/already_exists':
 _games.log: Importing tiggit.net/already_exists from input_full to _out_games
@@ -52,13 +54,15 @@ _games.log:   toDir=_out_games/gamedata/tiggit.net/game1
 _games.log: Picked source dir input_full/games/tiggit.net/game1
 _games.log: FINAL IN: /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/game1
 _games.log: FINAL OUT: /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/game1
+Waiting for job to finish...
 _games.log: copyFiles FROM=/home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/game1 TO=/home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/game1
 _games.log:   Indexing /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/game1
 _games.log:   Found 3 files, total 57 bytes
-_games.log:   Free disk space: 1630605312 bytes
+_games.log:   Free disk space: 1640525824 bytes
 _games.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/game1/file1.txt => /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/game1/file1.txt
 _games.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/game1/dir/file3.png => /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/game1/dir/file3.png
 _games.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/game1/file2 => /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/game1/file2
+_games.log: Updating _out_games/tiglib_installed.conf with tiggit.net/game1=/home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/game1
 
 Importing 'tiggit.net/game2':
 _games.log: Importing tiggit.net/game2 from input_full to _out_games
@@ -68,11 +72,13 @@ _games.log:   toDir=_out_games/gamedata/tiggit.net/game2
 _games.log: Picked source dir input_full/data/tiggit.net/game2
 _games.log: FINAL IN: /home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/game2
 _games.log: FINAL OUT: /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/game2
+Waiting for job to finish...
 _games.log: copyFiles FROM=/home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/game2 TO=/home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/game2
 _games.log:   Indexing /home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/game2
 _games.log:   Found 1 files, total 24 bytes
-_games.log:   Free disk space: 1630580736 bytes
+_games.log:   Free disk space: 1640497152 bytes
 _games.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/game2/file_in_game2 => /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/game2/file_in_game2
+_games.log: Updating _out_games/tiglib_installed.conf with tiggit.net/game2=/home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/game2
 
 Importing 'tiggit.net/backslash':
 _games.log: Importing tiggit.net/backslash from input_full to _out_games
@@ -82,11 +88,13 @@ _games.log:   toDir=_out_games/gamedata/tiggit.net/backslash
 _games.log: Picked source dir input_full/data/tiggit.net/backslash
 _games.log: FINAL IN: /home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/backslash
 _games.log: FINAL OUT: /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/backslash
+Waiting for job to finish...
 _games.log: copyFiles FROM=/home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/backslash TO=/home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/backslash
 _games.log:   Indexing /home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/backslash
 _games.log:   Found 1 files, total 0 bytes
-_games.log:   Free disk space: 1630572544 bytes
+_games.log:   Free disk space: 1640488960 bytes
 _games.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/backslash/test => /home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/backslash/test
+_games.log: Updating _out_games/tiglib_installed.conf with tiggit.net/backslash=/home/mortennk/koding/tigflow/app_wx/tests/_out_games/gamedata/tiggit.net/backslash
 
 Directory: _out_games
 00                                                 gamedata
@@ -105,5 +113,7 @@ _YgjiSnf9WKAg5dRoPLJbvAGUKux2UKK0dfiq4JvO6Qb       gamedata/tiggit.net/game1/fil
 47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU        gamedata/tiggit.net/game1/file2
 00                                                 gamedata/tiggit.net/game2
 -24vIJ0XC5ZlZomzG4zciR9wea0FbHm9dmEtM_OF9tEY       gamedata/tiggit.net/game2/file_in_game2
-Total 16 elements
-Hash: BdOlF3JkWSLncbE5MkfOJ17v7MEFDsKJLl5X7TXsc65eB
+jOJ-flJ296aimW0fM5a5cOAb4n23yQ_I10jwFKRRvk6wAQ     tiglib_installed.conf
+YWGTB1q0OF07IzAfBzdwCGk4S_0ql96nBSohfpbQD8A_AQ     tiglib_installed.conf.old
+Total 18 elements
+Hash: dbEX-4g6pR5DEYYaKeLKO2Jyj9MK8QlFQ5f2WDNkg9rgB

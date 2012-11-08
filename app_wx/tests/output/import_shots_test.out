@@ -1,0 +1,23 @@
+Importing screenshots:
+_shots.log: Importing screenshots from input_full to _out_shots
+_shots.log: FINAL IN: /home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net
+_shots.log: FINAL OUT: /home/mortennk/koding/tigflow/app_wx/tests/_out_shots/shots_300x260/tiggit.net
+Waiting for job to finish...
+_shots.log: copyFiles FROM=/home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net TO=/home/mortennk/koding/tigflow/app_wx/tests/_out_shots/shots_300x260/tiggit.net
+_shots.log:   Indexing /home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net
+_shots.log:   Found 4 files, total 8 bytes
+_shots.log:   Free disk space: 1640521728 bytes
+_shots.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net/file3.png => /home/mortennk/koding/tigflow/app_wx/tests/_out_shots/shots_300x260/tiggit.net/file3.png
+_shots.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net/file4.tmp => /home/mortennk/koding/tigflow/app_wx/tests/_out_shots/shots_300x260/tiggit.net/file4.tmp
+_shots.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net/file1 => /home/mortennk/koding/tigflow/app_wx/tests/_out_shots/shots_300x260/tiggit.net/file1.png
+_shots.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net/file2 => /home/mortennk/koding/tigflow/app_wx/tests/_out_shots/shots_300x260/tiggit.net/file2.png
+
+Directory: _out_shots
+00                                                 shots_300x260
+00                                                 shots_300x260/tiggit.net
+Q1WkaxnTSNwvV8BG-O9j1FOOu5NgAPPJ7pVKJ0YN2GUC       shots_300x260/tiggit.net/file1.png
+U8I05ehHK2rFHBrhyrP-BvrQU7646_2Jd7AQZVv908MC       shots_300x260/tiggit.net/file2.png
+ESHPzNWRPwpj_sQKb_1E6mT53BNcZmNLoAHRC89DAqIC       shots_300x260/tiggit.net/file3.png
+feFVXfDCcAMp6BW5OzLFccPqVNyWe4noGrc7mXK3LR0C       shots_300x260/tiggit.net/file4.tmp
+Total 6 elements
+Hash: E9qE7WWHQlLHqEHrEmhX8axUQB19a5flEM6RkNXp_ImxAQ

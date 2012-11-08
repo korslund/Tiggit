@@ -21,7 +21,7 @@ namespace Import
                                  Spread::SpreadLib *spread, Misc::Logger &logger,
                                  bool async=true);
 
-  void cleanup(const std::string &from, std::vector<std::string> &games,
+  void cleanup(const std::string &from, const std::vector<std::string> &games,
                Misc::Logger &logger);
 
   void copyFiles(const std::string &from, const std::string &to, bool addPng,

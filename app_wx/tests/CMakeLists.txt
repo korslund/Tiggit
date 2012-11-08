@@ -40,3 +40,12 @@ target_link_libraries(import_config_test Spread ${LIBS})
 
 add_executable(import_games_test import_games_test.cpp ${MIDIR}/logger.cpp ${AWDIR}/importer_backend.cpp ${MANGLE} ${MIDIR}/freespace.cpp)
 target_link_libraries(import_games_test Spread ${LIBS})
+
+add_executable(import_shots_test import_shots_test.cpp ${MIDIR}/logger.cpp ${AWDIR}/importer_backend.cpp ${MANGLE} ${MIDIR}/freespace.cpp)
+target_link_libraries(import_shots_test Spread ${LIBS})
+
+add_executable(import_clean_test import_clean_test.cpp ${MIDIR}/logger.cpp ${AWDIR}/importer_backend.cpp ${MANGLE} ${MIDIR}/freespace.cpp)
+target_link_libraries(import_clean_test Spread ${LIBS})
+
+add_executable(import_gui import_gui_test.cpp ${MIDIR}/logger.cpp ${AWDIR}/importer_backend.cpp ${AWDIR}/importer_gui.cpp ${AWDIR}/jobprogress.cpp ${WDIR}/progress_holder.cpp ${MANGLE} ${MIDIR}/freespace.cpp)
+target_link_libraries(import_gui Spread ${LIBS} ${WLIBS})

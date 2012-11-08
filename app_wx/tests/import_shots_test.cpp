@@ -34,7 +34,8 @@ int main()
   else
     cout << "ERROR: Info was empty\n";
 
-  printDir(outdir);
+  if(bf::exists(outdir))
+    printDir(outdir);
 
   return 0;
 }

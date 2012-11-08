@@ -1,0 +1,95 @@
+Copying input directory:
+_clean.log: copyFiles FROM=input_full TO=_out_clean
+_clean.log:   Indexing /home/mortennk/koding/tigflow/app_wx/tests/input_full
+_clean.log:   Found 15 files, total 471 bytes
+_clean.log:   Free disk space: 1639174144 bytes
+_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/readnews.json => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/readnews.json
+_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/dummy/dir/subdir/somefile => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/games/dummy/dir/subdir/somefile
+_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/already_exists/should_never_be_copied => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/games/tiggit.net/already_exists/should_never_be_copied
+_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/game1/file1.txt => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/games/tiggit.net/game1/file1.txt
+_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/game1/dir/file3.png => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/games/tiggit.net/game1/dir/file3.png
+_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/game1/file2 => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/games/tiggit.net/game1/file2
+_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/game2/file_in_game2 => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/data/tiggit.net/game2/file_in_game2
+_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/backslash/test => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/data/tiggit.net/backslash/test
+_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/config => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/config
+_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net/file3.png => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/cache/shot300x260/tiggit.net/file3.png
+_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net/file4.tmp => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/cache/shot300x260/tiggit.net/file4.tmp
+_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net/file1 => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/cache/shot300x260/tiggit.net/file1
+_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net/file2 => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/cache/shot300x260/tiggit.net/file2
+_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/ratings.json => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/ratings.json
+_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/installed.json => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/installed.json
+
+BEFORE:
+
+Directory: _out_clean
+00                                                 cache
+00                                                 cache/shot300x260
+00                                                 cache/shot300x260/tiggit.net
+Q1WkaxnTSNwvV8BG-O9j1FOOu5NgAPPJ7pVKJ0YN2GUC       cache/shot300x260/tiggit.net/file1
+U8I05ehHK2rFHBrhyrP-BvrQU7646_2Jd7AQZVv908MC       cache/shot300x260/tiggit.net/file2
+ESHPzNWRPwpj_sQKb_1E6mT53BNcZmNLoAHRC89DAqIC       cache/shot300x260/tiggit.net/file3.png
+feFVXfDCcAMp6BW5OzLFccPqVNyWe4noGrc7mXK3LR0C       cache/shot300x260/tiggit.net/file4.tmp
+UF7iKZaUDQF_ZjyIzgJNpMeVU51UN17tLPhd3ijVXIMx       config
+00                                                 data
+00                                                 data/tiggit.net
+00                                                 data/tiggit.net/backslash
+47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU        data/tiggit.net/backslash/test
+00                                                 data/tiggit.net/game2
+-24vIJ0XC5ZlZomzG4zciR9wea0FbHm9dmEtM_OF9tEY       data/tiggit.net/game2/file_in_game2
+00                                                 games
+00                                                 games/dummy
+00                                                 games/dummy/dir
+00                                                 games/dummy/dir/subdir
+ujPsFpQM5Th6MNpHHci_Jjo9Z_7Of3rr-By3uzIhCWwj       games/dummy/dir/subdir/somefile
+00                                                 games/tiggit.net
+00                                                 games/tiggit.net/already_exists
+47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU        games/tiggit.net/already_exists/should_never_be_copied
+00                                                 games/tiggit.net/game1
+00                                                 games/tiggit.net/game1/dir
+06ISSHlFYBtm6Byhx95ovV17xCFS5bLY0bVqs5zooU4e       games/tiggit.net/game1/dir/file3.png
+_YgjiSnf9WKAg5dRoPLJbvAGUKux2UKK0dfiq4JvO6Qb       games/tiggit.net/game1/file1.txt
+47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU        games/tiggit.net/game1/file2
+g7yAIW9qhOGf5EVFYCvaNnly43rvZ2aA-kFFTvAS9and       installed.json
+agc7yDUWqOCl-LSbhFZ1UiEKPcg6Dzgq_geXPUmzohBD       ratings.json
+qYSMd8XgGYXJDFdEW05gdBtaisYCdtXd-Vvb-gAyNa8K       readnews.json
+Total 30 elements
+Hash: TFYUvmjzNDU9-_2440rLTpcdauJ1VpW00CMdSVYk_MquBw
+_clean.log: Cleaning up /home/mortennk/koding/tigflow/app_wx/tests/_out_clean
+_clean.log: Deleting /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/all_games.json
+_clean.log:   Not found, ignoring.
+_clean.log: Deleting /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/auth.json
+_clean.log:   Not found, ignoring.
+_clean.log: Deleting /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/config
+_clean.log: Deleting /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/installed.json
+_clean.log: Deleting /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/latest.tig
+_clean.log:   Not found, ignoring.
+_clean.log: Deleting /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/news.json
+_clean.log:   Not found, ignoring.
+_clean.log: Deleting /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/promo.json
+_clean.log:   Not found, ignoring.
+_clean.log: Deleting /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/ratings.json
+_clean.log: Deleting /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/readnews.json
+_clean.log: Deleting /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/cache
+_clean.log: Deleting /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/incoming
+_clean.log:   Not found, ignoring.
+_clean.log: Deleting /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/tigfiles
+_clean.log:   Not found, ignoring.
+_clean.log: Deleting /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/games/dummy/dir/subdir
+_clean.log: Deleting /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/games/tiggit.net/game1
+_clean.log: Deleting /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/data/tiggit.net/backslash
+
+AFTER:
+
+Directory: _out_clean
+00                                                 data
+00                                                 data/tiggit.net
+00                                                 data/tiggit.net/game2
+-24vIJ0XC5ZlZomzG4zciR9wea0FbHm9dmEtM_OF9tEY       data/tiggit.net/game2/file_in_game2
+00                                                 games
+00                                                 games/dummy
+00                                                 games/dummy/dir
+00                                                 games/tiggit.net
+00                                                 games/tiggit.net/already_exists
+47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU        games/tiggit.net/already_exists/should_never_be_copied
+Total 10 elements
+Hash: 5u2SJJ09MvGBpawe1djdFsHwwNHU4g51azwL5gEjMyN7Ag
