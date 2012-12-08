@@ -55,6 +55,13 @@ struct TigApp : wxApp
     return true;
   }
 
+  int OnExit()
+  {
+    // Make sure we clean up the notifier on exit
+    wxTigApp::notify.cleanup();
+    return wxApp::OnExit();
+  }
+
   bool OnInit()
   {
     if(!wxApp::OnInit())

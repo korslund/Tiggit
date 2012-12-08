@@ -40,6 +40,28 @@ static GameInf* getFromId(const TigLib::Repo &repo, const std::string &idname)
   return (GameInf*)(it->second->extra);
 }
 
+void StatusNotifier::cleanup()
+{
+  // Disable the loop
+  data = NULL;
+
+  // Abort the update job, if any
+  if(updateJob && !updateJob->isFinished())
+    updateJob->abort();
+
+  // Abort any other job
+  WatchList::iterator it;
+  for(it = watchList.begin(); it != watchList.end(); it++)
+    {
+      JobInfoPtr job = it->second;
+      if(job && !job->isFinished())
+        job->abort();
+    }
+
+  // Give jobs some time to finish
+  wxSleep(1);
+}
+
 void StatusNotifier::reassignJobs()
 {
   if(!data) return;

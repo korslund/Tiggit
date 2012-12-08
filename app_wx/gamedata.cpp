@@ -107,9 +107,9 @@ void wxTigApp::GameData::updateReady()
          When the user presses the displayed button, notifyButton() is
          invoked, and the program is restarted.
 
-         If a new version is available, we do NOT reload the
-         data. This is because the new data may be packaged in a new
-         format that the current version doesn't know how to handle.
+         If a new version is available, we do NOT reload the data.
+         This is because the new data may be packaged in a new format
+         that the current version doesn't know how to handle.
 
          This is by design, so that we can update the client and data
          simultaneously, without worrying about cross-version

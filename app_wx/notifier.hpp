@@ -26,6 +26,9 @@ namespace wxTigApp
 
     StatusNotifier() : data(0) {}
 
+    // Invoked at program exit
+    void cleanup();
+
     // Invoked regularly to inspect the watchList
     void tick();
 

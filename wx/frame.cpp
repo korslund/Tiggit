@@ -43,8 +43,11 @@ TigFrame::TigFrame(const wxString& title, const std::string &ver,
 
   SetMenuBar(menuBar);
 
-  CreateStatusBar();
-  SetStatusText(strToWx("Welcome to Tiggit - version " + ver));
+  CreateStatusBar(2);
+  int widths[] = {200,-1};
+  SetStatusWidths(2, widths);
+  SetStatusText(strToWx("Tiggit version " + ver), 0);
+  SetStatusBarPane(2);
 
   mainSizer = new wxBoxSizer(wxVERTICAL);
   wxPanel *panel = new wxPanel(this);

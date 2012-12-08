@@ -98,11 +98,8 @@ struct AllGamesTab : GameTab
 // Lists newly added games
 struct NewGamesTab : GameTab
 {
-  int newGames;
-
   NewGamesTab(wxNotebook *parent, wxGameData &data)
-    : GameTab(parent, wxT("Latest"), data.getLatest()),
-      newGames(0)
+    : GameTab(parent, wxT("Latest"), data.getLatest())
   {
     list->addColumn("Name", 370, new TitleCol(true));
     list->addColumn("Added", 120, new AddDateCol);
@@ -113,14 +110,13 @@ struct NewGamesTab : GameTab
 
   int getTitleNumber()
   {
-    newGames = 0;
+    int newGames = 0;
+
     // Count number of new games
-    /* TODO
-    const std::vector<int> &base = lister.getBaseList();
-    for(int i=0; i<base.size(); i++)
-      if(data.arr[base[i]].isNew)
+    for(int i=0; i<lister.size(); i++)
+      if(lister.get(i).isNew())
         newGames++;
-    */
+
     return newGames;
   }
 };
