@@ -391,6 +391,11 @@ void GameTab::onContextClick(wxCommandEvent &evt)
       if((wxGetOsVersion() & wxOS_WINDOWS) != 0)
         {
           std::string cmd = "explorer \"" + e.getDir() + "\"";
+
+	  // Replace / with \ to make explorer happy
+	  for(int i=0; i<cmd.size(); i++)
+	    if(cmd[i] == '/') cmd[i] = '\\';
+
           int res = wxExecute(strToWx(cmd));
           if(res == -1)
             Boxes::error("Failed to launch " + cmd);
