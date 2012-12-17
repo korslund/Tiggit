@@ -69,7 +69,7 @@ struct Copy
     vector<string> fromList, toList;
     int64_t totalSize = 0;
 
-    // Recurse the directory
+    // Recurse the directory and list files to copy
     recursive_directory_iterator iter(srcDir), end;
     log("  Indexing " + srcDir.string());
     for(; iter != end; ++iter)
@@ -121,27 +121,9 @@ struct Copy
     if(diskFree < totalSize)
       fail("Not enough free disk space on destination drive " + dstDir.string());
 
-    int64_t cur = 0;
-    for(int i=0; i<fromList.size(); i++)
-      {
-        // If this is run in a Job thread, we should check regularly
-        // for user aborts.
-        if(info && info->checkStatus())
-          return;
-
-        const string &src = fromList[i];
-        const string &dst = toList[i];
-
-        log("  Copying " + src + " => " + dst);
-
-        // Let Spread perform the copying, as it will hash and index
-        // files in the process.
-        spread->cacheCopy(src, dst);
-
-        int64_t size = file_size(src);
-        cur += size;
-        prog(cur, totalSize);
-      }
+    log("  Copying files...");
+    spread->cacheCopy(fromList, toList, info);
+    log("  Done");
   }
 };
 

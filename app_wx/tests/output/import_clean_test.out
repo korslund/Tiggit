@@ -2,22 +2,9 @@ Copying input directory:
 _clean.log: copyFiles FROM=input_full TO=_out_clean
 _clean.log:   Indexing /home/mortennk/koding/tigflow/app_wx/tests/input_full
 _clean.log:   Found 15 files, total 471 bytes
-_clean.log:   Free disk space: 1639174144 bytes
-_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/readnews.json => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/readnews.json
-_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/dummy/dir/subdir/somefile => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/games/dummy/dir/subdir/somefile
-_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/already_exists/should_never_be_copied => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/games/tiggit.net/already_exists/should_never_be_copied
-_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/game1/file1.txt => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/games/tiggit.net/game1/file1.txt
-_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/game1/dir/file3.png => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/games/tiggit.net/game1/dir/file3.png
-_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/games/tiggit.net/game1/file2 => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/games/tiggit.net/game1/file2
-_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/game2/file_in_game2 => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/data/tiggit.net/game2/file_in_game2
-_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/data/tiggit.net/backslash/test => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/data/tiggit.net/backslash/test
-_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/config => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/config
-_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net/file3.png => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/cache/shot300x260/tiggit.net/file3.png
-_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net/file4.tmp => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/cache/shot300x260/tiggit.net/file4.tmp
-_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net/file1 => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/cache/shot300x260/tiggit.net/file1
-_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net/file2 => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/cache/shot300x260/tiggit.net/file2
-_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/ratings.json => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/ratings.json
-_clean.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/installed.json => /home/mortennk/koding/tigflow/app_wx/tests/_out_clean/installed.json
+_clean.log:   Free disk space: 9676742656 bytes
+_clean.log:   Copying files...
+_clean.log:   Done
 
 BEFORE:
 

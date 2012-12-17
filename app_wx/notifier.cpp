@@ -60,7 +60,7 @@ void StatusNotifier::cleanup()
 
   // Give jobs some time to finish. This is run after the main window
   // closes, so a delay before exiting won't disturb the user.
-  wxSleep(2);
+  wxSleep(1);
 }
 
 void StatusNotifier::reassignJobs()

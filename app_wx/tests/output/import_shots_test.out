@@ -6,11 +6,9 @@ Waiting for job to finish...
 _shots.log: copyFiles FROM=/home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net TO=/home/mortennk/koding/tigflow/app_wx/tests/_out_shots/shots_300x260/tiggit.net
 _shots.log:   Indexing /home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net
 _shots.log:   Found 4 files, total 8 bytes
-_shots.log:   Free disk space: 1640521728 bytes
-_shots.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net/file3.png => /home/mortennk/koding/tigflow/app_wx/tests/_out_shots/shots_300x260/tiggit.net/file3.png
-_shots.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net/file4.tmp => /home/mortennk/koding/tigflow/app_wx/tests/_out_shots/shots_300x260/tiggit.net/file4.tmp
-_shots.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net/file1 => /home/mortennk/koding/tigflow/app_wx/tests/_out_shots/shots_300x260/tiggit.net/file1.png
-_shots.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input_full/cache/shot300x260/tiggit.net/file2 => /home/mortennk/koding/tigflow/app_wx/tests/_out_shots/shots_300x260/tiggit.net/file2.png
+_shots.log:   Free disk space: 9676673024 bytes
+_shots.log:   Copying files...
+_shots.log:   Done
 
 Directory: _out_shots
 00                                                 shots_300x260

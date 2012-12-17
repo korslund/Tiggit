@@ -1,10 +1,9 @@
 _import1.log: copyFiles FROM=input1 TO=_output1
 _import1.log:   Indexing /home/mortennk/koding/tigflow/app_wx/tests/input1
 _import1.log:   Found 3 files, total 36 bytes
-_import1.log:   Free disk space: 2194169856 bytes
-_import1.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input1/file.png => /home/mortennk/koding/tigflow/app_wx/tests/_output1/file.png
-_import1.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input1/dir/file2 => /home/mortennk/koding/tigflow/app_wx/tests/_output1/dir/file2
-_import1.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input1/file1 => /home/mortennk/koding/tigflow/app_wx/tests/_output1/file1
+_import1.log:   Free disk space: 9676713984 bytes
+_import1.log:   Copying files...
+_import1.log:   Done
 Copying non-existing source:
 _import1.log: copyFiles FROM=nothing TO=_output2
 _import1.log: ERROR: COPY: Source directory nothing not found!
@@ -19,10 +18,9 @@ GOT: boost::filesystem::create_directory: Permission denied: "/blah"
 _import1.log: copyFiles FROM=input1 TO=_output3
 _import1.log:   Indexing /home/mortennk/koding/tigflow/app_wx/tests/input1
 _import1.log:   Found 3 files, total 36 bytes
-_import1.log:   Free disk space: 2194141184 bytes
-_import1.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input1/file.png => /home/mortennk/koding/tigflow/app_wx/tests/_output3/file.png
-_import1.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input1/dir/file2 => /home/mortennk/koding/tigflow/app_wx/tests/_output3/dir/file2.png
-_import1.log:   Copying /home/mortennk/koding/tigflow/app_wx/tests/input1/file1 => /home/mortennk/koding/tigflow/app_wx/tests/_output3/file1.png
+_import1.log:   Free disk space: 9676689408 bytes
+_import1.log:   Copying files...
+_import1.log:   Done
 
 Directory: _output1
 00                                                 dir
