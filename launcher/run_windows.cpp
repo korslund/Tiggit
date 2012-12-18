@@ -1,4 +1,5 @@
 #include "run_windows.hpp"
+#include "assert.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -48,8 +49,10 @@ void Launcher::win32_run(const std::string &command, const std::string &workdir)
   // Check if the command is a .bat file
   if(iends(command, ".bat"))
     {
+      /* This didn't work in all cases. Find a plan B. 
       ShellExecute(NULL, NULL, (char*)command.c_str(), NULL, (workdir==""?NULL:workdir.c_str()), SW_SHOWNORMAL);
       return;
+      */
     }
 
   STARTUPINFO si;
