@@ -24,8 +24,9 @@ namespace Import
   void cleanup(const std::string &from, const std::vector<std::string> &games,
                Misc::Logger &logger);
 
-  void copyFiles(const std::string &from, const std::string &to, bool addPng,
-                 Spread::SpreadLib *spread, Spread::JobInfoPtr info, Misc::Logger &logger);
+  Spread::JobInfoPtr copyFiles(const std::string &from, const std::string &to,
+                               Spread::SpreadLib *spread,
+                               Misc::Logger *logger = NULL);
 }
 
 #endif

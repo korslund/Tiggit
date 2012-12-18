@@ -83,6 +83,11 @@ bool Repo::findRepo(const std::string &where)
   return true;
 }
 
+bool Repo::setStoredPath(const std::string &newPath)
+{
+  return TigLibInt::setStoredPath(newPath);
+}
+
 void Repo::setDirs()
 {
   assert(dir != "");

@@ -286,6 +286,11 @@ struct TigApp : wxApp
         // Check for and act on cleanup instructions.
         ImportGui::doUserCleanup(rep.getPath());
 
+        // TODO: Reaffirm the stored path. This might be needed on
+        // Linux, where the path is stored in a file. In some cases
+        // the user cleanup above can delete that file.
+        //rep.setStoredPath(rep.getPath());
+
         return true;
       }
     catch(std::exception &e)

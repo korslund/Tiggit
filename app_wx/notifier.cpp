@@ -50,9 +50,15 @@ void StatusNotifier::cleanup()
   // Disable the loop
   data = NULL;
 
+  // True if there was anything to abort
+  bool abort = false;
+
   // Abort the update job, if any
   if(updateJob && !updateJob->isFinished())
-    updateJob->abort();
+    {
+      updateJob->abort();
+      abort = true;
+    }
 
   // Abort any other job
   WatchList::iterator it;
@@ -60,12 +66,16 @@ void StatusNotifier::cleanup()
     {
       JobInfoPtr job = it->second;
       if(job && !job->isFinished())
-        job->abort();
+        {
+          job->abort();
+          abort = true;
+        }
     }
 
   // Give jobs some time to finish. This is run after the main window
   // closes, so a delay before exiting won't disturb the user.
-  wxSleep(1);
+  if(abort)
+    wxSleep(1);
 }
 
 void StatusNotifier::reassignJobs()

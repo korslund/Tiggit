@@ -227,8 +227,8 @@ Spread::JobInfoPtr AppUpdater::startJob()
 
 bool AppUpdater::launchCorrectExe()
 {
-  // This is meand to be run at program startup, so we assume no
-  // values have been set yet
+  // This is ment to be run at program startup, so we assume no values
+  // have been set yet
   assert(!hasNewUpdate);
   assert(!current);
   assert(newExePath == "");

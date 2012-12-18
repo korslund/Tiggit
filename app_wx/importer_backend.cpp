@@ -47,9 +47,9 @@ struct Copy
     if(info) info->setProgress(cur, tot);
   }
 
-  void copyFiles(const string &from, const string &to, bool addPng=false)
+  void doCopyFiles(const string &from, const string &to, bool addPng=false)
   {
-    log("copyFiles FROM=" + from + " TO=" + to);
+    log("doCopyFiles FROM=" + from + " TO=" + to);
 
     assert(spread);
     assert(!info || info->isBusy());
@@ -127,17 +127,6 @@ struct Copy
   }
 };
 
-void Import::copyFiles(const string &from, const string &to, bool addPng,
-                       SpreadLib *spread, JobInfoPtr info,
-                       Misc::Logger &logger)
-{
-  Copy cpy;
-  cpy.spread = spread;
-  cpy.info = info;
-  cpy.logger = &logger;
-  cpy.copyFiles(from, to, addPng);
-}
-
 static void file2GameList(vector<string> &games, const string &dir,
                           const std::string &name, Misc::Logger &log)
 {
@@ -192,16 +181,26 @@ struct CopyJob : Spread::Job
   SpreadLib *spread;
   bool addPng;
 
+  CopyJob() : log(NULL), addPng(false) {}
+
   void doJob()
   {
     setBusy("Copying files");
-    Import::copyFiles(fromDir, toDir, addPng, spread, info, *log);
+    assert(spread);
+
+    Copy cpy;
+    cpy.spread = spread;
+    cpy.info = info;
+    cpy.logger = log;
+    cpy.doCopyFiles(fromDir, toDir, addPng);
+
     if(checkStatus()) return;
 
     // Success. Write the entry to the output config file, if any.
     if(outConf != "" && idname != "")
       {
-        (*log)("Updating " + outConf + " with " + idname + "=" + toDir);
+        if(log)
+          (*log)("Updating " + outConf + " with " + idname + "=" + toDir);
         JConfig conf(outConf);
         conf.set(idname, toDir);
       }
@@ -209,6 +208,22 @@ struct CopyJob : Spread::Job
     setDone();
   }
 };
+
+JobInfoPtr Import::copyFiles(const string &from, const string &to,
+                             SpreadLib *spread, Misc::Logger *logger)
+{
+  if(logger) (*logger)("Copying " + from + " to " + to);
+
+  if(bf::equivalent(from, to))
+    return JobInfoPtr();
+
+  CopyJob *job = new CopyJob;
+  job->fromDir = from;
+  job->toDir = to;
+  job->log = logger;
+  job->spread = spread;
+  return Thread::run(job);
+}
 
 JobInfoPtr Import::importGame(const string &game,
                               const string &from, const string &to,
@@ -417,22 +432,22 @@ void Import::cleanup(const string &from, const vector<string> &games,
     }
 }
 
-static void mergeConf(const std::string &fromDir,
+static void copyFile(const std::string &fromDir,
                       const std::string &toDir,
                       const std::string &name)
 {
-  string infile = (bf::path(fromDir)/name).string();
-  string outfile = (bf::path(toDir)/name).string();
-
-  JConfig input(infile, true);
-  JConfig output(outfile);
-
-  vector<string> names = input.getNames();
-  for(int i=0; i<names.size(); i++)
+  try
     {
-      const string &name = names[i];
-      if(!output.has(name)) output.set(name, input.get(name));
+      bf::path from = fromDir;
+      bf::path to = toDir;
+
+      from /= name;
+      to /= name;
+
+      if(exists(from) && !exists(to))
+        copy_file(from, to);
     }
+  catch(...) {}
 }
 
 void Import::importConfig(const string &from, const string &to,
@@ -451,11 +466,13 @@ void Import::importConfig(const string &from, const string &to,
 
   using namespace Misc;
 
-  // Convert new config files first
-  mergeConf(from, to, "tiglib.conf");
-  mergeConf(from, to, "tiglib_news.conf");
-  mergeConf(from, to, "tiglib_rates.conf");
-  mergeConf(from, to, "wxtiggit.conf");
+  // Copy over new files first, if present
+  copyFile(from, to, "tiglib.conf");
+  copyFile(from, to, "tiglib_news.conf");
+  copyFile(from, to, "tiglib_rates.conf");
+  copyFile(from, to, "wxtiggit.conf");
+  copyFile(from, to, "stats.json");
+  copyFile(from, to, "news.json");
 
   // Convert main config file
   try

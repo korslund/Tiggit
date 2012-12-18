@@ -40,9 +40,7 @@ namespace TigLib
     bool isLocked() const;
 
     /* Find or establish a repository in the given location. An empty
-       path means we should use the standard path for this OS. This
-       will also look for repositories in legacy locations from older
-       versions of Tiggit.
+       path means we should use the standard path for this OS.
 
        Returns true on success, false if the repository is not usable
        (eg. if the path is not writable), or if no standard path was
@@ -53,6 +51,15 @@ namespace TigLib
        location suggestion.
      */
     bool findRepo(const std::string &where = "");
+
+    /* Set the global stored path. This does NOT affect the current
+       object in any way. It will just affect what directory is found
+       the NEXT time findRepo() is called.
+
+       Returns false if the path could not be set (usually means the
+       path is not writable.)
+     */
+    bool setStoredPath(const std::string &newPath);
 
     /* Returns the default path to suggest to the user if no existing
        repository is found.

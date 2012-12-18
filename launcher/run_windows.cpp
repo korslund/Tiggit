@@ -25,8 +25,33 @@ static std::string getWinError(int errCode, const std::string &prepend = "")
   return res;
 }
 
+static bool icmp(char a, char b)
+{
+  if(a >= 'A' && a <= 'Z') a += 'a'-'A';
+  if(b >= 'A' && b <= 'Z') b += 'a'-'A';
+  return a == b;
+}
+
+static bool iends(const std::string &str, const std::string &ending)
+{
+  if(str.size() < ending.size()) return false;
+
+  std::string tmp = str.substr(str.size()-ending.size());
+  assert(tmp.size() == ending.size());
+  for(int i=0; i<tmp.size(); i++)
+    if(!icmp(tmp[i], ending[i])) return false;
+  return true;
+}
+
 void Launcher::win32_run(const std::string &command, const std::string &workdir)
 {
+  // Check if the command is a .bat file
+  if(iends(command, ".bat"))
+    {
+      ShellExecute(NULL, NULL, (char*)command.c_str(), NULL, (workdir==""?NULL:workdir.c_str()), SW_SHOWNORMAL);
+      return;
+    }
+
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
 

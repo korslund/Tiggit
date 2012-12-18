@@ -4,7 +4,11 @@
 #include "notifier.hpp"
 #include "misc/dirfinder.hpp"
 #include "importer_gui.hpp"
+#include <boost/filesystem.hpp>
+#include <spread/misc/readjson.hpp>
+#include "launcher/run.hpp"
 
+namespace bf = boost::filesystem;
 using namespace TigData;
 using namespace wxTigApp;
 using namespace TigLib;
@@ -182,10 +186,45 @@ bool wxTigApp::GameData::moveRepo(const std::string &newPath)
 
   try
     {
-      // Import main data (games and screenshots). The last 'false'
-      // parameter means 'do not delete source files'.
-      if(!ImportGui::importRepoGui(repo.getPath(), newPath, &repo.getSpread(), false))
+      Spread::SpreadLib *spread = &repo.getSpread();
+
+      // Import main data (games, screenshots and config files.) The
+      // last 'false' parameter means 'do not delete source files'.
+      if(!ImportGui::importRepoGui(repo.getPath(), newPath, spread, false))
         return true;
+
+      bf::path oldP = repo.getPath(), newP = newPath;
+
+      // Next, copy executables and spread files.
+      if(!ImportGui::copyFilesGui((oldP/"run").string(), (newP/"run").string(),
+                                  spread, "Copying executables"))
+        return true;
+      if(!ImportGui::copyFilesGui((oldP/"spread/channels").string(),
+                                  (newP/"spread/channels").string(),
+                                  spread, "Copying Tiggit data"))
+        return true;
+
+      bf::copy_file(oldP/"spread/cache.conf", newP/"spread/cache.conf");
+
+      /* Create a cleanup file in the new repo. This will ask the user
+         if they want to delete the old repository after we've
+         restarted.
+       */
+      ReadJson::writeJson((newP/"cleanup.json").string(), oldP.string(), true);
+
+      // Finally, switch the globally stored path string over to the
+      // new location. This makes this the "official" repository from
+      // now on.
+      repo.setStoredPath(newPath);
+
+      // Notify the user that we are restarting from the new location
+      Boxes::say("Tiggit will now restart for changes to take effect");
+
+      // Launch the new exe
+      newP = newP / "run" / "1";
+      try { Launcher::run((newP/"tiggit.exe").string(), newP.string()); }
+      catch(std::exception &e) { Boxes::error(e.what()); }
+      frame->Close();
     }
   catch(std::exception &e)
     {
@@ -196,30 +235,6 @@ bool wxTigApp::GameData::moveRepo(const std::string &newPath)
       Boxes::error("An unknown error occured");
     }
 
-  // Test this process on its own. Use diffing and check that
-  // EVERYTHING is copied to the new location. Don't switch anything
-  // over yet. We also have to make sure we catch, report and abort on
-  // ANY error (a catch-all try block should work). An abort still
-  // returns 'true', so it doesn't loop the dialog box.
-
-  // The only files missing will be the log files, all .old files, and
-  // cache.conf. EVERYTHING else, including run/*, should be
-  // present. Actually we have to make sure we copy the 'current' file
-  // correctly though. We also create a cleanup.json file in the new
-  // repo.
-
-  // The final action is to write the cache file, set the global dir
-  // pointer, then restart. Say: "Tiggit will now restart for changes
-  // to take effect. [Ok]"
-
-  // Reuse whatever launch code we're already using to restart, but
-  // don't use appupdater, since that's too tied to the repo. We're
-  // not switching repo dirs internally, we're just setting it up for
-  // ANOTHER process to work off the new repo! THAT is clean
-  // transactional thinking!
-
-  // Finally consider moving this entire thing to a separate file as
-  // well. We're already using the importer for much of the work.
   return true;
 }
 

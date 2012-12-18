@@ -43,6 +43,28 @@ void ImportGui::doUserCleanup(const std::string &repoDir)
   catch(...) {}
 }
 
+bool ImportGui::copyFilesGui(const std::string &from, const std::string &to,
+                             Spread::SpreadLib *spread, const std::string &text)
+{
+  assert(spread);
+  if(bf::equivalent(from, to))
+    return false;
+
+  JobInfoPtr info = Import::copyFiles(from, to, spread);
+  if(info)
+    {
+      wxTigApp::JobProgress prog(info);
+      if(!prog.start(text))
+        {
+          if(info->isError())
+            Boxes::error("Copy failure: " + info->getMessage());
+          return false;
+        }
+      return true;
+    }
+  return false;
+}
+
 bool ImportGui::importRepoGui(const string &from, const string &to, SpreadLib *spread,
                               bool doCleanup)
 {
