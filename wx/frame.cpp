@@ -2,6 +2,7 @@
 #include "gametab.hpp"
 #include "myids.hpp"
 #include "dialogs.hpp"
+#include "boxes.hpp"
 
 using namespace wxTiggit;
 
@@ -88,6 +89,8 @@ TigFrame::TigFrame(const wxString& title, const std::string &ver,
   else
     freewareTab->select();
 
+  Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(TigFrame::onClose));
+
   Connect(wxID_EXIT, wxEVT_COMMAND_MENU_SELECTED,
           wxCommandEventHandler(TigFrame::onExit));
   Connect(myID_SPECIAL_KEY, wxEVT_COMMAND_BUTTON_CLICKED,
@@ -107,6 +110,19 @@ TigFrame::TigFrame(const wxString& title, const std::string &ver,
           wxCommandEventHandler(TigFrame::onDataMenu));
   Connect(myID_MENU_EXTERNAL, wxEVT_COMMAND_MENU_SELECTED,
           wxCommandEventHandler(TigFrame::onDataMenu));
+}
+
+void TigFrame::onClose(wxCloseEvent &event)
+{
+  bool exit = true;
+  if(event.CanVeto())
+    {
+      if(data.isActive())
+        exit = Boxes::ask("There are downloads in progress. Are you sure you want to exit? All downloads will be aborted.");
+    }
+
+  if(exit) Destroy();
+  else event.Veto();
 }
 
 void TigFrame::onOption(wxCommandEvent &event)
@@ -161,16 +177,24 @@ void TigFrame::onDataMenu(wxCommandEvent &event)
 
       while(true)
         {
-          OutputDirDialog dlg(this, curDir, "", error);
+          std::string path;
 
-          // Abort if the user pressed 'cancel', or if the new path is
-          // the same as the old.
-          if(!dlg.ok || !dlg.changed)
-            break;
+          {
+            OutputDirDialog dlg(this, curDir, "", error);
+
+            // Abort if the user pressed 'cancel', or if the new path is
+            // the same as the old.
+            if(!dlg.ok || !dlg.changed)
+              break;
+
+            path = dlg.path;
+
+            // Make sure dlg goes out of scope before continuing
+          }
 
           // Start import procedure. Will return false if the path was
           // not writable, otherwise true on success.
-          if(data.moveRepo(dlg.path)) break;
+          if(data.moveRepo(path)) break;
 
           // Give the user feedback and let them try again
           error = true;

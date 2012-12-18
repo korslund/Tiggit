@@ -157,6 +157,8 @@ void wxTigApp::GameData::notifyButton(int id)
     }
 }
 
+bool wxTigApp::GameData::isActive() { return notify.hasJobs(); }
+
 bool wxTigApp::GameData::moveRepo(const std::string &newPath)
 {
   PRINT("GameData::moveRepo(" << newPath << ")");

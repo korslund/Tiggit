@@ -37,6 +37,7 @@ namespace wxTiggit
     // Event handling
     void onNoticeButton(wxCommandEvent &event);
     void onExit(wxCommandEvent &event) { Close(); }
+    void onClose(wxCloseEvent &event);
     void onSpecialKey(wxCommandEvent &event);
     void onOption(wxCommandEvent &event);
     void onDataMenu(wxCommandEvent &event);

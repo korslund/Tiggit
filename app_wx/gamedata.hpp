@@ -46,6 +46,8 @@ namespace wxTigApp
     std::string getRepoDir() { return repo.getPath(); }
     bool moveRepo(const std::string &newPath);
 
+    bool isActive();
+
     // Notify us that an update is available. This will prompt the
     // user about the appropriate action.
     void updateReady();
