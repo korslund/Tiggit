@@ -158,24 +158,43 @@ struct TigApp : wxApp
         if(legacy_dir != "")
           {
             PRINT("Importing from " << legacy_dir);
-            if(!ImportGui::importRepoGui(legacy_dir, rep.getPath(), &rep.getSpread()))
+            if(!ImportGui::importRepoGui(legacy_dir, rep.getPath(), &rep.getSpread(), true))
               return false;
           }
 
         PRINT("Initializing repository");
-        if(!rep.initRepo())
-          {
-            if(Boxes::ask("Failed to lock repository: " + rep.getPath() + "\n\nThis usually means that a previous instance of Tiggit crashed. But it MIGHT also mean you are running two instances of Tiggit at once.\n\nAre you SURE you want to continue? If two programs access the repository at the same, data loss may occur!"))
-              {
-                if(!rep.initRepo(true))
-                  {
-                    Boxes::error("Still unable to lock repository. Aborting.");
-                    return false;
-                  }
-              }
-            else
+        {
+          // Try locking the repository
+          bool repOk = rep.initRepo();
+
+          if(!repOk)
+            {
+              // Try waiting a short while. The lock could be the
+              // remains of an exiting process that is still shutting
+              // down, as is typical when we are restarting from
+              // within the client itself.
+              wxSleep(2);
+              repOk = rep.initRepo();
+            }
+
+          if(!repOk)
+            {
+              // Ask the user
+              if(Boxes::ask("Failed to lock repository: " + rep.getPath() + "\n\nThis usually means that a previous instance of Tiggit crashed. But it MIGHT also mean you are running two instances of Tiggit at once.\n\nAre you SURE you want to continue? If two programs access the repository at the same, data loss may occur!"))
+                // The 'true' means override lock
+                repOk = rep.initRepo(true);
+              else
+                return false;
+            }
+
+          if(!repOk)
+            {
+              Boxes::error("Still unable to lock repository. Aborting.");
               return false;
-          }
+            }
+
+          assert(repOk);
+        }
 
         // Set up the GameData struct
         gameData = new wxTigApp::GameData(rep);
@@ -263,6 +282,9 @@ struct TigApp : wxApp
         gameData->frame = frame;
 
         PRINT("last_time: " << rep.getLastTime());
+
+        // Check for and act on cleanup instructions.
+        ImportGui::doUserCleanup(rep.getPath());
 
         return true;
       }

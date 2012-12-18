@@ -153,6 +153,14 @@ struct TestData : wxGameData
   wxGameList &getDemos() { return listDemos; }
   wxGameList &getInstalled() { return listInstalled; }
 
+  bool moveRepo(const std::string &newRepo)
+  {
+    cout << "Moved repo to " << newRepo << endl;
+    return true;
+  }
+
+  std::string getRepoDir() { return "over the rainbow"; }
+
   wxGameNews &getNews() { return testNews; }
   wxGameConf &conf() { return testConf; }
 

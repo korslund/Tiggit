@@ -15,6 +15,11 @@ using namespace Spread;
 #define PRINT(a)
 #endif
 
+bool StatusNotifier::hasJobs()
+{
+  return watchList.size() != 0;
+}
+
 void StatusNotifier::watchMe(GameInf *p)
 {
   assert(p);

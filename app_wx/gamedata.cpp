@@ -2,6 +2,8 @@
 
 #include "wx/boxes.hpp"
 #include "notifier.hpp"
+#include "misc/dirfinder.hpp"
+#include "importer_gui.hpp"
 
 using namespace TigData;
 using namespace wxTigApp;
@@ -153,6 +155,70 @@ void wxTigApp::GameData::notifyButton(int id)
     {
       PRINT("No process launched. Continuing this one instead.");
     }
+}
+
+bool wxTigApp::GameData::moveRepo(const std::string &newPath)
+{
+  PRINT("GameData::moveRepo(" << newPath << ")");
+
+  // First, check if the new path is usable. If the path is the same
+  // as the old path, exit with success.
+  if(!Misc::DirFinder::isWritable(newPath))
+    return false;
+
+  // NOTE: All points below this return 'true', even on error. The
+  // 'false' return value is ONLY used to signal a non-writable path.
+
+  // We do NOT allow running this function if downloads are currently
+  // in progress (TODO: later we will simply stash the jobs, and
+  // resume them on restart.)
+  if(notify.hasJobs())
+    {
+      Boxes::error("Cannot change directories while downloads are in progress");
+      return true;
+    }
+
+  try
+    {
+      // Import main data (games and screenshots). The last 'false'
+      // parameter means 'do not delete source files'.
+      if(!ImportGui::importRepoGui(repo.getPath(), newPath, &repo.getSpread(), false))
+        return true;
+    }
+  catch(std::exception &e)
+    {
+      Boxes::error(e.what());
+    }
+  catch(...)
+    {
+      Boxes::error("An unknown error occured");
+    }
+
+  // Test this process on its own. Use diffing and check that
+  // EVERYTHING is copied to the new location. Don't switch anything
+  // over yet. We also have to make sure we catch, report and abort on
+  // ANY error (a catch-all try block should work). An abort still
+  // returns 'true', so it doesn't loop the dialog box.
+
+  // The only files missing will be the log files, all .old files, and
+  // cache.conf. EVERYTHING else, including run/*, should be
+  // present. Actually we have to make sure we copy the 'current' file
+  // correctly though. We also create a cleanup.json file in the new
+  // repo.
+
+  // The final action is to write the cache file, set the global dir
+  // pointer, then restart. Say: "Tiggit will now restart for changes
+  // to take effect. [Ok]"
+
+  // Reuse whatever launch code we're already using to restart, but
+  // don't use appupdater, since that's too tied to the repo. We're
+  // not switching repo dirs internally, we're just setting it up for
+  // ANOTHER process to work off the new repo! THAT is clean
+  // transactional thinking!
+
+  // Finally consider moving this entire thing to a separate file as
+  // well. We're already using the importer for much of the work.
+  return true;
 }
 
 void wxTigApp::GameData::killData()

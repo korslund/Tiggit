@@ -43,6 +43,9 @@ namespace wxTigApp
     wxGameList &getDemos() { return *demos; }
     wxGameList &getInstalled() { return *installed; }
 
+    std::string getRepoDir() { return repo.getPath(); }
+    bool moveRepo(const std::string &newPath);
+
     // Notify us that an update is available. This will prompt the
     // user about the appropriate action.
     void updateReady();

@@ -138,11 +138,13 @@ void Import::copyFiles(const string &from, const string &to, bool addPng,
   cpy.copyFiles(from, to, addPng);
 }
 
-void Import::getGameList(vector<string> &games, const string &from,
-                         Misc::Logger &log)
+static void file2GameList(vector<string> &games, const string &dir,
+                          const std::string &name, Misc::Logger &log)
 {
-  string infile = (bf::path(from)/"installed.json").string();
+  std::string infile = (bf::path(dir)/name).string();
+
   log("Reading game list from " + infile);
+  if(!bf::exists(infile)) return;
 
   JConfig conf(infile);
   vector<string> names = conf.getNames();
@@ -171,6 +173,16 @@ void Import::getGameList(vector<string> &games, const string &from,
       // Store it
       games.push_back(idname);
     }
+}
+
+void Import::getGameList(vector<string> &games, const string &from,
+                         Misc::Logger &log)
+{
+  /* TODO: This does NOT currently work with games installed in
+     non-standard locations.
+   */
+  file2GameList(games, from, "installed.json", log);
+  file2GameList(games, from, "tiglib_installed.conf", log);
 }
 
 struct CopyJob : Spread::Job
@@ -204,13 +216,26 @@ JobInfoPtr Import::importGame(const string &game,
 {
   log("Importing " + game + " from " + from + " to " + to);
 
+  if(bf::equivalent(from, to))
+    {
+      log("ERROR: from and to paths are equivalent");
+      return JobInfoPtr();
+    }
+
   string fromDir1 = (bf::path(from)/"data"/game).string();
   string fromDir2 = (bf::path(from)/"games"/game).string();
+  string fromDir3 = (bf::path(from)/"gamedata"/game).string();
+
+  // TODO: When importing from new repositories, we should actually
+  // check the value in the tiglib_installed.conf file first as our
+  // source path.
+
   string toDir = (bf::path(to)/"gamedata"/game).string();
   JobInfoPtr info;
 
   log("  fromDir1=" + fromDir1);
   log("  fromDir2=" + fromDir2);
+  log("  fromDir3=" + fromDir3);
   log("  toDir=" + toDir);
 
   bool isOk = true;
@@ -233,15 +258,16 @@ JobInfoPtr Import::importGame(const string &game,
       }
   }
 
-  if(!bf::exists(fromDir1) || !bf::is_directory(fromDir1))
+  if(bf::exists(fromDir1) && bf::is_directory(fromDir1))
+    {}
+  else if(bf::exists(fromDir2) && bf::is_directory(fromDir2))
+    fromDir1 = fromDir2;
+  else if(bf::exists(fromDir3) && bf::is_directory(fromDir3))
+    fromDir1 = fromDir3;
+  else
     {
-      if(!bf::exists(fromDir2) || !bf::is_directory(fromDir2))
-        {
-          log("No source directory found. Abort.");
-          return info;
-        }
-
-      fromDir1 = fromDir2;
+      log("No source directory found. Abort.");
+      return info;
     }
 
   log("Picked source dir " + fromDir1);
@@ -271,14 +297,26 @@ JobInfoPtr Import::importShots(const string &from, const string &to,
 {
   log("Importing screenshots from " + from + " to " + to);
 
+  if(bf::equivalent(from, to))
+    {
+      log("ERROR: from and to paths are equivalent");
+      return JobInfoPtr();
+    }
+
   string fromDir = (bf::path(from)/"cache/shot300x260/tiggit.net").string();
+  string fromDir2 = (bf::path(from)/"shots_300x260/tiggit.net").string();
   string toDir = (bf::path(to)/"shots_300x260/tiggit.net").string();
   JobInfoPtr info;
 
   if(!bf::exists(fromDir) || !bf::is_directory(fromDir))
     {
-      log(fromDir + " not found. Nothing to do.");
-      return info;
+      fromDir = fromDir2;
+
+      if(!bf::exists(fromDir) || !bf::is_directory(fromDir))
+        {
+          log("No screenshots found. Nothing to do.");
+          return info;
+        }
     }
 
   // Make sure to absolute() paths. If we are running in a thread, we
@@ -307,9 +345,14 @@ void Import::cleanup(const string &from, const vector<string> &games,
   // Fixed file names to delete from the old repo
   const char* files[] =
     {
+      // Old repo names
       "all_games.json", "auth.json", "config", "installed.json", "latest.tig",
       "news.json", "promo.json", "ratings.json", "readnews.json", "cache",
       "incoming", "tigfiles",
+
+      // New repo names
+      "stats.json", "tiglib.conf", "tiglib_installed.conf", "tiglib_news.conf",
+      "tiglib_rates.conf", "wxtiggit.conf",
 
       // Terminator
       ""
@@ -346,8 +389,12 @@ void Import::cleanup(const string &from, const vector<string> &games,
           dir = fromDir / "data" / games[i];
           if(!bf::exists(dir))
             {
-              log("WARNING: Cleanup: Could not find requested game: " + games[i]);
-              continue;
+              dir = fromDir / "gamedata" / games[i];
+              if(!bf::exists(dir))
+                {
+                  log("WARNING: Cleanup: Could not find requested game: " + games[i]);
+                  continue;
+                }
             }
         }
       kill.push_back(dir);
@@ -370,15 +417,45 @@ void Import::cleanup(const string &from, const vector<string> &games,
     }
 }
 
+static void mergeConf(const std::string &fromDir,
+                      const std::string &toDir,
+                      const std::string &name)
+{
+  string infile = (bf::path(fromDir)/name).string();
+  string outfile = (bf::path(toDir)/name).string();
+
+  JConfig input(infile, true);
+  JConfig output(outfile);
+
+  vector<string> names = input.getNames();
+  for(int i=0; i<names.size(); i++)
+    {
+      const string &name = names[i];
+      if(!output.has(name)) output.set(name, input.get(name));
+    }
+}
+
 void Import::importConfig(const string &from, const string &to,
                           Misc::Logger &log)
 {
   log("Converting config options from " + from + " to " + to);
 
+  if(bf::equivalent(from, to))
+    {
+      log("ERROR: from and to paths are equivalent");
+      return;
+    }
+
   bf::path fromDir = from;
   bf::path toDir = to;
 
   using namespace Misc;
+
+  // Convert new config files first
+  mergeConf(from, to, "tiglib.conf");
+  mergeConf(from, to, "tiglib_news.conf");
+  mergeConf(from, to, "tiglib_rates.conf");
+  mergeConf(from, to, "wxtiggit.conf");
 
   // Convert main config file
   try

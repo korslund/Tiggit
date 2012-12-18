@@ -5,15 +5,55 @@
 #include <boost/filesystem.hpp>
 #include "wx/boxes.hpp"
 #include "jobprogress.hpp"
+#include <spread/misc/readjson.hpp>
+#include "tiglib/repo.hpp"
 
 using namespace std;
 using namespace Spread;
 using namespace wxTiggit;
+namespace bf = boost::filesystem;
 
-bool ImportGui::importRepoGui(const string &from, const string &to, SpreadLib *spread)
+void ImportGui::doUserCleanup(const std::string &repoDir)
+{
+  assert(repoDir != "");
+
+  bf::path file = repoDir;
+  file /= "cleanup.json";
+
+  // No file, no action
+  if(!bf::exists(file)) return;
+
+  try
+    {
+      Json::Value root = ReadJson::readJson(file.string());
+      bf::remove(file);
+
+      // Only instructions we can currently use is a single string,
+      // representing the path to clean up. We have the option to
+      // expand this later.
+      if(root.isString())
+        {
+          std::string path = root.asString();
+
+          if(Boxes::ask("Remove all files from\n" + path + "?"))
+            TigLib::Repo::killPath(path);
+        }
+    }
+  // Ignore errors
+  catch(...) {}
+}
+
+bool ImportGui::importRepoGui(const string &from, const string &to, SpreadLib *spread,
+                              bool doCleanup)
 {
   Misc::Logger log((boost::filesystem::path(to) / "import.log").string());
   log("Importing repository from '" + from + "' to '" + to + "'");
+
+  if(bf::equivalent(from, to))
+    {
+      log("ERROR: from and to paths are equivalent");
+      return false;
+    }
 
   assert(spread);
 
@@ -66,7 +106,7 @@ bool ImportGui::importRepoGui(const string &from, const string &to, SpreadLib *s
   if(info)
     {
       wxTigApp::JobProgress prog(info);
-      if(prog.start("Copying existing screenshot data to save bandwidth"))
+      if(prog.start("Import screenshot data"))
         log("Screenshot success");
       else
         {
@@ -77,7 +117,7 @@ bool ImportGui::importRepoGui(const string &from, const string &to, SpreadLib *s
         }
     }
 
-  if(Boxes::ask("Do you want to delete successfully imported data from " + from + "?"))
+  if(doCleanup && Boxes::ask("Do you want to delete successfully imported data from " + from + "?"))
     Import::cleanup(from, success, log);
 
   return true;

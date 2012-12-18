@@ -352,6 +352,12 @@ struct RemoveJob : Job
   }
 };
 
+JobInfoPtr Repo::killPath(const std::string &dir, bool async)
+{
+  assert(dir != "");
+  return Thread::run(new RemoveJob(dir), async);
+}
+
 // Start uninstalling a game
 JobInfoPtr Repo::startUninstall(const std::string &idname, bool async)
 {
@@ -363,5 +369,5 @@ JobInfoPtr Repo::startUninstall(const std::string &idname, bool async)
   inst.set(idname, "");
 
   // Kill the installation directory
-  return Thread::run(new RemoveJob(dir), async);
+  return killPath(dir, async);
 }

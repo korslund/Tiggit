@@ -1,6 +1,7 @@
 #include "frame.hpp"
 #include "gametab.hpp"
 #include "myids.hpp"
+#include "dialogs.hpp"
 
 using namespace wxTiggit;
 
@@ -28,18 +29,18 @@ TigFrame::TigFrame(const wxString& title, const std::string &ver,
   // Set current options
   menuOpts->Check(myID_MENU_SHOW_VOTES, data.conf().getShowVotes());
 
+  wxMenu *menuData = new wxMenu;
+  menuData->Append(myID_MENU_SETDIR, _("Set &Data Location..."));
   /*
-    wxMenu *menuData = new wxMenu;
-    menuData->Append(myID_MENU_SETDIR, _("Select &Output Directory..."));
-    menuData->Append(myID_MENU_EXPORT, _("&Export Data"));
-    menuData->Append(myID_MENU_IMPORT, _("Add/&Import Data"));
-    menuData->Append(myID_MENU_EXTERNAL, _("External &Games"));
+  menuData->Append(myID_MENU_EXPORT, _("&Export Data"));
+  menuData->Append(myID_MENU_IMPORT, _("Add/&Import Data"));
+  menuData->Append(myID_MENU_EXTERNAL, _("External &Games"));
   */
 
   wxMenuBar *menuBar = new wxMenuBar;
   menuBar->Append(menuFile, _("&App"));
-  //menuBar->Append(menuData, _("&Data"));
   menuBar->Append(menuOpts, _("&Options"));
+  menuBar->Append(menuData, _("&Data"));
 
   SetMenuBar(menuBar);
 
@@ -153,13 +154,29 @@ void TigFrame::displayNotification(const std::string &message, const std::string
 
 void TigFrame::onDataMenu(wxCommandEvent &event)
 {
-  /*
   if(event.GetId() == myID_MENU_SETDIR)
     {
-      OutputDirDialog dlg(this, get.base.string());
-      cout << "SetDir: " << dlg.ok << " " << dlg.move << " "
-           << dlg.changed << " " << dlg.path << endl;
+      const std::string &curDir = data.getRepoDir();
+      bool error = false;
+
+      while(true)
+        {
+          OutputDirDialog dlg(this, curDir, "", error);
+
+          // Abort if the user pressed 'cancel', or if the new path is
+          // the same as the old.
+          if(!dlg.ok || !dlg.changed)
+            break;
+
+          // Start import procedure. Will return false if the path was
+          // not writable, otherwise true on success.
+          if(data.moveRepo(dlg.path)) break;
+
+          // Give the user feedback and let them try again
+          error = true;
+        }
     }
+  /*
   else if(event.GetId() == myID_MENU_IMPORT)
     {
       ImportDialog dlg(this, get.base.string());
@@ -182,6 +199,7 @@ void TigFrame::onDataMenu(wxCommandEvent &event)
            << dlg.exe << endl;
     }
   */
+  else assert(0);
 }
 
 void TigFrame::onSpecialKey(wxCommandEvent &event)

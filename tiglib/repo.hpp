@@ -178,6 +178,10 @@ namespace TigLib
     // Start uninstalling a game
     Spread::JobInfoPtr startUninstall(const std::string &idname, bool async=true);
    
+    // Remove any path, using boost::filesystem::remove_all(), in a
+    // background thread.
+    static Spread::JobInfoPtr killPath(const std::string &dir, bool async=true);
+
     // Get access to the Spread repository instance used internally by
     // Repo
     Spread::SpreadLib &getSpread() const;

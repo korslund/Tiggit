@@ -103,6 +103,12 @@ namespace wxTiggit
     virtual wxGameConf &conf() = 0;
     virtual wxGameNews &getNews() = 0;
 
+    /* Move repository directory. Returns true on success, false if
+       the directory was not writable.
+     */
+    virtual bool moveRepo(const std::string &newDir) = 0;
+    virtual std::string getRepoDir() = 0;
+
     virtual void notifyButton(int id) = 0;
 
     wxAppListener *listener;

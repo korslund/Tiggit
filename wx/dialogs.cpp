@@ -58,7 +58,7 @@ OutputDirDialog::OutputDirDialog(wxWindow *parent, const std::string &old_dir,
   if(freshInstall)
     text = wxT("The directory will be created if it does not already exist.\nPress Cancel to exit.");
   else
-    text = wxT("Already installed games and data will be MOVED to this directory");
+    text = wxT("WARNING: This will MOVE all installed games, savegames and\nTiggit configuration to this location.");
   vbox->Add(new wxStaticText(this, -1, text),0, wxTOP, 12);
 
   wxCheckBox *import = NULL;

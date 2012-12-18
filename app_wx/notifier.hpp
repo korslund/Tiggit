@@ -44,6 +44,9 @@ namespace wxTigApp
     */
     void reassignJobs();
 
+    // Returns true if there are any currently running install jobs
+    bool hasJobs();
+
     // Add an item to the watch list
     void watchMe(GameInf *p);
 
