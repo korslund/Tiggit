@@ -1,8 +1,8 @@
 #include "repo.hpp"
-#include "fetch.hpp"
 #include "server_api.hpp"
 #include "repo_locator.hpp"
 #include "misc/lockfile.hpp"
+#include "misc/fetch.hpp"
 #include "gameinfo/stats_json.hpp"
 #include <spread/job/thread.hpp>
 #include <spread/spread.hpp>

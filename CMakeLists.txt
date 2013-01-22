@@ -29,11 +29,11 @@ set(TLDIR ${TIG}/tiglib)
 set(WDIR ${TIG}/wx)
 set(AWDIR ${TIG}/app_wx)
 
-set(MISC ${MIDIR}/dirfinder.cpp ${MIDIR}/lockfile.cpp ${MIDIR}/logger.cpp ${MIDIR}/freespace.cpp)
+set(MISC ${MIDIR}/dirfinder.cpp ${MIDIR}/lockfile.cpp ${MIDIR}/logger.cpp ${MIDIR}/freespace.cpp ${MIDIR}/fetch.cpp)
 set(MANGLE ${MDIR}/stream/clients/io_stream.cpp)
 set(GAMEINFO ${GIDIR}/stats_json.cpp ${GIDIR}/tigloader.cpp)
 set(LIST ${LDIR}/sortlist.cpp ${LDIR}/listbase.cpp ${LDIR}/picklist.cpp ${LDIR}/parentbase.cpp)
-set(TIGLIB ${TLDIR}/gamedata.cpp ${TLDIR}/gamelister.cpp ${TLDIR}/sorters.cpp ${TLDIR}/repo.cpp ${TLDIR}/fetch.cpp ${TLDIR}/liveinfo.cpp ${TLDIR}/news.cpp ${TLDIR}/repo_locator.cpp)
+set(TIGLIB ${TLDIR}/gamedata.cpp ${TLDIR}/gamelister.cpp ${TLDIR}/sorters.cpp ${TLDIR}/repo.cpp ${TLDIR}/liveinfo.cpp ${TLDIR}/news.cpp ${TLDIR}/repo_locator.cpp)
 set(LAUNCH ${LADIR}/run.cpp ${LADIR}/run_windows.cpp)
 
 set(WX ${WDIR}/frame.cpp ${WDIR}/tabbase.cpp ${WDIR}/gametab.cpp ${WDIR}/image_viewer.cpp ${WDIR}/gamelist.cpp ${WDIR}/listbase.cpp ${WDIR}/newstab.cpp ${WDIR}/progress_holder.cpp ${WDIR}/dialogs.cpp)

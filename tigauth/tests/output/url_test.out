@@ -1,0 +1,9 @@
+Browser links:
+  test/browser_v1.php?key=KEY
+  test/browser_v1.php?key=KEY&want=hello+world
+  test/browser_v1.php?want=hello+world
+JSON links:
+  http://example.com/api/json_v1.php?key=KEY
+  http://example.com/api/json_v1.php?key=KEY&want=I+hope+you+are+fine
+Sign-out link:
+  http://someurl/with/long/path/signal_v1.php?act=signout&key=KEY

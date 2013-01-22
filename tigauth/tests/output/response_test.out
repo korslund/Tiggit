@@ -1,0 +1,59 @@
+
+TESTING: ''
+CAUGHT: * Line 1, Column 1
+  Syntax error: value, object or array expected.
+
+
+TESTING: '{}'
+CAUGHT: Unexpected server response: {}
+
+TESTING: '{"type":"fishcat"}'
+CAUGHT: Unexpected server response: fishcat
+
+TESTING: '{"type":"message"}'
+ isError=0 isAuthFail=0 hasUserInfo=0
+ newKey= message=
+ userid= usernick= userauth= useritems=
+ generated=
+
+TESTING: '{"type":"error"}'
+ isError=1 isAuthFail=0 hasUserInfo=0
+ newKey= message=
+ userid= usernick= userauth= useritems=
+ generated=
+
+TESTING: '{"type":"authfail","generated":"now"}'
+ isError=1 isAuthFail=1 hasUserInfo=0
+ newKey= message=
+ userid= usernick= userauth= useritems=
+ generated=now
+
+TESTING: '{"type":"message","newkey":"NEW KEY!"}'
+ isError=0 isAuthFail=0 hasUserInfo=0
+ newKey=NEW KEY! message=
+ userid= usernick= userauth= useritems=
+ generated=
+
+TESTING: '{"type":"message","message":"This is a message"}'
+ isError=0 isAuthFail=0 hasUserInfo=0
+ newKey= message=This is a message
+ userid= usernick= userauth= useritems=
+ generated=
+
+TESTING: '{"type":"error","message":"This is an error message"}'
+ isError=1 isAuthFail=0 hasUserInfo=0
+ newKey= message=This is an error message
+ userid= usernick= userauth= useritems=
+ generated=
+
+TESTING: '{"type":"message","userinfo":{"userid":"1234","nickname":"My Name is Nick"}}'
+ isError=0 isAuthFail=0 hasUserInfo=1
+ newKey= message=
+ userid=1234 usernick=My Name is Nick userauth= useritems=
+ generated=
+
+TESTING: '{"type":"message","message":"MESSAGE","userinfo":{"userid":"1234","nickname":"My Name is Nick","authname":"Home","items":"item1+item2+another_item+anitemIreallylike"},"newkey":"NEWKEY","generated":"2013-01-22 15:47:12 UTC"}'
+ isError=0 isAuthFail=0 hasUserInfo=1
+ newKey=NEWKEY message=MESSAGE
+ userid=1234 usernick=My Name is Nick userauth=Home useritems=item1+item2+another_item+anitemIreallylike
+ generated=2013-01-22 15:47:12 UTC
