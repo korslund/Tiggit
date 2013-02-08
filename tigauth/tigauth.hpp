@@ -109,8 +109,8 @@ namespace TigAuth
 
        Will throw an exception if:
        - called in STATE#1 (no key present)
-       - authentication failed (key is invalid). This will change the
-         state to STATE#1 by removing the key.
+       - authentication failed (key is invalid). This will also sign
+         you out (set our state to STATE#1.)
        - connection or server failure (does not affect state)
 
        After calling (even if it throws), always remember to recheck
@@ -154,13 +154,14 @@ namespace TigAuth
        calling getSignInURL, except that the user is also redirected
        the buy page after signing in.
 
-       You can also specify lists through the one-string version by
-       concatenating IDs into a list delimited by plus signs.
-       Ie. item1+item2+... (plus signs are not valid as ID
-       characters.)
+       You may specify several items to purchase, either through the
+       list version, or through the string version by concatenating
+       IDs into a list delimited by plus signs, ie.:
+       item1+item2+...
 
-       After the user signals they have finished on the purchase, a
-       call to updateData() will update our local list of owned items.
+       After the user signals they have finished the purchase, a call
+       to updateData() can be used to update the client's list of
+       owned items.
      */
     std::string getBuyURL(const std::string &item, bool signIn=true);
     std::string getBuyURL(const ItemList &itemList, bool signIn=true);
@@ -172,8 +173,8 @@ namespace TigAuth
        this user.
 
        This function also throws exceptions under the same conditions
-       as updateData(), and changes the object state under the same
-       conditions.
+       as updateData(), and like updateData() may also sign you out if
+       the authentication failed.
      */
     std::string getDownloadLink(const std::string &item);
 

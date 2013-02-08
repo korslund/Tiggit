@@ -230,16 +230,12 @@ std::string Auth::getBuyURL(const std::string &item, bool signIn)
       if(!isSignedIn())
         url.key = ptr->makeKey();
 
-      /* Otherwise, if the user IS signed in, send our current key, so
-         the server can validate it, or reenable it with the user if
-         necessary in one go. This minimizes the number of times we
-         have to force the user to visit the website.
-      */
-      else
-        url.key = getKey();
-
       assert(url.key != "");
     }
+
+  // Send our userid so the server can check that we're actually
+  // logged in as the same user.
+  url.userid = ptr->userid;
 
   // Set the list of items we want to acquire
   assert(item != "");

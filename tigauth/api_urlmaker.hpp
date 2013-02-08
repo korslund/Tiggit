@@ -11,7 +11,7 @@ namespace TigAuth
     {
       // Input variables. Their meanings depend somewhat on what type
       // of URL is being produced.
-      std::string key, wantlist, baseURL;
+      std::string key, wantlist, userid, baseURL;
 
       URLMaker(const std::string &_baseURL);
 
@@ -20,14 +20,17 @@ namespace TigAuth
 
          Parameters (either or both may be present):
 
-         - if 'key' is set, the website should ask the user to
-           validate the given key for use with the API backend. The
-           server may ignore this step if the given key is already
-           valid.
+         - key: if set, the website should ask the user to validate
+           the given key for use with the API backend. The server may
+           skip this step if the given key is already valid.
 
-         - if 'wantlist' is set, the website should redirect to a
-           'buy' page for all the items in the list. The list is a set
-           of IDs separated by plus-signs.
+         - wantlist: if set, the website should redirect to a 'buy'
+           page for all the items in the list. The list is a set of
+           IDs separated by plus-signs.
+
+         - userid: if set, sent to the website so it can double check
+           whether the key's owner is the same the user logged in to
+           the site.
        */
       std::string createBrowserLink();
 

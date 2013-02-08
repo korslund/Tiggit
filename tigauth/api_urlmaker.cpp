@@ -29,6 +29,13 @@ std::string URLMaker::make(const std::string &base, bool q)
       q = false;
       res += "want=" + wantlist;
     }
+  if(userid != "")
+    {
+      if(q) res += '?';
+      else res += '&';
+      q = false;
+      res += "asuser=" + userid;
+    }
 
   return res;
 }

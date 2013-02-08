@@ -4,7 +4,6 @@
 
 using namespace std;
 string baseURL;
-string url;
 
 TigAuth::Auth *auth;
 
@@ -54,6 +53,29 @@ void login(const std::string &key)
   update();
 }
 
+void getURL(const std::string &buy="")
+{
+  try
+    {
+      string url;
+      if(buy == "")
+        url = auth->getSignInURL();
+      else
+        url = auth->getBuyURL(buy);
+      cout << "Browser URL: " << url << endl;
+
+      cout << "Press ENTER when you have finished your actions in the web browser\n";
+      cin.get();
+      auth->updateData();
+
+      // This try-catch-check structure is the standard way of calling
+      // state-changing functions like updateData() and
+      // getDownloadLink().
+    }
+  catch(exception &e) { cout << "ERROR " << e.what() << endl; }
+  check();
+}
+
 int main()
 {
   baseURL = ReadJson::readJson("data.json").asString();
@@ -64,45 +86,16 @@ int main()
   cout << "\nInitial state\n";
   check();
 
-  login("unknown");
-  login("dude");
+  login("I8izCnALPFg8");
 
   cout << "Fetching a download link\n";
-  fetch("three");
-
-  update();
-
-  cout << "Fail on purpose:\n";
+  fetch("unknown");
   fetch("abc");
-  fetch("def");
 
-  // Sign out
-  if(auth->isSignedIn())
-    {
-      cout << "Signing out.\n";
-      auth->signOut();
-      check();
-    }
-
-  /*
-  // Get sign-in URL
-  try
-    {
-      //url = auth->getSignInURL();
-      url = auth->getBuyURL("item");
-      cout << "URL for signing in: " << url << endl;
-
-      cout << "Press ENTER when you have enabled this key online\n";
-      cin.get();
-      auth->updateData();
-
-      // This try-catch-check structure is the standard way of calling
-      // state-changing functions like updateData() and
-      // getDownloadLink().
-    }
-  catch(exception &e) { cout << "ERROR " << e.what() << endl; }
+  auth->signOut();
   check();
-  */
+  cout << "Press ENTER when you think the job has finished\n";
+  cin.get();
 
   return 0;
 }
