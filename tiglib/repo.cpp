@@ -16,6 +16,14 @@ using namespace Spread;
 
 namespace bf = boost::filesystem;
 
+//#define PRINT_DEBUG
+#ifdef PRINT_DEBUG
+#include <iostream>
+#define PRINT(a) std::cout << a << "\n"
+#else
+#define PRINT(a)
+#endif
+
 // Used to notify the server about broken URLs
 struct CallbackURL
 {
@@ -65,10 +73,13 @@ List::ListBase &Repo::baseList()
 
 bool Repo::findRepo(const std::string &where)
 {
+  PRINT("findRepo(" << where << ")");
   dir = where;
 
   if(dir == "")
     dir = TigLibInt::getStoredPath();
+
+  PRINT("  dir=" << dir);
 
   // Nothing was found. Tell the user.
   if(dir == "")
@@ -90,6 +101,7 @@ bool Repo::setStoredPath(const std::string &newPath)
 
 void Repo::setDirs()
 {
+  PRINT("  setDirs dir=" << dir);
   assert(dir != "");
   tigFile = getPath("spread/channels/tiggit.net/tigdata.json");
   shotDir = getPath("shots_300x260/");
@@ -97,7 +109,10 @@ void Repo::setDirs()
   newsFile = getPath("news.json");
   spreadDir = getPath("spread/");
 
-  ptr.reset(new _Internal(spreadDir, getPath("spread/tmp/")));
+  std::string tmpDir = getPath("spread/tmp/");
+
+  PRINT("  spreadDir=" << spreadDir << " tmpDir=" << tmpDir);
+  ptr.reset(new _Internal(spreadDir, tmpDir));
 }
 
 void Repo::setRepo(const std::string &where)

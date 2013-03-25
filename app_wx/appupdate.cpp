@@ -10,7 +10,7 @@
 #include <mangle/stream/servers/file_stream.hpp>
 #include <mangle/stream/servers/outfile_stream.hpp>
 #include "launcher/run.hpp"
-#include "misc/logger.hpp"
+#include <spread/misc/logger.hpp>
 
 //#define PRINT_DEBUG
 
@@ -28,7 +28,7 @@ namespace MS = Mangle::Stream;
 
 /* Mechanism used to alternate between two program directories. This
    is necessary for auto-updates on Windows because you can't update
-   the current app while it's running.
+   the current exe while it is running.
  */
 struct Switch
 {
@@ -118,6 +118,12 @@ struct UpdateJob : Job
     hasNew = false;
     newExe = "";
     newVer = "";
+
+    /* Do a cache cleanup run - this removes dead entries from our
+       cache, potentially speeding up load time.
+     */
+    log("Doing routine cache cleanup");
+    repo->getSpread().verifyCache();
 
     // Do the main data update first
     log("Starting update of repository " + repo->getPath(""));

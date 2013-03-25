@@ -304,6 +304,8 @@ wxTigApp::GameData::GameData(Repo &rep)
   : config(rep.getPath("wxtiggit.conf")), news(&rep),
     repo(rep), updater(rep)
 {
+  repo.getSpread().getJobManager()->setLogger(rep.getPath("threads.log"));
+
   latest = new GameList(rep.baseList(), NULL);
   freeware = new GameList(rep.baseList(), &freePick);
   demos = new GameList(rep.baseList(), &demoPick);

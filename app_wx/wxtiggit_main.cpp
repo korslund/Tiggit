@@ -64,6 +64,7 @@ struct TigApp : wxApp
 
   bool OnInit()
   {
+    PRINT("OnInit()");
     if(!wxApp::OnInit())
       return false;
 

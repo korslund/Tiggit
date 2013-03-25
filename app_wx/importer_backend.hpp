@@ -2,7 +2,7 @@
 #define __APPWX_IMPORTER_HPP_
 
 #include <spread/spread.hpp>
-#include "../misc/logger.hpp"
+#include <spread/misc/logger.hpp>
 #include <vector>
 
 namespace Import
