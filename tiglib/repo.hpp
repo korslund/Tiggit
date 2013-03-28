@@ -19,12 +19,21 @@ namespace TigLib
 
     std::string dir;
     std::string tigFile, statsFile, newsFile, shotDir, spreadDir;
-    Misc::JConfig conf, inst;
+    Misc::JConfig conf;
     int64_t lastTime;
 
     void setDirs();
 
   public:
+
+    struct GameStatus
+    {
+      std::string id, curVer, newVer;
+      bool isUpdated;
+    };
+
+    typedef std::vector<GameStatus> StatusList;
+
     Repo(bool runOffline=false)
       : offline(runOffline) {}
 
@@ -161,24 +170,26 @@ namespace TigLib
     std::string fetchPath(const std::string &url,
                           const std::string &fname);
 
-    // Returns idnames of all games that are or have been installed.
-    // Use getGameDir() to check actual install status of the game.
-    std::vector<std::string> getGameList() { return inst.getNames(); }
-
     // Get actuall install dir for a game. Returns "" if the game is
     // not registered as installed.
-    std::string getGameDir(const std::string &idname);
+    std::string getGameDir(const std::string &urlname) const;
+
+    // Get the complete install size of a given package
+    uint64_t getGameSize(const std::string &urlname) const;
 
     // Get default install dir for a game
     std::string getDefGameDir(const std::string &idname) const
     { return getPath("gamedata/" + idname); }
 
+    // Get the status of all installed games, based on latest
+    // up-to-date information
+    void getStatusList(StatusList &list) const;
+
     // Get screenshot path for a game.
     std::string getScreenshot(const std::string &idname) const;
 
     // Start installing a game
-    Spread::JobInfoPtr startInstall(const std::string &idname,
-                                    const std::string &urlname,
+    Spread::JobInfoPtr startInstall(const std::string &urlname,
                                     std::string where,
                                     bool async=true); 
 
@@ -212,6 +223,12 @@ namespace TigLib
     // Set new lastTime. Does NOT change the current lastTime field,
     // but instead stores the value in conf for our next run.
     void setLastTime(int64_t val);
+
+  private:
+    /* Load the legacy file tiglib_installed.conf, if it exists, and
+       convert it into the new spread system. Called from loadData().
+     */
+    void convertOldInstallConf() const;
   };
 }
 #endif

@@ -167,8 +167,8 @@ static void file2GameList(vector<string> &games, const string &dir,
 void Import::getGameList(vector<string> &games, const string &from,
                          Misc::Logger &log)
 {
-  /* TODO: This does NOT currently work with games installed in
-     non-standard locations.
+  /* Note: This does NOT work with games installed in non-standard
+     locations.
    */
   file2GameList(games, from, "installed.json", log);
   file2GameList(games, from, "tiglib_installed.conf", log);
@@ -240,10 +240,6 @@ JobInfoPtr Import::importGame(const string &game,
   string fromDir1 = (bf::path(from)/"data"/game).string();
   string fromDir2 = (bf::path(from)/"games"/game).string();
   string fromDir3 = (bf::path(from)/"gamedata"/game).string();
-
-  // TODO: When importing from new repositories, we should actually
-  // check the value in the tiglib_installed.conf file first as our
-  // source path.
 
   string toDir = (bf::path(to)/"gamedata"/game).string();
   JobInfoPtr info;

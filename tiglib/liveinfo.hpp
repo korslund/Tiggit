@@ -25,6 +25,9 @@ namespace TigLib
     // user-data.
     void *extra;
 
+    // Total file size after install
+    uint64_t instSize;
+
     bool isInstalled() const;
     bool isUninstalled() const;
     bool isWorking() const;
@@ -104,9 +107,14 @@ namespace TigLib
      */
     void launch() const;
 
-    // Mark this game as installed. Called on installed games at
-    // startup.
-    void markAsInstalled();
+    /* Mark this game as installed. Called on installed games at
+       startup.
+
+       If isUpdated (and optionally newVer) is set, then there is a
+       new version available for this game.
+    */
+    void markAsInstalled(const std::string &curVer, const std::string &newVer,
+                         bool isUpdated);
 
     // Set to true if this game was added since our last repo load.
     // Allows clients to notify users about newly added games.

@@ -9,7 +9,7 @@ namespace bs = boost::filesystem;
 using namespace TigLib;
 
 LiveInfo::LiveInfo(const TigData::TigEntry *e, Repo *_repo)
-  : ent(e), extra(NULL), repo(_repo), myRate(-2)
+  : ent(e), extra(NULL), instSize(0), repo(_repo), myRate(-2)
 {
   // Mark newly added games as 'new'.
   sNew = ent->addTime > repo->getLastTime();
@@ -55,7 +55,7 @@ void LiveInfo::markAsInstalled()
 std::string LiveInfo::getInstallDir() const
 {
   assert(isInstalled());
-  return repo->getGameDir(ent->idname);
+  return repo->getGameDir(ent->urlname);
 }
 
 int LiveInfo::getMyRating()
@@ -89,7 +89,7 @@ Spread::JobInfoPtr LiveInfo::install(bool async)
       std::string instDir = repo->getDefGameDir(ent->idname);
 
       // Ask the repository to start the install process
-      installJob = repo->startInstall(ent->idname, ent->urlname, instDir, async);
+      installJob = repo->startInstall(ent->urlname, instDir, async);
     }
 
   return installJob;
@@ -106,9 +106,9 @@ Spread::JobInfoPtr LiveInfo::install(bool async)
 Spread::JobInfoPtr LiveInfo::update(bool async)
 {
   assert(isInstalled());
-  std::string instDir = repo->getGameDir(ent->idname);
+  std::string instDir = repo->getGameDir(ent->urlname);
   assert(instDir != "");
-  return repo->startInstall(ent->idname, ent->urlname, instDir, async);
+  return repo->startInstall(ent->urlname, instDir, async);
 }
 
 Spread::JobInfoPtr LiveInfo::uninstall(bool async)
@@ -124,7 +124,7 @@ Spread::JobInfoPtr LiveInfo::uninstall(bool async)
   installJob->reset();
 
   // Tell the repository to uninstall this game
-  return repo->startUninstall(ent->idname, async);
+  return repo->startUninstall(ent->urlname, async);
 }
 
 void LiveInfo::launch() const

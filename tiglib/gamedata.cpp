@@ -34,38 +34,29 @@ void GameData::createLiveData(Repo *repo)
   int64_t maxTime = 0;
   for(it = list.begin(); it != list.end(); it++)
     {
+      const std::string &idname = it->first;
       const TigData::TigEntry *ent = it->second;
       LiveInfo *inf = new LiveInfo(ent, repo);
       out[index++] = inf;
-      lookup[it->first] = inf;
+      lookup[idname] = inf;
 
       if(ent->addTime > maxTime)
         maxTime = ent->addTime;
+
+      inf->instSize = repo->getGameSize(ent->urlname);
     }
 
   // Store new maxtime
   repo->setLastTime(maxTime);
 
-  // Apply install status
-  std::vector<std::string> games = repo->getGameList();
+  // Apply current status information
+  Repo::StatusList games;
+  repo->getStatusList(games);
   for(int i=0; i<games.size(); i++)
     {
-      const std::string &id = games[i];
-      if(repo->getGameDir(id) != "")
-        {
-          LiveInfo *l = get(id);
-          if(l) l->markAsInstalled();
-        }
+      const Repo::GameStatus &e = games[i];
+      LiveInfo *l = get(e.id);
+      if(!l) continue;
+      l->markAsInstalled(e.curVer, e.newVer, e.isUpdated);
     }
-
-  // Signal child lists that data has changed
-  //allList.done();
-
-  /* Update: this was a bad idea. Because systems further down stream
-     may rely on the LiveInfo::extra member to be set, which of course
-     isn't the case at this point.
-
-     So do NOT signal child lists that we have changed. Leave that to
-     the caller.
-   */
 }
