@@ -111,7 +111,9 @@ namespace TigLib
        startup.
 
        If isUpdated (and optionally newVer) is set, then there is a
-       new version available for this game.
+       new version available for this game. This is mostly cosmetic
+       and won't change any behavior outside of what is shown to the
+       user.
     */
     void markAsInstalled(const std::string &curVer, const std::string &newVer,
                          bool isUpdated);

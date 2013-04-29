@@ -28,7 +28,7 @@ namespace TigLib
 
     struct GameStatus
     {
-      std::string id, curVer, newVer;
+      std::string id, curVer, newVer, where;
       bool isUpdated;
     };
 
@@ -172,10 +172,10 @@ namespace TigLib
 
     // Get actuall install dir for a game. Returns "" if the game is
     // not registered as installed.
-    std::string getGameDir(const std::string &urlname) const;
+    std::string getGameDir(const std::string &idname) const;
 
     // Get the complete install size of a given package
-    uint64_t getGameSize(const std::string &urlname) const;
+    uint64_t getGameSize(const std::string &idname) const;
 
     // Get default install dir for a game
     std::string getDefGameDir(const std::string &idname) const
@@ -189,7 +189,8 @@ namespace TigLib
     std::string getScreenshot(const std::string &idname) const;
 
     // Start installing a game
-    Spread::JobInfoPtr startInstall(const std::string &urlname,
+    Spread::JobInfoPtr startInstall(const std::string &idname,
+                                    const std::string &urlname,
                                     std::string where,
                                     bool async=true); 
 

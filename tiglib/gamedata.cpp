@@ -4,6 +4,14 @@
 
 using namespace TigLib;
 
+//#define PRINT_DEBUG
+#ifdef PRINT_DEBUG
+#include <iostream>
+#define PRINT(a) std::cout << a << "\n"
+#else
+#define PRINT(a)
+#endif
+
 void GameData::clear()
 {
   List::PtrList &out = allList.fillList();
@@ -18,6 +26,9 @@ void GameData::clear()
 
 void GameData::createLiveData(Repo *repo)
 {
+  PRINT("createLiveData()");
+  assert(repo);
+
   clear();
 
   // Output list
@@ -43,7 +54,7 @@ void GameData::createLiveData(Repo *repo)
       if(ent->addTime > maxTime)
         maxTime = ent->addTime;
 
-      inf->instSize = repo->getGameSize(ent->urlname);
+      inf->instSize = repo->getGameSize(idname);
     }
 
   // Store new maxtime

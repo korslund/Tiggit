@@ -1,9 +1,11 @@
 #include "jobprogress.hpp"
+#include <assert.h>
 
 using namespace wxTigApp;
 
 bool JobProgress::start(const std::string &msg)
 {
+  assert(info);
   setMsg(msg);
 
   // Poll-loop until the job finishes, or the user cancels it.

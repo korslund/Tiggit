@@ -154,13 +154,16 @@ void GameInf::launchGame()
   /* Simple ad-hoc solution for now, improve it later.
    */
   Spread::JobInfoPtr job = info.update();
-  JobProgress prog(job);
-
   bool run = true;
-  if(!prog.start("Checking for updates"))
+  if(job)
     {
-      if(job->isError())
-        run = Boxes::ask("Update failed: " + job->getMessage() + "\n\nRun anyway?");
+      JobProgress prog(job);
+
+      if(!prog.start("Checking for updates"))
+        {
+          if(job->isError())
+            run = Boxes::ask("Update failed: " + job->getMessage() + "\n\nRun anyway?");
+        }
     }
 
   if(run)

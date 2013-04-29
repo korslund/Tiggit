@@ -45,7 +45,8 @@ void LiveInfo::setupInfo()
     installJob.reset(new Spread::JobInfo);
 }
 
-void LiveInfo::markAsInstalled()
+void LiveInfo::markAsInstalled(const std::string &curVer, const std::string &newVer,
+                               bool isUpdated)
 {
   assert(isUninstalled());
   setupInfo();
@@ -55,7 +56,7 @@ void LiveInfo::markAsInstalled()
 std::string LiveInfo::getInstallDir() const
 {
   assert(isInstalled());
-  return repo->getGameDir(ent->urlname);
+  return repo->getGameDir(ent->idname);
 }
 
 int LiveInfo::getMyRating()
@@ -89,7 +90,7 @@ Spread::JobInfoPtr LiveInfo::install(bool async)
       std::string instDir = repo->getDefGameDir(ent->idname);
 
       // Ask the repository to start the install process
-      installJob = repo->startInstall(ent->urlname, instDir, async);
+      installJob = repo->startInstall(ent->idname, ent->urlname, instDir, async);
     }
 
   return installJob;
@@ -106,9 +107,9 @@ Spread::JobInfoPtr LiveInfo::install(bool async)
 Spread::JobInfoPtr LiveInfo::update(bool async)
 {
   assert(isInstalled());
-  std::string instDir = repo->getGameDir(ent->urlname);
+  std::string instDir = repo->getGameDir(ent->idname);
   assert(instDir != "");
-  return repo->startInstall(ent->urlname, instDir, async);
+  return repo->startInstall(ent->idname, ent->urlname, instDir, async);
 }
 
 Spread::JobInfoPtr LiveInfo::uninstall(bool async)
@@ -124,7 +125,7 @@ Spread::JobInfoPtr LiveInfo::uninstall(bool async)
   installJob->reset();
 
   // Tell the repository to uninstall this game
-  return repo->startUninstall(ent->urlname, async);
+  return repo->startUninstall(ent->idname, async);
 }
 
 void LiveInfo::launch() const

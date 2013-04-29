@@ -16,7 +16,7 @@ using namespace Spread;
 
 namespace bf = boost::filesystem;
 
-#define PRINT_DEBUG
+//#define PRINT_DEBUG
 #ifdef PRINT_DEBUG
 #include <iostream>
 #define PRINT(a) std::cout << a << "\n"
@@ -164,7 +164,7 @@ void Repo::convertOldInstallConf() const
     return;
 
   PRINT("Converting old install list conf");
-  blah; // More output here
+  PRINT("  reading " << instFile);
 
   Misc::JConfig inst(instFile);
   std::vector<std::string> names = inst.getNames();
@@ -172,15 +172,16 @@ void Repo::convertOldInstallConf() const
     {
       const std::string &id = names[i];
       std::string path = inst.get(id);
+      PRINT("  FOUND: " << id << " at " << path);
       if(path != "" && id.size() > 11 && id.substr(0,11) == "tiggit.net/")
-        {
-          std::string urlname = id.substr(11);
-          ptr->spread.install("tiggit.net", urlname, path, NULL, false);
-        }
+        try { ptr->spread.setLegacyPack("tiggit.net", id, path); }
+        catch(std::exception &e)
+          { PRINT("    ERROR: " << e.what()); }
     }
   bf::remove(instFile);
   bf::remove(oldF);
   bf::remove(newF);
+  PRINT("  legacy conversion done");
 }
 
 void Repo::setLastTime(int64_t val)
@@ -257,8 +258,8 @@ struct FetchJob : Job
     if(shots)
       {
         std::string dest = (bf::path(shotsPath)/"tiggit.net").string();
-        client = spread.install("tiggit.net", "shots300x260", dest);
-        if(waitClient(client)) return;
+        client = spread.installPack("tiggit.net", "shots300x260", dest);
+        if(client && waitClient(client)) return;
       }
 
     /* Fetch the stats file (download counts etc), if the current file
@@ -295,17 +296,16 @@ JobInfoPtr Repo::fetchFiles(bool includeShots, bool async)
                                   &ptr->newData), async);
 }
 
-std::string Repo::getGameDir(const std::string &urlname) const
+std::string Repo::getGameDir(const std::string &idname) const
 {
-  // TODO: NOT urlname!
-  const SpreadLib::PackStatus *is = ptr->spread.getPackStatus("tiggit.net", urlname);
-  if(is) return is->path;
+  const PackStatus *is = ptr->spread.getPackStatus("tiggit.net", idname);
+  if(is) return is->where;
   return "";
 }
 
-uint64_t Repo::getGameSize(const std::string &urlname) const
+uint64_t Repo::getGameSize(const std::string &idname) const
 {
-  return ptr->spread.getPackInfo("tiggit.net", urlname).installSize;
+  return ptr->spread.getPackInfo("tiggit.net", idname).installSize;
 }
 
 void Repo::loadStats()
@@ -322,6 +322,8 @@ void Repo::doneLoading()
 
 void Repo::loadData()
 {
+  PRINT("loadData()");
+
   assert(isLocked());
 
   // TODO: This kills everything. Later we might add the possiblity to
@@ -333,6 +335,7 @@ void Repo::loadData()
   convertOldInstallConf();
   loadStats();
   ptr->data.createLiveData(this);
+  PRINT("loadData() done");
 }
 
 // Get screenshot path for a game.
@@ -364,32 +367,39 @@ struct InstallJob : Job
 
 void Repo::getStatusList(StatusList &list) const
 {
-  const SpreadLib::StatusList &inp = spread.getStatusList("tiggit.net");
-  list.resize(inp.size());
+  PackStatusList orig;
+  ptr->spread.getStatusList(orig);
+  list.resize(orig.size());
+  PackStatusList::const_iterator it = orig.begin();
   for(int i=0; i<list.size(); i++)
     {
       GameStatus &s = list[i];
-      const SpreadLib::PackStatus &is = inp[i];
-      assert(is.pack->channel == "tiggit.net");
-      s.id = "tiggit.net/" + is.pack->package;
-      s.curVer = is.curVer;
-      s.newVer = is.newVer;
-      s.path = is.path;
-      s.isUpdated = is.isUpdated;
+      const Spread::PackStatus *is = *it++;
+      assert(is->info.channel == "tiggit.net");
+      s.id = is->info.package;
+      s.curVer = is->info.version;
+      s.newVer = ptr->spread.getPackInfo(is->info.channel, is->info.package).version;
+      s.where = is->where;
+      s.isUpdated = is->needsUpdate;
     }
 }
 
 // Start installing or upgrading a game
-JobInfoPtr Repo::startInstall(const std::string &urlname, std::string where, bool async)
+JobInfoPtr Repo::startInstall(const std::string &idname, const std::string &urlname,
+                              std::string where, bool async)
 {
   // Ignore offline mode for game installs, since they are user
   // initiated events.
   where = bf::absolute(where).string();
-  JobInfoPtr client = ptr->spread.install("tiggit.net", urlname, where, NULL, async);
-  InstallJob *job = new InstallJob;
-  job->client = client;
-  job->sendOnDone = ServerAPI::dlCountURL(urlname);
-  Thread::run(job, async);
+  JobInfoPtr client = ptr->spread.installPack("tiggit.net", idname, where, NULL, true, true, false); // TODO: Change last to 'true' when we enable user-asks
+
+  if(client)
+    {
+      InstallJob *job = new InstallJob;
+      job->client = client;
+      job->sendOnDone = ServerAPI::dlCountURL(urlname);
+      Thread::run(job, async);
+    }
   return client;
 }
 
@@ -413,7 +423,7 @@ JobInfoPtr Repo::killPath(const std::string &dir, bool async)
   return Thread::run(new RemoveJob(dir), async);
 }
 
-JobInfoPtr Repo::startUninstall(const std::string &urlname, bool async)
+JobInfoPtr Repo::startUninstall(const std::string &idname, bool async)
 {
-  return ptr->spread.uninstall("tiggit.net", urlname, async);
+  return ptr->spread.uninstallPack("tiggit.net", idname, getGameDir(idname), async);
 }

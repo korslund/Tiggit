@@ -161,7 +161,7 @@ struct UpdateJob : Job
           }
 
         log("Current version: " + std::string(TIGGIT_VERSION));
-        newVer = repo->getSpread().getPackVersion("tiggit.net", package);
+        newVer = repo->getSpread().getPackInfo("tiggit.net", package).version;
         log("New version: " + newVer);
 
         // Figure out if we've got a new version
@@ -171,8 +171,8 @@ struct UpdateJob : Job
           {
             log("NEW version detected!");
             log("Installing tiggit.net/" + package + " into " + dest);
-            client = repo->getSpread().install("tiggit.net", package, dest);
-            if(waitClient(client))
+            client = repo->getSpread().installPack("tiggit.net", package, dest);
+            if(client && waitClient(client))
               {
                 if(info->isAbort()) log("Install aborted");
                 else log("Install failed: " + info->getMessage());
