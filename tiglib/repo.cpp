@@ -237,19 +237,20 @@ struct FetchJob : Job
 {
   SpreadLib &spread;
   bool shots, *newData;
-  std::string spreadRepo, shotsPath, statsFile, newsFile;
+  std::string spreadRepo, shotsPath, statsFile, newsFile, fetchURL;
 
   FetchJob(SpreadLib &_spread, bool _shots, const std::string &_spreadRepo,
            const std::string &_shotsPath, const std::string &_statsFile,
-           const std::string &_newsFile, bool *_newData)
+           const std::string &_newsFile, bool *_newData, const std::string &_fetchURL)
     : spread(_spread), shots(_shots), newData(_newData), spreadRepo(_spreadRepo),
-      shotsPath(_shotsPath), statsFile(_statsFile), newsFile(_newsFile) {}
+      shotsPath(_shotsPath), statsFile(_statsFile), newsFile(_newsFile),
+      fetchURL(_fetchURL) {}
 
   void doJob()
   {
     using namespace std;
 
-    JobInfoPtr client = spread.updateFromURL("tiggit.net", ServerAPI::spreadURL_SR0());
+    JobInfoPtr client = spread.updateFromURL("tiggit.net", fetchURL);
     if(waitClient(client)) return;
 
     // Set newData depending on whether data was updated
@@ -290,10 +291,15 @@ JobInfoPtr Repo::fetchFiles(bool includeShots, bool async)
 
   assert(isLocked());
 
+  std::string fetchURL = ServerAPI::spreadURL_SR0();
+
+  // Get the Spread channel URL from the config instead, if it is set.
+  fetchURL = conf.get("fetch_url", fetchURL);
+
   // Create and run the fetch job
   return Thread::run(new FetchJob(ptr->spread, includeShots, spreadDir,
                                   shotDir, statsFile, newsFile,
-                                  &ptr->newData), async);
+                                  &ptr->newData, fetchURL), async);
 }
 
 std::string Repo::getGameDir(const std::string &idname) const
