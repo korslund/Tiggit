@@ -4,3 +4,6 @@
 [submodule "libs/spread"]
 	path = libs/spread
 	url = git://github.com/korslund/spread
+[submodule "libs/unpackcpp"]
+	path = libs/unpackcpp
+	url = git://github.com/korslund/UnpackCpp.git

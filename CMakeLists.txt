@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 
 find_package(Boost COMPONENTS filesystem system thread REQUIRED)
 find_package(CURL REQUIRED)
+find_package(ZLIB REQUIRED)
 
 find_package(wxWidgets COMPONENTS core base REQUIRED)
 include(${wxWidgets_USE_FILE})
@@ -13,8 +14,9 @@ include_directories("libs/spread/libs/jsoncpp/include/")
 include_directories(${Boost_INCLUDE_DIRS})
 
 add_subdirectory("libs/spread/")
+add_subdirectory("libs/unpackcpp/")
 
-set(LIBS ${Boost_LIBRARIES} zzip ${CURL_LIBRARIES})
+set(LIBS Spread UnpackCpp ${Boost_LIBRARIES} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES})
 set(WLIBS ${wxWidgets_LIBRARIES})
 
 set(LIBDIR libs)
@@ -46,6 +48,6 @@ set(ALL ${MISC} ${MANGLE} ${GAMEINFO} ${LIST} ${TIGLIB} ${LAUNCH})
 set(ALL_WX ${WX} ${APPWX})
 
 add_executable(tiggit ${ALL} ${ALL_WX})
-target_link_libraries(tiggit Spread ${LIBS} ${WLIBS})
+target_link_libraries(tiggit ${LIBS} ${WLIBS})
 #add_executable(tiggit-cli ${ALL} cli/cli_main.cpp)
 #target_link_libraries(tiggit-cli ${LIBS})

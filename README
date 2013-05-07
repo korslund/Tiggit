@@ -35,6 +35,7 @@ DEPENDENCIES:
 Git submodules:
 
 - Mangle (Minimal Abstracted Game Layer, for abstracted stream reading)
+- Spread (Library used for downloading, installing and updating games)
 
 Submodules are installed automatically if you run:
 
