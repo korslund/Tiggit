@@ -19,6 +19,7 @@ namespace wxTiggit
 
     wxStaticText *noticeText;
     wxButton *noticeButton;
+    wxGauge *noticeGauge;
     int noticeID;
 
   public:
@@ -31,6 +32,8 @@ namespace wxTiggit
 
     // From wxAppListener
     void refreshNews();
+
+    void displayProgress(const std::string &message, uint64_t cur, uint64_t total);
     void displayNotification(const std::string &message, const std::string &button,
                              int id);
 

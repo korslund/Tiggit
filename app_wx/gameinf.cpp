@@ -159,7 +159,7 @@ void GameInf::launchGame()
     {
       JobProgress prog(job);
 
-      if(!prog.start("Checking for updates"))
+      if(!prog.start("Downloading update for " + info.ent->title + "..."))
         {
           if(job->isError())
             run = Boxes::ask("Update failed: " + job->getMessage() + "\n\nRun anyway?");

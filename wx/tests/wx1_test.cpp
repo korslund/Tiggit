@@ -152,6 +152,7 @@ struct TestData : wxGameData
   wxGameList &getFreeware() { return listFreeware; }
   wxGameList &getDemos() { return listDemos; }
   wxGameList &getInstalled() { return listInstalled; }
+  bool isActive() { return false; }
 
   bool moveRepo(const std::string &newRepo)
   {

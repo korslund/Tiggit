@@ -73,6 +73,12 @@ struct InstalledPick : GamePicker
 static FreeDemoPick freePick(true), demoPick(false);
 static InstalledPick instPick;
 
+void wxTigApp::GameData::updateRunning(int64_t cur, int64_t total)
+{
+  if(listener)
+    listener->displayProgress("Downloading data update:", cur, total);
+}
+
 void wxTigApp::GameData::updateReady()
 {
   PRINT("GameData::updateReady()");
@@ -82,6 +88,8 @@ void wxTigApp::GameData::updateReady()
   PRINT("  newVersion:         " << updater.newVersion);
 
   if(!listener) return;
+
+  listener->displayProgress("", 1, 1);
 
   // Load the updated news file and refresh the display
   listener->refreshNews();

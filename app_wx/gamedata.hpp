@@ -48,6 +48,9 @@ namespace wxTigApp
 
     bool isActive();
 
+    // Notify us that the main dataset is currently updating
+    void updateRunning(int64_t cur, int64_t total);
+
     // Notify us that an update is available. This will prompt the
     // user about the appropriate action.
     void updateReady();

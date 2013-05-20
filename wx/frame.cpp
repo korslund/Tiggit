@@ -55,10 +55,11 @@ TigFrame::TigFrame(const wxString& title, const std::string &ver,
   wxPanel *panel = new wxPanel(this);
 
   noticeSizer = new wxBoxSizer(wxHORIZONTAL);
-  mainSizer->Add(noticeSizer, 0, wxGROW | wxALL, 7);
+  mainSizer->Add(noticeSizer, 0, wxGROW | wxLEFT, 10);
 
-  noticeSizer->Add(noticeText = new wxStaticText(panel, -1, wxT("No text")), 0, wxTOP, 5);
+  noticeSizer->Add(noticeText = new wxStaticText(panel, -1, wxT("No text")), 0, wxTOP | wxRIGHT, 7);
   noticeSizer->Add(noticeButton = new wxButton(panel, myID_BUTTON_NOTICE, wxT("No action")), 0, wxLEFT, 10);
+  noticeSizer->Add(noticeGauge = new wxGauge(panel, -1, 10), 1, wxLEFT | wxRIGHT, 10);
 
   mainSizer->Show(noticeSizer, false);
 
@@ -156,17 +157,35 @@ void TigFrame::onNoticeButton(wxCommandEvent &event)
   noticeID = 0;
 }
 
+void TigFrame::displayProgress(const std::string &message, uint64_t cur, uint64_t total)
+{
+  noticeGauge->SetRange(total);
+  noticeGauge->SetValue(cur);
+  if(cur == total && message == "")
+    {
+      mainSizer->Hide(noticeSizer);
+    }
+  else
+    {
+      noticeText->SetLabel(strToWx(message));
+      mainSizer->Show(noticeSizer, true);
+      noticeSizer->Show(noticeButton, false);
+    }
+  mainSizer->Layout();
+}
+
 void TigFrame::displayNotification(const std::string &message, const std::string &button,
                                    int id)
 {
   noticeText->SetLabel(strToWx(message));
   noticeButton->SetLabel(strToWx(button));
+  noticeSizer->Show(noticeButton);
   noticeID = id;
 
   mainSizer->Show(noticeSizer, true);
+  noticeSizer->Show(noticeGauge, false);
   mainSizer->Layout();
 }
-
 
 void TigFrame::onDataMenu(wxCommandEvent &event)
 {

@@ -106,26 +106,32 @@ void StatusNotifier::tick()
   if(!data) return;
 
   // Check if we're updating the entire dataset first
-  if(updateJob && updateJob->isFinished())
-    {
-      if(updateJob->isSuccess())
-        {
-          PRINT("Update job successful");
-          data->updateReady();
-        }
-      else
-        {
-          /* TODO: If the job failed, but the base Spread update
-             succeeded, then the update will not be attempted again
-             until the next release. This means we might be sitting on
-             a partially updated repo and it won't be fixed.
-           */
+  if(updateJob)
+    if(updateJob->isFinished())
+      {
+        if(updateJob->isSuccess())
+          {
+            PRINT("Update job successful");
+            data->updateReady();
+          }
+        else
+          {
+            /* TODO: If the job failed, but the base Spread update
+               succeeded, then the update will not be attempted again
+               until the next release. This means we might be sitting on
+               a partially updated repo and it won't be fixed.
+            */
 
-          PRINT("Update job FAILED: " << updateJob->getMessage());
-        }
+            PRINT("Update job FAILED: " << updateJob->getMessage());
+          }
 
-      updateJob.reset();
-    }
+        updateJob.reset();
+      }
+    else
+      {
+        // Update is running
+        data->updateRunning(updateJob->getCurrent(), updateJob->getTotal());
+      }
 
   // How much do we need to update
   bool soft = false;

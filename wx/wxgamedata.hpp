@@ -2,6 +2,7 @@
 #define __WX_WXGAMEDATA_HPP_
 
 #include "wxcommon.hpp"
+#include <stdint.h>
 
 /*
   This abstract set of interfaces represents all our interaction with
@@ -130,6 +131,12 @@ namespace wxTiggit
 
     // Called when the app needs to reload and redisplay the news
     virtual void refreshNews() = 0;
+
+    /* Called when the app should present an update message and
+       progress.
+     */
+    virtual void displayProgress(const std::string &message, uint64_t cur,
+                                 uint64_t total) = 0;
 
     /* Called when the app should present the user with a
        notification, and an associated button (if set). When the
