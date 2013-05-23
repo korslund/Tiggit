@@ -28,6 +28,13 @@ namespace TigLib
     // Total file size after install
     uint64_t instSize;
 
+    /* Game version. May be empty.
+
+       NOTE: This is the latest known package version. It might not
+       correspond to the actual installed version.
+     */
+    std::string version;
+
     bool isInstalled() const;
     bool isUninstalled() const;
     bool isWorking() const;

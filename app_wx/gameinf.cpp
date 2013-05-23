@@ -91,6 +91,12 @@ void GameInf::updateAll()
   title = strToWx(ent->title);
   desc = strToWx(ent->desc);
 
+  if(info.instSize) instSize = strToWx(sizify(info.instSize));
+  else instSize = wxT("Unknown");
+
+  if(info.version != "") version = strToWx(info.version);
+  else version = wxT("unknown");
+
   dlStr = wxString::Format(wxT("%d"), ent->dlCount);
   if(ent->rateCount > 0 && ent->rating > 0)
     {

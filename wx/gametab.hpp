@@ -27,7 +27,7 @@ namespace wxTiggit
     ImageViewer *screenshot;
     wxListBox *tags;
     wxChoice *rateBox;
-    wxStaticText *rateText;
+    wxStaticText *rateText, *sizeText, *versionText;
     wxString rateString[7];
 
     // List of tags shown in the tag view window

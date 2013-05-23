@@ -4,6 +4,7 @@
 #include "launcher/run.hpp"
 #include <boost/filesystem.hpp>
 #include <assert.h>
+#include <stdexcept>
 
 namespace bs = boost::filesystem;
 using namespace TigLib;
@@ -13,6 +14,10 @@ LiveInfo::LiveInfo(const TigData::TigEntry *e, Repo *_repo)
 {
   // Mark newly added games as 'new'.
   sNew = ent->addTime > repo->getLastTime();
+
+  // Fetch current game information from the repository
+  instSize = repo->getGameSize(ent->idname);
+  version = repo->getGameVersion(ent->idname);
 }
 
 bool LiveInfo::isInstalled() const
@@ -139,7 +144,11 @@ void LiveInfo::launch() const
   // Use executable location as working directory
   bs::path work = exe.parent_path();
 
-  Launcher::run(exe.string(), work.string());
+  try { Launcher::run(exe.string(), work.string()); }
+  catch(std::exception &e)
+    {
+      throw std::runtime_error("Error running " + exe.string() + "\n\nDetails:\n"+ e.what());
+    }
 }
 
 std::string LiveInfo::getScreenshot() const

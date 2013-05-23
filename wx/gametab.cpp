@@ -39,6 +39,11 @@ GameTab::GameTab(wxNotebook *parent, const wxString &name, wxGameList &lst)
   buttonBar->Add(b1, 0, wxTOP | wxBOTTOM | wxRIGHT, 3);
   buttonBar->Add(b2, 0, wxTOP | wxBOTTOM | wxRIGHT, 3);
 
+  wxBoxSizer *infoSizer = new wxBoxSizer(wxVERTICAL);
+  infoSizer->Add(versionText = new wxStaticText(this, wxID_ANY, wxT("")));
+  infoSizer->Add(sizeText = new wxStaticText(this, wxID_ANY, wxT("")));
+  buttonBar->Add(infoSizer, 0, wxLEFT, 10);
+
   wxBoxSizer *buttonHolder = new wxBoxSizer(wxVERTICAL);
   buttonHolder->Add(buttonBar, 0);
   buttonHolder->Add(new wxButton(this, myID_GAMEPAGE, wxT("Game Website")),
@@ -459,6 +464,8 @@ void GameTab::updateGameInfo()
     {
       textView->Clear();
       rateText->SetLabel(rateString[0]);
+      sizeText->SetLabel(wxT(""));
+      versionText->SetLabel(wxT(""));
       rateBox->Disable();
       return;
     }
@@ -470,6 +477,10 @@ void GameTab::updateGameInfo()
 
   // Set the screenshot
   screenshot->loadImage(e.getShot());
+
+  // Set size and version info
+  sizeText->SetLabel(wxT("Size: ") + e.getSize());
+  versionText->SetLabel(wxT("Version: " + e.getVersion()));
 
   // Revert rating box
   rateBox->SetSelection(0);

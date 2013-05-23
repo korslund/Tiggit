@@ -53,8 +53,6 @@ void GameData::createLiveData(Repo *repo)
 
       if(ent->addTime > maxTime)
         maxTime = ent->addTime;
-
-      inf->instSize = repo->getGameSize(idname);
     }
 
   // Store new maxtime

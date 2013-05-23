@@ -32,7 +32,7 @@ namespace wxTigApp
 
     GameConf *conf;
 
-    wxString title, titleStatus, timeStr, rateStr, rateStr2, dlStr, statusStr, desc;
+    wxString title, titleStatus, timeStr, rateStr, rateStr2, dlStr, statusStr, desc, instSize, version;
 
     // Used to update cached wxStrings from source data
     void updateAll();
@@ -43,6 +43,8 @@ namespace wxTigApp
     wxString dlString() const { return dlStr; }
     wxString statusString() const { return statusStr; }
     wxString getDesc() const { return desc; }
+    wxString getSize() const { return instSize; }
+    wxString getVersion() const { return version; }
     wxString rateString() const
     { return conf->show_votes?rateStr2:rateStr; }
 

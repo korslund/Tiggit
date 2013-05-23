@@ -314,6 +314,11 @@ uint64_t Repo::getGameSize(const std::string &idname) const
   return ptr->spread.getPackInfo("tiggit.net", idname).installSize;
 }
 
+std::string Repo::getGameVersion(const std::string &idname) const
+{
+  return ptr->spread.getPackInfo("tiggit.net", idname).version;
+}
+
 void Repo::loadStats()
 {
   // Always ignore errors, stats aren't critically important

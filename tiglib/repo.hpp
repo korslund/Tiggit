@@ -177,6 +177,8 @@ namespace TigLib
     // Get the complete install size of a given package
     uint64_t getGameSize(const std::string &idname) const;
 
+    std::string getGameVersion(const std::string &idname) const;
+
     // Get default install dir for a game
     std::string getDefGameDir(const std::string &idname) const
     { return getPath("gamedata/" + idname); }
