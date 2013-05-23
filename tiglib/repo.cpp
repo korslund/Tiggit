@@ -384,7 +384,11 @@ void Repo::getStatusList(StatusList &list) const
       assert(is->info.channel == "tiggit.net");
       s.id = is->info.package;
       s.curVer = is->info.version;
-      s.newVer = ptr->spread.getPackInfo(is->info.channel, is->info.package).version;
+      s.isRemoved = false;
+      // Not good to use exceptions for flow control, but this should
+      // be a rare occurance. Fix it later.
+      try { s.newVer = ptr->spread.getPackInfo(is->info.channel, is->info.package).version; }
+      catch(...) { s.isRemoved = true; }
       s.where = is->where;
       s.isUpdated = is->needsUpdate;
     }

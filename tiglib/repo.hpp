@@ -29,7 +29,7 @@ namespace TigLib
     struct GameStatus
     {
       std::string id, curVer, newVer, where;
-      bool isUpdated;
+      bool isUpdated, isRemoved;
     };
 
     typedef std::vector<GameStatus> StatusList;

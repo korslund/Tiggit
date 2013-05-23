@@ -66,8 +66,13 @@ void GameData::createLiveData(Repo *repo)
   for(int i=0; i<games.size(); i++)
     {
       const Repo::GameStatus &e = games[i];
+
+      // TODO: We can handle this more gracefully later.
+      if(e.isRemoved) continue;
+
       LiveInfo *l = get(e.id);
       if(!l) continue;
+
       l->markAsInstalled(e.curVer, e.newVer, e.isUpdated);
     }
 }
