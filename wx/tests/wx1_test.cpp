@@ -41,7 +41,6 @@ struct TestInfo : wxGameInfo
   }
 
   std::string getHomepage() const { return "http://tiggit.net/"; }
-  std::string getTiggitPage() const { return "http://tiggit.net/"; }
   std::string getIdName() const { return "tiggit.net/mayor-poo"; }
   wxString getDesc() const { return wxT("Description!"); }
   std::string getDir() const { return "/"; }

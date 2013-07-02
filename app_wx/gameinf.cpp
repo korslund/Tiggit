@@ -111,8 +111,6 @@ void GameInf::updateAll()
 
 std::string GameInf::getHomepage() const
 { return info.ent->homepage; }
-std::string GameInf::getTiggitPage() const
-{ return "http://tiggit.net/game/" + info.ent->urlname; }
 std::string GameInf::getIdName() const
 { return info.ent->idname; }
 std::string GameInf::getDir() const

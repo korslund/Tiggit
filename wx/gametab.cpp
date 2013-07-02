@@ -275,21 +275,8 @@ void GameTab::onGamePage(wxCommandEvent &event)
 
   const wxGameInfo &e = lister.get(select);
 
-  wxString url;
-
-  /* If the user selected Tiggit page from the context menu, or if
-     they pressed the Game Website page but the homepage link is
-     missing, then visit the Tiggit page.
-  */
-  if(event.GetId() == myID_TIGGIT_PAGE ||
-     e.getHomepage() == "")
-    url = strToWx(e.getTiggitPage());
-
-  // Otherwise, go to the game's homepage
-  else
-    url = strToWx(e.getHomepage());
-
-  wxLaunchDefaultBrowser(url);
+  if(e.getHomepage() != "")
+    wxLaunchDefaultBrowser(strToWx(e.getHomepage()));
 }
 
 void GameTab::onButton(wxCommandEvent &event)
@@ -366,7 +353,6 @@ void GameTab::onListRightClick(wxListEvent &event)
   // Common actions
   menu.AppendSeparator();
   menu.Append(myID_GAMEPAGE, wxT("Visit Website"));
-  menu.Append(myID_TIGGIT_PAGE, wxT("Visit Tiggit.net Page"));
 
   // Currently only supported in Windows
   if((wxGetOsVersion() & wxOS_WINDOWS) != 0)
@@ -388,7 +374,7 @@ void GameTab::onContextClick(wxCommandEvent &evt)
   if(id == myID_BUTTON1 || id == myID_BUTTON2)
     onButton(evt);
 
-  else if(id == myID_GAMEPAGE || id == myID_TIGGIT_PAGE)
+  else if(id == myID_GAMEPAGE)
     onGamePage(evt);
 
   else if(id == myID_OPEN_LOCATION)

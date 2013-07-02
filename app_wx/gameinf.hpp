@@ -49,7 +49,6 @@ namespace wxTigApp
     { return conf->show_votes?rateStr2:rateStr; }
 
     std::string getHomepage() const;
-    std::string getTiggitPage() const;
     std::string getIdName() const;
     std::string getDir() const;
     int myRating() const;

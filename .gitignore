@@ -19,3 +19,4 @@ tiggit-cli
 data
 changelog.txt
 ext/
+gen/

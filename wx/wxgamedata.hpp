@@ -29,7 +29,6 @@ namespace wxTiggit
     virtual wxString statusString() const = 0;
 
     virtual std::string getHomepage() const = 0;
-    virtual std::string getTiggitPage() const = 0;
     virtual std::string getIdName() const = 0;
     virtual wxString getVersion() const = 0;
     virtual wxString getSize() const = 0;
