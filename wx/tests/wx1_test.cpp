@@ -19,6 +19,9 @@ struct TestInfo : wxGameInfo
   bool isWorking() const { return false; }
   bool isDemo() const { return false; }
 
+  wxString getVersion() const { return wxT("1.0!"); }
+  wxString getSize() const { return wxT("10 gigaflops"); }
+
   wxString getTitle(bool includeStatus=false) const
   {
     return name;

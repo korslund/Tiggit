@@ -7,6 +7,9 @@
 #include <boost/filesystem.hpp>
 #include <spread/misc/readjson.hpp>
 #include "launcher/run.hpp"
+#include "misc/curl_post.hpp"
+#include <spread/tasks/download.hpp>
+#include <spread/job/thread.hpp>
 
 namespace bf = boost::filesystem;
 using namespace TigData;
@@ -77,6 +80,45 @@ void wxTigApp::GameData::updateRunning(int64_t cur, int64_t total)
 {
   if(listener)
     listener->displayProgress("Downloading data update:", cur, total);
+}
+
+struct PostJob : Spread::Job
+{
+  cURL::PostRequest post;
+  std::string url;
+
+  void doJob()
+  {
+    setBusy("Uploading to " + url);
+    assert(url != "");
+    post.upload(url, Spread::DownloadTask::userAgent);
+    setDone();
+  }
+};
+
+void wxTigApp::GameData::submitGame(const std::string &title, const std::string &homepage,
+                                    const std::string &shot, const std::string &download,
+                                    const std::string &version, const std::string &devname,
+                                    const std::string &tags, const std::string &type,
+                                    const std::string &desc)
+{
+  PostJob *job = new PostJob;
+
+  cURL::PostRequest::StrMap &v = job->post.fields;
+
+  job->url = "http://tiggit.net/suggest.php";
+
+  v["title"] = title;
+  v["homepage"] = homepage;
+  v["shot"] = shot;
+  v["download"] = download;
+  v["version"] = version;
+  v["devname"] = devname;
+  v["tags"] = tags;
+  v["type"] = type;
+  v["desc"] = desc;
+
+  Spread::Thread::run(job);
 }
 
 void wxTigApp::GameData::updateReady()

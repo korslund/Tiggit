@@ -111,6 +111,13 @@ namespace wxTiggit
     virtual bool moveRepo(const std::string &newDir) = 0;
     virtual std::string getRepoDir() = 0;
 
+    // Game suggestions
+    virtual void submitGame(const std::string &title, const std::string &homepage,
+                            const std::string &shot, const std::string &download,
+                            const std::string &version, const std::string &devname,
+                            const std::string &tags, const std::string &type,
+                            const std::string &desc) = 0;
+
     // True if there are any active jobs in progress
     virtual bool isActive() = 0;
 

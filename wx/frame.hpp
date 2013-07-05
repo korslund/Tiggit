@@ -38,6 +38,7 @@ namespace wxTiggit
                              int id);
 
     // Event handling
+    void onSuggest(wxCommandEvent &event);
     void onNoticeButton(wxCommandEvent &event);
     void onExit(wxCommandEvent &event) { Close(); }
     void onClose(wxCloseEvent &event);

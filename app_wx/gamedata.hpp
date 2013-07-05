@@ -48,6 +48,12 @@ namespace wxTigApp
 
     bool isActive();
 
+    void submitGame(const std::string &title, const std::string &homepage,
+                    const std::string &shot, const std::string &download,
+                    const std::string &version, const std::string &devname,
+                    const std::string &tags, const std::string &type,
+                    const std::string &desc);
+
     // Notify us that the main dataset is currently updating
     void updateRunning(int64_t cur, int64_t total);
 

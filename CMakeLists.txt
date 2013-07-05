@@ -31,7 +31,7 @@ set(TLDIR ${TIG}/tiglib)
 set(WDIR ${TIG}/wx)
 set(AWDIR ${TIG}/app_wx)
 
-set(MISC ${MIDIR}/dirfinder.cpp ${MIDIR}/lockfile.cpp ${MIDIR}/freespace.cpp ${MIDIR}/fetch.cpp)
+set(MISC ${MIDIR}/dirfinder.cpp ${MIDIR}/lockfile.cpp ${MIDIR}/freespace.cpp ${MIDIR}/fetch.cpp ${MIDIR}/curl_post.cpp)
 set(MANGLE ${MDIR}/stream/clients/io_stream.cpp)
 set(GAMEINFO ${GIDIR}/stats_json.cpp ${GIDIR}/tigloader.cpp)
 set(LIST ${LDIR}/sortlist.cpp ${LDIR}/listbase.cpp ${LDIR}/picklist.cpp ${LDIR}/parentbase.cpp)

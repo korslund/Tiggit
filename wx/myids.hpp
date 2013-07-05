@@ -18,5 +18,6 @@
 #define myID_MENU_IMPORT 20016
 #define myID_MENU_EXPORT 20017
 #define myID_MENU_EXTERNAL 20018
+#define myID_MENU_SUGGEST 20020
 
 #endif

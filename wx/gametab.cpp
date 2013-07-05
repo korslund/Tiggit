@@ -24,6 +24,7 @@ GameTab::GameTab(wxNotebook *parent, const wxString &name, wxGameList &lst)
 
   wxBoxSizer *bottomCenter = new wxBoxSizer(wxHORIZONTAL);
   bottomCenter->Add(bcLeft, 1, wxGROW);
+  bottomCenter->Add(new wxButton(this, myID_MENU_SUGGEST, wxT("+ Add Game")), 0, wxRIGHT, 10);
 
   textView = new wxTextCtrl
     (this, myID_TEXTVIEW, wxT(""), wxDefaultPosition, wxDefaultSize,
@@ -44,10 +45,12 @@ GameTab::GameTab(wxNotebook *parent, const wxString &name, wxGameList &lst)
   infoSizer->Add(sizeText = new wxStaticText(this, wxID_ANY, wxT("")));
   buttonBar->Add(infoSizer, 0, wxLEFT, 10);
 
+  wxBoxSizer *buttonBar2 = new wxBoxSizer(wxHORIZONTAL);
+  buttonBar2->Add(new wxButton(this, myID_GAMEPAGE, wxT("Game Website")));
+
   wxBoxSizer *buttonHolder = new wxBoxSizer(wxVERTICAL);
   buttonHolder->Add(buttonBar, 0);
-  buttonHolder->Add(new wxButton(this, myID_GAMEPAGE, wxT("Game Website")),
-                    0, wxTOP | wxBOTTOM, 3);
+  buttonHolder->Add(buttonBar2, 0, wxTOP | wxBOTTOM, 3);
 
   wxString choices[7];
   choices[0] = wxT("Rate this game");
