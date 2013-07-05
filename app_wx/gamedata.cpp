@@ -78,7 +78,7 @@ static InstalledPick instPick;
 
 void wxTigApp::GameData::updateRunning(int64_t cur, int64_t total)
 {
-  if(listener)
+  if(listener && repo.hasNewData())
     listener->displayProgress("Downloading data update:", cur, total);
 }
 

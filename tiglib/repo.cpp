@@ -40,9 +40,6 @@ struct Repo::_Internal
   SpreadLib spread;
   std::string tmp;
 
-  // Used by fetchFiles()
-  bool newData;
-
   _Internal(const std::string &spreadDir, const std::string &tmpDir)
     : spread(spreadDir, tmpDir), tmp(tmpDir)
   {
@@ -236,13 +233,13 @@ std::string Repo::fetchPath(const std::string &url,
 struct FetchJob : Job
 {
   SpreadLib &spread;
-  bool shots, *newData;
+  bool shots;
   std::string spreadRepo, shotsPath, statsFile, newsFile, fetchURL;
 
   FetchJob(SpreadLib &_spread, bool _shots, const std::string &_spreadRepo,
            const std::string &_shotsPath, const std::string &_statsFile,
-           const std::string &_newsFile, bool *_newData, const std::string &_fetchURL)
-    : spread(_spread), shots(_shots), newData(_newData), spreadRepo(_spreadRepo),
+           const std::string &_newsFile, const std::string &_fetchURL)
+    : spread(_spread), shots(_shots), spreadRepo(_spreadRepo),
       shotsPath(_shotsPath), statsFile(_statsFile), newsFile(_newsFile),
       fetchURL(_fetchURL) {}
 
@@ -252,9 +249,6 @@ struct FetchJob : Job
 
     JobInfoPtr client = spread.updateFromURL("tiggit.net", fetchURL);
     if(waitClient(client)) return;
-
-    // Set newData depending on whether data was updated
-    *newData = spread.wasUpdated("tiggit.net");
 
     if(shots)
       {
@@ -280,12 +274,10 @@ struct FetchJob : Job
   }
 };
 
-bool Repo::hasNewData() const { return ptr->newData; }
+bool Repo::hasNewData() const { return ptr->spread.wasUpdated("tiggit.net"); }
 
 JobInfoPtr Repo::fetchFiles(bool includeShots, bool async)
 {
-  ptr->newData = false;
-
   // If we're in offline mode, skip this entire function
   if(offline) return JobInfoPtr();
 
@@ -298,8 +290,8 @@ JobInfoPtr Repo::fetchFiles(bool includeShots, bool async)
 
   // Create and run the fetch job
   return Thread::run(new FetchJob(ptr->spread, includeShots, spreadDir,
-                                  shotDir, statsFile, newsFile,
-                                  &ptr->newData, fetchURL), async);
+                                  shotDir, statsFile, newsFile, fetchURL),
+                     async);
 }
 
 std::string Repo::getGameDir(const std::string &idname) const

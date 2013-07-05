@@ -129,8 +129,9 @@ namespace TigLib
      */
     Spread::JobInfoPtr fetchFiles(bool includeShots=true, bool async=true);
 
-    /* Returns true if the latest fetch updated the data set. Only
-       valid after the fetchFiles() job has successfully completed.
+    /* Returns true if the latest fetchFiles() job updated the data
+       set. May be called while the fetch job is running, will be set
+       to true as soon as new data is detected.
      */
     bool hasNewData() const;
 
