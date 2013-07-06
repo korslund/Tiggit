@@ -4,7 +4,7 @@ find_package(Boost COMPONENTS filesystem system thread REQUIRED)
 find_package(CURL REQUIRED)
 find_package(ZLIB REQUIRED)
 
-find_package(wxWidgets COMPONENTS core base REQUIRED)
+find_package(wxWidgets COMPONENTS core base adv REQUIRED)
 include(${wxWidgets_USE_FILE})
 
 include_directories("./")

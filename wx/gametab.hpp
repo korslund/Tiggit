@@ -11,18 +11,19 @@ namespace wxTiggit
 
   struct GameTab : TabBase, wxGameListener
   {
-    GameTab(wxNotebook *parent, const wxString &name, wxGameList &lst);
+    GameTab(wxNotebook *parent, const wxString &name, wxGameList &lst, wxGameData &data);
 
   protected:
     GameListView *list;
     wxGameList &lister;
+    wxGameData &data;
 
   private:
     int select;
     time_t last_launch;
 
     // Controls
-    wxButton *b1, *b2;
+    wxButton *b1, *b2, *b3, *b4;
     wxTextCtrl *textView, *searchCtrl;
     ImageViewer *screenshot;
     wxListBox *tags;
@@ -50,6 +51,7 @@ namespace wxTiggit
     void onTagSelect(wxCommandEvent &event);
     void onSearch(wxCommandEvent &event);
     void onGamePage(wxCommandEvent &event);
+    void onBroken(wxCommandEvent &event);
     void onButton(wxCommandEvent &event);
     void onListActivate(wxListEvent &event);
     void onListDeselect(wxListEvent &event);

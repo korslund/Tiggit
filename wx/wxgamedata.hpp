@@ -111,6 +111,9 @@ namespace wxTiggit
     virtual bool moveRepo(const std::string &newDir) = 0;
     virtual std::string getRepoDir() = 0;
 
+    // Game bug reports
+    virtual void submitBroken(const std::string &idname, const std::string &comment) = 0;
+
     // Game suggestions
     virtual void submitGame(const std::string &title, const std::string &homepage,
                             const std::string &shot, const std::string &download,

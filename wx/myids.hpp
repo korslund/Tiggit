@@ -5,6 +5,7 @@
 #define myID_BUTTON1 20002
 #define myID_BUTTON2 20003
 #define myID_GAMEPAGE 20004
+#define myID_BROKEN 20100
 #define myID_TEXTVIEW 20005
 #define myID_SCREENSHOT 20006
 #define myID_LIST 20007

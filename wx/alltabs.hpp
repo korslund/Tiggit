@@ -87,7 +87,7 @@ struct StatusCol : ColumnHandler
 struct AllGamesTab : GameTab
 {
   AllGamesTab(wxNotebook *parent, wxGameData &data)
-    : GameTab(parent, wxT("All Games"), data.getAllList())
+    : GameTab(parent, wxT("All Games"), data.getAllList(), data)
   {
     list->addColumn("Name", 310, new TitleCol);
     list->addColumn("Status", 170, new StatusCol);
@@ -99,7 +99,7 @@ struct AllGamesTab : GameTab
 struct NewGamesTab : GameTab
 {
   NewGamesTab(wxNotebook *parent, wxGameData &data)
-    : GameTab(parent, wxT("Latest"), data.getLatest())
+    : GameTab(parent, wxT("Latest"), data.getLatest(), data)
   {
     list->addColumn("Name", 370, new TitleCol(true));
     list->addColumn("Added", 120, new AddDateCol);
@@ -125,7 +125,7 @@ struct NewGamesTab : GameTab
 struct FreewareTab : GameTab
 {
   FreewareTab(wxNotebook *parent, wxGameData &data)
-    : GameTab(parent, wxT("Freeware"), data.getFreeware())
+    : GameTab(parent, wxT("Freeware"), data.getFreeware(), data)
   {
     list->addColumn("Name", 310, new TitleCol(true));
     list->addColumn("Rating", 95, new RatingCol);
@@ -141,7 +141,7 @@ struct FreewareTab : GameTab
 struct DemoTab : GameTab
 {
   DemoTab(wxNotebook *parent, wxGameData &data)
-    : GameTab(parent, wxT("Demos"), data.getDemos())
+    : GameTab(parent, wxT("Demos"), data.getDemos(), data)
   {
     list->addColumn("Name", 310, new TitleCol(true));
     list->addColumn("Rating", 95, new RatingCol);
@@ -157,7 +157,7 @@ struct DemoTab : GameTab
 struct InstalledTab : GameTab
 {
   InstalledTab(wxNotebook *parent, wxGameData &data)
-    : GameTab(parent, wxT("Installed"), data.getInstalled())
+    : GameTab(parent, wxT("Installed"), data.getInstalled(), data)
   {
     list->addColumn("Name", 310, new TitleCol);
     list->addColumn("Status", 170, new StatusCol);

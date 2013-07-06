@@ -96,6 +96,17 @@ struct PostJob : Spread::Job
   }
 };
 
+void wxTigApp::GameData::submitBroken(const std::string &idname, const std::string &comment)
+{
+  PostJob *job = new PostJob;
+
+  job->url = "http://tiggit.net/broken_game.php";
+  job->post.fields["idname"] = idname;
+  job->post.fields["comment"] = comment;
+
+  Spread::Thread::run(job);
+}
+
 void wxTigApp::GameData::submitGame(const std::string &title, const std::string &homepage,
                                     const std::string &shot, const std::string &download,
                                     const std::string &version, const std::string &devname,

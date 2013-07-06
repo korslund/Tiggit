@@ -5,8 +5,9 @@
 
 using namespace wxTiggit;
 
-GameTab::GameTab(wxNotebook *parent, const wxString &name, wxGameList &lst)
-  : TabBase(parent, name), lister(lst), select(0), last_launch(0)
+GameTab::GameTab(wxNotebook *parent, const wxString &name, wxGameList &lst,
+                 wxGameData &_data)
+  : TabBase(parent, name), lister(lst), data(_data), select(0), last_launch(0)
 {
   list = new GameListView(this, myID_LIST, lister);
 
@@ -46,7 +47,9 @@ GameTab::GameTab(wxNotebook *parent, const wxString &name, wxGameList &lst)
   buttonBar->Add(infoSizer, 0, wxLEFT, 10);
 
   wxBoxSizer *buttonBar2 = new wxBoxSizer(wxHORIZONTAL);
-  buttonBar2->Add(new wxButton(this, myID_GAMEPAGE, wxT("Game Website")));
+  buttonBar2->Add(b3 = new wxButton(this, myID_GAMEPAGE, wxT("Game Website")));
+  buttonBar2->Add(b4 = new wxButton(this, myID_BROKEN, wxT("Report broken game")),
+                  0, wxLEFT, 3);
 
   wxBoxSizer *buttonHolder = new wxBoxSizer(wxVERTICAL);
   buttonHolder->Add(buttonBar, 0);
@@ -109,6 +112,8 @@ GameTab::GameTab(wxNotebook *parent, const wxString &name, wxGameList &lst)
           wxCommandEventHandler(GameTab::onTagSelect));
   Connect(myID_GAMEPAGE, wxEVT_COMMAND_BUTTON_CLICKED,
           wxCommandEventHandler(GameTab::onGamePage));
+  Connect(myID_BROKEN, wxEVT_COMMAND_BUTTON_CLICKED,
+          wxCommandEventHandler(GameTab::onBroken));
 
   Connect(myID_BUTTON1, wxEVT_COMMAND_BUTTON_CLICKED,
           wxCommandEventHandler(GameTab::onButton));
@@ -356,6 +361,7 @@ void GameTab::onListRightClick(wxListEvent &event)
   // Common actions
   menu.AppendSeparator();
   menu.Append(myID_GAMEPAGE, wxT("Visit Website"));
+  menu.Append(myID_BROKEN, wxT("Report broken game"));;
 
   // Currently only supported in Windows
   if((wxGetOsVersion() & wxOS_WINDOWS) != 0)
@@ -363,6 +369,23 @@ void GameTab::onListRightClick(wxListEvent &event)
       menu.Append(myID_OPEN_LOCATION, wxT("Open Location"));
 
   PopupMenu(&menu);
+}
+
+#include "broken.hpp"
+
+void GameTab::onBroken(wxCommandEvent &evt)
+{
+  if(select < 0 || select >= lister.size())
+    return;
+
+  const wxGameInfo &e = lister.get(select);
+
+  ProblemDialog diag(this, e.getTitle());
+
+  if(diag.ok)
+    {
+      data.submitBroken(e.getIdName(), diag.comment);
+    }
 }
 
 // Handle events from the context menu
@@ -379,6 +402,9 @@ void GameTab::onContextClick(wxCommandEvent &evt)
 
   else if(id == myID_GAMEPAGE)
     onGamePage(evt);
+
+  else if(id == myID_BROKEN)
+    onBroken(evt);
 
   else if(id == myID_OPEN_LOCATION)
     {
@@ -415,6 +441,8 @@ void GameTab::fixButtons()
     {
       b1->Disable();
       b2->Disable();
+      b3->Disable();
+      b4->Disable();
       b1->SetLabel(wxT("No action"));
       b2->SetLabel(wxT("No action"));
       return;
@@ -424,6 +452,8 @@ void GameTab::fixButtons()
 
   b1->Enable();
   b2->Enable();
+  b3->Enable();
+  b4->Enable();
 
   if(e.isUninstalled())
     {
