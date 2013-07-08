@@ -13,6 +13,10 @@ namespace wxTiggit
     // Refresh tab title
     void updateTitle();
 
+    // Call this when files on disk have changed (promo images, news
+    // files etc)
+    virtual void reloadData() {}
+
     // Called when the tab is selected
     virtual void gotFocus() {}
 

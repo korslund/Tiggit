@@ -5,7 +5,6 @@
 #define myID_BUTTON1 20002
 #define myID_BUTTON2 20003
 #define myID_GAMEPAGE 20004
-#define myID_BROKEN 20100
 #define myID_TEXTVIEW 20005
 #define myID_SCREENSHOT 20006
 #define myID_LIST 20007
@@ -20,5 +19,7 @@
 #define myID_MENU_EXPORT 20017
 #define myID_MENU_EXTERNAL 20018
 #define myID_MENU_SUGGEST 20020
+#define myID_BROKEN 20030
+#define myID_LEFTIMAGE 20031
 
 #endif

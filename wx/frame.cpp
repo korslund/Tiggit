@@ -170,6 +170,12 @@ void TigFrame::updateTabNames()
 void TigFrame::refreshNews()
 {
   newsTab->reloadData();
+
+  // Reload left image in gametabs as well
+  newGamesTab->reloadData();
+  freewareTab->reloadData();
+  demosTab->reloadData();
+  installedTab->reloadData();
 }
 
 void TigFrame::onNoticeButton(wxCommandEvent &event)

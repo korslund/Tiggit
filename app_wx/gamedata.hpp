@@ -48,6 +48,7 @@ namespace wxTigApp
 
     bool isActive();
 
+    bool getLeftImage(std::string &file, std::string &url);
     void submitBroken(const std::string &idname, const std::string &comment);
     void submitGame(const std::string &title, const std::string &homepage,
                     const std::string &shot, const std::string &download,

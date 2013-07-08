@@ -8,6 +8,7 @@
 namespace wxTiggit
 {
   struct ImageViewer;
+  struct ClickableImage;
 
   struct GameTab : TabBase, wxGameListener
   {
@@ -26,6 +27,7 @@ namespace wxTiggit
     wxButton *b1, *b2, *b3, *b4;
     wxTextCtrl *textView, *searchCtrl;
     ImageViewer *screenshot;
+    ClickableImage *leftImage;
     wxListBox *tags;
     wxChoice *rateBox;
     wxStaticText *rateText, *sizeText, *versionText;
@@ -43,6 +45,7 @@ namespace wxTiggit
     // TabBase functions
     void gotFocus();
     int getTitleNumber();
+    void reloadData();
 
     // Event handling functions
     void onSpecialKey(wxCommandEvent &event);
@@ -61,6 +64,7 @@ namespace wxTiggit
 
     // Internal functions
     void updateSelection();
+    void setLeftImage();
     void updateTags();
     void fixButtons();
     void updateGameInfo();

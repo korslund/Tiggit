@@ -1,5 +1,6 @@
 #include "gametab.hpp"
 #include "image_viewer.hpp"
+#include "image_clickable.hpp"
 #include "myids.hpp"
 #include "boxes.hpp"
 
@@ -84,6 +85,12 @@ GameTab::GameTab(wxNotebook *parent, const wxString &name, wxGameList &lst,
 
   wxBoxSizer *bottomLeft = new wxBoxSizer(wxVERTICAL);
 
+  leftImage = new ClickableImage(this, myID_LEFTIMAGE, wxDefaultPosition,
+                                       wxSize(150,76));
+  bottomLeft->Add(leftImage, 0, wxALL, 3);
+
+  setLeftImage();
+
   wxBoxSizer *rightPane = new wxBoxSizer(wxVERTICAL);
   rightPane->Add(screenshot, 0, wxTOP, 5);
   rightPane->Add(rateBar);
@@ -166,6 +173,20 @@ static const char* itags[] =
     "open-source",
     "\0"
   };
+
+void GameTab::reloadData()
+{
+  setLeftImage();
+}
+
+void GameTab::setLeftImage()
+{
+  std::string ifile, iurl;
+  if(data.getLeftImage(ifile, iurl))
+    leftImage->setData(ifile, iurl);
+  else
+    leftImage->setData("", "");
+}
 
 void GameTab::updateTags()
 {

@@ -2,7 +2,10 @@
 
 #include <spread/job/thread.hpp>
 #include <spread/spread.hpp>
+#include <spread/misc/readjson.hpp>
+#include <spread/tasks/download.hpp>
 #include "misc/dirfinder.hpp"
+#include "misc/fetch.hpp"
 #include "version.hpp"
 #include <fstream>
 #include <ctime>
@@ -185,6 +188,32 @@ struct UpdateJob : Job
         else log("Existing version detected.");
       }
     else log("No new data available");
+
+    try
+      {
+        std::string promoFile = repo->getPath("promo/index.json");
+        Fetch::fetchIfOlder("http://tiggit.net/client/promo/index.json", promoFile, 120);
+
+        Json::Value val = ReadJson::readJson(promoFile);
+
+        std::vector<std::string> names = val.getMemberNames();
+        for(int i=0; i<names.size(); i++)
+          {
+            const std::string &code = names[i];
+            std::string imgFile = repo->getPath("promo/" + code + ".png");
+
+            if(code != "" && !bf::exists(imgFile))
+              {
+                std::string imgUrl = val[code]["img_url"].asString();
+                if(imgUrl != "")
+                  {
+                    DownloadTask dl(imgUrl, imgFile);
+                    if(runClient(dl, false, false)) return;
+                  }
+              }
+          }
+      }
+    catch(...) {}
 
     log("Update job finished successfully");
     setDone();

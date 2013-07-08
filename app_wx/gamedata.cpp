@@ -96,6 +96,68 @@ struct PostJob : Spread::Job
   }
 };
 
+// This is kinda hacky but who cares
+static std::string leftImage, leftImageUrl;
+
+bool wxTigApp::GameData::getLeftImage(std::string &file, std::string &url)
+{
+  if(leftImage != "")
+    {
+      if(leftImage == "none" || !bf::exists(leftImage))
+        return false;
+
+      file = leftImage;
+      url = leftImageUrl;
+      return true;
+    }
+
+  std::string promoFile = repo.getPath("promo/index.json");
+
+  // We haven't loaded any data yet
+  leftImage = "none";
+
+  if(bf::exists(promoFile))
+    try
+      {
+        Json::Value list = ReadJson::readJson(promoFile);
+        if(list.isObject())
+          {
+            bool isTest = config.conf.getBool("istest");
+
+            std::vector<std::string> all, forUse;
+            all = list.getMemberNames();
+            for(int i=0; i<all.size(); i++)
+              {
+                const std::string &code = all[i];
+                if(list[code]["istest"].asBool() == isTest)
+                  forUse.push_back(code);
+              }
+
+            // Pick a random entry from our keeper's list
+            if(forUse.size())
+              {
+                Misc::Random rnd;
+                const std::string &code = forUse[rnd.genBelow(forUse.size())];
+                Json::Value val = list[code];
+
+                /* Note that we are allowed to set a filename that
+                   doesn't exist. That is filtered out elsewhere, and
+                   allows us to create the file later on without
+                   redoing all of the processing.
+                 */
+                leftImage = repo.getPath("promo/"+code+".png");
+                leftImageUrl = val["click_url"].asString();
+              }
+          }
+      }
+    catch(...)
+      {}
+
+  // Run the top of the function again
+  assert(leftImage != "");
+  return getLeftImage(file, url);
+}
+
 void wxTigApp::GameData::submitBroken(const std::string &idname, const std::string &comment)
 {
   PostJob *job = new PostJob;
@@ -143,6 +205,9 @@ void wxTigApp::GameData::updateReady()
   if(!listener) return;
 
   listener->displayProgress("", 1, 1);
+
+  // Make another go at reloading promo image, if it failed previously
+  if(leftImage == "none") leftImage = "";
 
   // Load the updated news file and refresh the display
   listener->refreshNews();
