@@ -22,4 +22,7 @@
 #define myID_BROKEN 20030
 #define myID_LEFTIMAGE 20031
 
+// The next 100 numbers following this are reserved
+#define myID_LIBRARY 21000
+
 #endif

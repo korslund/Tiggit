@@ -135,6 +135,41 @@ const wxImage &GameInf::getShot()
   return screenshot;
 }
 
+struct LibraryDialog : wxDialog
+{
+  bool install;
+  bool neverask;
+
+  LibraryDialog(const std::string &game, const std::string &library)
+    : wxDialog(NULL, -1, wxT("Dependency Notice"))
+  {
+    wxPanel *panel = new wxPanel(this);
+    wxBoxSizer *outer = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *sizer = new wxBoxSizer(wxVERTICAL);
+    outer->Add(sizer, 1, wxGROW | wxALL, 20);
+    panel->SetSizer(outer);
+
+    sizer->Add(new wxStaticText(panel, -1, strToWx(game + " requires " + library + ".\nInstall now?")));
+
+    wxCheckBox *check = new wxCheckBox(panel, -1, strToWx("Don't ask me about "+library+" again"));
+    check->SetValue(true);
+
+    wxBoxSizer *buttons = new wxBoxSizer(wxHORIZONTAL);
+    sizer->Add(buttons, 0, wxTOP, 12);
+    buttons->Add(new wxButton(panel, wxID_OK, wxT("Install (opens webpage)")));
+    buttons->Add(new wxButton(panel, wxID_CANCEL, wxT("Already have it!")), 0, wxLEFT, 8);
+
+    sizer->Add(check, 0, wxTOP, 10);
+
+    panel->Fit();
+    Fit();
+    Center();
+
+    install = ShowModal() == wxID_OK;
+    neverask = check->GetValue();
+  }
+};
+
 void GameInf::installGame()
 {
   info.install();
@@ -142,6 +177,25 @@ void GameInf::installGame()
 
   // Add ourselves to the watch list
   notify.watchMe(this);
+
+  // Check for dependencies
+  for(int i=0; i<info.ent->libs.size(); i++)
+    {
+      const std::string &tag = info.ent->libs[i];
+      int num = libs->getNum(tag);
+      if(!libs->isInstalled(tag) && num >= 0)
+        {
+          LibraryDialog dlg(info.ent->title, libs->names[num]);
+
+          if(dlg.neverask) libs->markInstalled(tag);
+          if(dlg.install)
+            {
+              std::string url = libs->getUrl(num);
+              if(url.size())
+                wxLaunchDefaultBrowser(strToWx(url));
+            }
+        }
+    }
 }
 
 void GameInf::uninstallGame()

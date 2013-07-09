@@ -45,6 +45,7 @@ namespace wxTiggit
     void onSpecialKey(wxCommandEvent &event);
     void onOption(wxCommandEvent &event);
     void onDataMenu(wxCommandEvent &event);
+    void onLibraryMenu(wxCommandEvent &event);
   };
 }
 #endif

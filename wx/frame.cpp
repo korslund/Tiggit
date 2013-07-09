@@ -20,13 +20,17 @@ TigFrame::TigFrame(const wxString& title, const std::string &ver,
 
   Centre();
 
+  wxMenuBar *menuBar = new wxMenuBar;
+
   wxMenu *menuFile = new wxMenu;
   menuFile->Append(wxID_EXIT, _("E&xit"));
+  menuBar->Append(menuFile, _("&App"));
 
   wxMenu *menuOpts = new wxMenu;
   menuOpts->AppendCheckItem(myID_MENU_SHOW_VOTES, wxT("Show &Vote Count"),
                             wxT("If checked will display the number of votes next to the rating in the game lists"));
   menuOpts->Append(myID_MENU_SETDIR, _("Set &Data Location..."));
+  menuBar->Append(menuOpts, _("&Options"));
 
   // Set current options
   menuOpts->Check(myID_MENU_SHOW_VOTES, data.conf().getShowVotes());
@@ -37,16 +41,24 @@ TigFrame::TigFrame(const wxString& title, const std::string &ver,
   menuData->Append(myID_MENU_EXPORT, _("&Export Data"));
   menuData->Append(myID_MENU_IMPORT, _("Add/&Import Data"));
   menuData->Append(myID_MENU_EXTERNAL, _("External &Games"));
+  menuBar->Append(menuData, _("&Data"));
   */
 
   wxMenu *menuCommunity = new wxMenu;
   menuCommunity->Append(myID_MENU_SUGGEST, _("S&uggest Game..."));
-
-  wxMenuBar *menuBar = new wxMenuBar;
-  menuBar->Append(menuFile, _("&App"));
-  menuBar->Append(menuOpts, _("&Options"));
-  //menuBar->Append(menuData, _("&Data"));
   menuBar->Append(menuCommunity, _("&Community"));
+
+  wxMenu *menuLibraries = new wxMenu;
+  menuBar->Append(menuLibraries, _("&Install..."));
+
+  const std::vector<std::string> &libs = data.getLibraryMenu();
+
+  for(int i=0; i<libs.size(); i++)
+    {
+      menuLibraries->Append(myID_LIBRARY+i, strToWx(libs[i]));
+      Connect(myID_LIBRARY+i,  wxEVT_COMMAND_MENU_SELECTED,
+              wxCommandEventHandler(TigFrame::onLibraryMenu));
+    }
 
   SetMenuBar(menuBar);
 
@@ -214,6 +226,12 @@ void TigFrame::displayNotification(const std::string &message, const std::string
   mainSizer->Show(noticeSizer, true);
   noticeSizer->Show(noticeGauge, false);
   mainSizer->Layout();
+}
+
+void TigFrame::onLibraryMenu(wxCommandEvent &event)
+{
+  int num = event.GetId() - myID_LIBRARY;
+  data.installLibrary(num);
 }
 
 void TigFrame::onDataMenu(wxCommandEvent &event)

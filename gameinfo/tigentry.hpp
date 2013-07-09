@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <string>
+#include <vector>
 
 namespace TigData
 {
@@ -19,6 +20,9 @@ namespace TigData
 
     // Generated strings. idname = channel+"/"+urlname
     std::string channel, idname;
+
+    // Required libraries. See app_wx/libraries.hpp for supported values.
+    std::vector<std::string> libs;
 
     // See TigFlags for meaning.
     uint32_t flags;

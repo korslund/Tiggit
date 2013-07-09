@@ -20,6 +20,14 @@ void TigLoader::clear()
   channels.clear();
 }
 
+static std::string getNext(const char* &ptr)
+{
+  while(*ptr == ' ') ptr++;
+  const char *start = ptr;
+  while(*ptr != ' ' && *ptr != 0) ptr++;
+  return std::string(start, ptr-start);
+}
+
 void TigLoader::addChannel(const std::string &channel,
                            const std::string &jsonfile)
 {
@@ -62,6 +70,17 @@ void TigLoader::addChannel(const std::string &channel,
       e.homepage = v["homepage"].asString();
       e.tags = v["tags"].asString();
       e.urlname = v["name"].asString();
+
+      {
+        std::string libs = v["libs"].asString();
+        const char *ptr = libs.c_str();
+        for(;;)
+          {
+            std::string next = getNext(ptr);
+            if(next == "") break;
+            e.libs.push_back(next);
+          }
+      }
 
       e.channel = channel;
       e.idname = channel + "/" + e.urlname;

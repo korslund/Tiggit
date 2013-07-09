@@ -158,6 +158,18 @@ bool wxTigApp::GameData::getLeftImage(std::string &file, std::string &url)
   return getLeftImage(file, url);
 }
 
+const std::vector<std::string> &wxTigApp::GameData::getLibraryMenu()
+{
+  return libs.titles;
+}
+
+void wxTigApp::GameData::installLibrary(int num)
+{
+  std::string url = libs.getUrl(num);
+  if(url.size())
+    wxLaunchDefaultBrowser(strToWx(url));
+}
+
 void wxTigApp::GameData::submitBroken(const std::string &idname, const std::string &comment)
 {
   PostJob *job = new PostJob;
@@ -401,7 +413,7 @@ void wxTigApp::GameData::loadData()
     {
       LiveInfo *li = it->second;
       assert(li->extra == NULL);
-      li->extra = new GameInf(li, &config);
+      li->extra = new GameInf(li, &config, &libs);
     }
 
   /* Transfer existing install jobs, if any, over to the new LiveInfo
@@ -428,7 +440,7 @@ void wxTigApp::GameData::loadData()
 
 wxTigApp::GameData::GameData(Repo &rep)
   : config(rep.getPath("wxtiggit.conf")), news(&rep),
-    repo(rep), updater(rep)
+    repo(rep), libs(rep.getPath("wxtiggit_libs.conf")), updater(rep)
 {
   repo.getSpread().getJobManager()->setLogger(rep.getPath("threads.log"));
 

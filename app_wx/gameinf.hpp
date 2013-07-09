@@ -3,6 +3,7 @@
 
 #include "tiglib/liveinfo.hpp"
 #include "gameconf.hpp"
+#include "libraries.hpp"
 
 using namespace wxTiggit;
 
@@ -10,8 +11,8 @@ namespace wxTigApp
 {
   struct GameInf : wxGameInfo
   {
-    GameInf(TigLib::LiveInfo *_info, GameConf *_conf)
-      : info(*_info), shotIsLoaded(false), conf(_conf)
+    GameInf(TigLib::LiveInfo *_info, GameConf *_conf, LibraryHandler *_libs)
+      : info(*_info), shotIsLoaded(false), conf(_conf), libs(_libs)
     { updateAll(); }
 
     bool isInstalled() const { return info.isInstalled(); }
@@ -31,6 +32,7 @@ namespace wxTigApp
     bool shotIsLoaded;
 
     GameConf *conf;
+    LibraryHandler *libs;
 
     wxString title, titleStatus, timeStr, rateStr, rateStr2, dlStr, statusStr, desc, instSize, version;
 

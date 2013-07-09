@@ -6,6 +6,7 @@
 #include "gameconf.hpp"
 #include "tiglib/news.hpp"
 #include "appupdate.hpp"
+#include "libraries.hpp"
 
 namespace wxTigApp
 {
@@ -30,6 +31,7 @@ namespace wxTigApp
     GameConf config;
     GameNews news;
     TigLib::Repo &repo;
+    LibraryHandler libs;
 
     wxWindow *frame;
 
@@ -48,6 +50,8 @@ namespace wxTigApp
 
     bool isActive();
 
+    const std::vector<std::string> &getLibraryMenu();
+    void installLibrary(int num);
     bool getLeftImage(std::string &file, std::string &url);
     void submitBroken(const std::string &idname, const std::string &comment);
     void submitGame(const std::string &title, const std::string &homepage,

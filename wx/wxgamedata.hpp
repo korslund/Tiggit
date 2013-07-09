@@ -3,6 +3,7 @@
 
 #include "wxcommon.hpp"
 #include <stdint.h>
+#include <vector>
 
 /*
   This abstract set of interfaces represents all our interaction with
@@ -111,6 +112,8 @@ namespace wxTiggit
     virtual bool moveRepo(const std::string &newDir) = 0;
     virtual std::string getRepoDir() = 0;
 
+    virtual const std::vector<std::string> &getLibraryMenu() = 0;
+    virtual void installLibrary(int num) = 0;
     virtual bool getLeftImage(std::string &file, std::string &url) = 0;
 
     // Game bug reports
