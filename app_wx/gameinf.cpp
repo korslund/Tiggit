@@ -141,7 +141,7 @@ struct LibraryDialog : wxDialog
   bool neverask;
 
   LibraryDialog(const std::string &game, const std::string &library)
-    : wxDialog(NULL, -1, wxT("Dependency Notice"))
+    : wxDialog(NULL, -1, wxT("Dependency Notice"), wxDefaultPosition)
   {
     wxPanel *panel = new wxPanel(this);
     wxBoxSizer *outer = new wxBoxSizer(wxVERTICAL);

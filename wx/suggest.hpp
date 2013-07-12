@@ -71,9 +71,9 @@ struct SuggestDialog : wxDialog
 
     wxRadioButton *r_free, *r_open, *r_demo;
 
-    sizer->Add(new wxStaticText(panel, -1, wxT("Suggest a game to add to Tiggit:")));
+    sizer->Add(new wxStaticText(panel, -1, wxT("Suggest a game that you want to add to Tiggit:")));
     t_title = addText("Title:", 20);
-    sizer->Add(new wxStaticText(panel, -1, wxT("OPTIONAL: provide more info to help add the game faster:")), 0, wxTOP, 17);
+    sizer->Add(new wxStaticText(panel, -1, wxT("OPTIONAL: provide more info to add the game faster:")), 0, wxTOP, 17);
     t_homepage = addText("Homepage URL:", 18);
     t_shot = addText("Screenshot URL:");
     t_download = addText("Download URL:");

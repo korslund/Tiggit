@@ -44,12 +44,12 @@ TigFrame::TigFrame(const wxString& title, const std::string &ver,
   menuBar->Append(menuData, _("&Data"));
   */
 
-  wxMenu *menuCommunity = new wxMenu;
-  menuCommunity->Append(myID_MENU_SUGGEST, _("S&uggest Game..."));
-  menuBar->Append(menuCommunity, _("&Community"));
+  wxMenu *menuActions = new wxMenu;
+  menuActions->Append(myID_MENU_SUGGEST, _("S&uggest Game..."));
+  menuBar->Append(menuActions, _("&Actions"));
 
   wxMenu *menuLibraries = new wxMenu;
-  menuBar->Append(menuLibraries, _("&Install..."));
+  menuActions->AppendSubMenu(menuLibraries, _("&Install..."));
 
   const std::vector<std::string> &libs = data.getLibraryMenu();
 

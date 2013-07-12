@@ -25,7 +25,7 @@ struct ProblemDialog : wxDialog
     wxTextCtrl *t_comment;
 
     sizer->Add(new wxStaticText(panel, -1, wxT("Game: ") + gameTitle));
-    sizer->Add(new wxStaticText(panel, -1, wxT("What's broken:")), 0, wxTOP, 6);
+    sizer->Add(new wxStaticText(panel, -1, wxT("Describe the problem:")), 0, wxTOP, 6);
     t_comment = new wxTextCtrl(panel, -1, wxT(""), wxDefaultPosition, wxSize(260,80),
                                wxTE_MULTILINE);
     sizer->Add(t_comment);

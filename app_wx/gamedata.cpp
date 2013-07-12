@@ -193,7 +193,7 @@ void wxTigApp::GameData::submitGame(const std::string &title, const std::string 
 
   job->url = "http://tiggit.net/suggest.php";
 
-  v["title"] = title;
+  v["title"] = title.substr(0,49);
   v["homepage"] = homepage;
   v["shot"] = shot;
   v["download"] = download;
@@ -202,6 +202,7 @@ void wxTigApp::GameData::submitGame(const std::string &title, const std::string 
   v["tags"] = tags;
   v["type"] = type;
   v["desc"] = desc;
+  v["ten"] = "100";
 
   Spread::Thread::run(job);
 }

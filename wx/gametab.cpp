@@ -49,7 +49,7 @@ GameTab::GameTab(wxNotebook *parent, const wxString &name, wxGameList &lst,
 
   wxBoxSizer *buttonBar2 = new wxBoxSizer(wxHORIZONTAL);
   buttonBar2->Add(b3 = new wxButton(this, myID_GAMEPAGE, wxT("Game Website")));
-  buttonBar2->Add(b4 = new wxButton(this, myID_BROKEN, wxT("Report broken game")),
+  buttonBar2->Add(b4 = new wxButton(this, myID_BROKEN, wxT("Report Broken Game")),
                   0, wxLEFT, 3);
 
   wxBoxSizer *buttonHolder = new wxBoxSizer(wxVERTICAL);
