@@ -25,7 +25,7 @@ struct ProblemDialog : wxDialog
     wxTextCtrl *t_comment;
 
     sizer->Add(new wxStaticText(panel, -1, wxT("Game: ") + gameTitle));
-    sizer->Add(new wxStaticText(panel, -1, wxT("Describe the problem:")), 0, wxTOP, 6);
+    sizer->Add(new wxStaticText(panel, -1, wxT("Describe the problem (required):")), 0, wxTOP, 6);
     t_comment = new wxTextCtrl(panel, -1, wxT(""), wxDefaultPosition, wxSize(260,80),
                                wxTE_MULTILINE);
     sizer->Add(t_comment);
@@ -44,6 +44,10 @@ struct ProblemDialog : wxDialog
     if(ok)
       {
         comment = wxToStr(t_comment->GetValue());
+
+        // Not filling out the description is considered the same as
+        // clicking cancel
+        if(comment == "") ok = false;
       }
 
     Destroy();

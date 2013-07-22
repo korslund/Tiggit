@@ -109,7 +109,6 @@ public:
 #define myID_BMARKALL 10046
 #define myID_TIGHOME  10060
 #define myID_TIGFORUM 10061
-#define myID_TIGBLOG  10062
 #define myID_TIGTWIT  10063
 
 NewsTab::NewsTab(wxNotebook *parent, wxGameData &data)
@@ -129,8 +128,6 @@ NewsTab::NewsTab(wxNotebook *parent, wxGameData &data)
   buttons->Add(new wxButton(this, myID_TIGHOME, wxT("Tiggit.net")),
                0, wxLEFT | wxTOP | wxBOTTOM, 5);
   buttons->Add(new wxButton(this, myID_TIGFORUM, wxT("Tiggit Forum")),
-               0, wxLEFT | wxTOP | wxBOTTOM, 5);
-  buttons->Add(new wxButton(this, myID_TIGBLOG, wxT("Tiggit Blog")),
                0, wxLEFT | wxTOP | wxBOTTOM, 5);
   buttons->Add(new wxButton(this, myID_TIGTWIT, wxT("Twitter")),
                0, wxLEFT | wxTOP | wxBOTTOM, 5);
@@ -159,8 +156,6 @@ NewsTab::NewsTab(wxNotebook *parent, wxGameData &data)
           wxCommandEventHandler(NewsTab::onWebsite));
   Connect(myID_TIGFORUM, wxEVT_COMMAND_BUTTON_CLICKED,
           wxCommandEventHandler(NewsTab::onWebsite));
-  Connect(myID_TIGBLOG, wxEVT_COMMAND_BUTTON_CLICKED,
-          wxCommandEventHandler(NewsTab::onWebsite));
   Connect(myID_TIGTWIT, wxEVT_COMMAND_BUTTON_CLICKED,
           wxCommandEventHandler(NewsTab::onWebsite));
 
@@ -181,7 +176,6 @@ void NewsTab::onWebsite(wxCommandEvent &event)
 
   if(id == myID_TIGHOME) url = wxT("http://tiggit.net/");
   if(id == myID_TIGFORUM) url = wxT("http://tiggit.net/forum/");
-  if(id == myID_TIGBLOG) url = wxT("http://tiggit.net/blog");
   if(id == myID_TIGTWIT) url = wxT("https://twitter.com/tiggitdev");
 
   wxLaunchDefaultBrowser(url);
