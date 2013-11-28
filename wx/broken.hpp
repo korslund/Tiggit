@@ -8,7 +8,7 @@ struct ProblemDialog : wxDialog
   std::string comment;
 
   ProblemDialog(wxWindow *parent, const wxString &gameTitle)
-    : wxDialog(parent, -1, wxT("Report A Game Problem"), wxDefaultPosition,
+    : wxDialog(parent, -1, wxT("Report Broken Download"), wxDefaultPosition,
                wxSize(300,300))
   {
     wxPanel *panel;
@@ -25,7 +25,7 @@ struct ProblemDialog : wxDialog
     wxTextCtrl *t_comment;
 
     sizer->Add(new wxStaticText(panel, -1, wxT("Game: ") + gameTitle));
-    sizer->Add(new wxStaticText(panel, -1, wxT("Describe the problem (required):")), 0, wxTOP, 6);
+    sizer->Add(new wxStaticText(panel, -1, wxT("Describe the issue (required):")), 0, wxTOP, 6);
     t_comment = new wxTextCtrl(panel, -1, wxT(""), wxDefaultPosition, wxSize(260,80),
                                wxTE_MULTILINE);
     sizer->Add(t_comment);

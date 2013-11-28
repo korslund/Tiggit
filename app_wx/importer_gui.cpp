@@ -35,7 +35,7 @@ void ImportGui::doUserCleanup(const std::string &repoDir)
         {
           std::string path = root.asString();
 
-          if(Boxes::ask("Remove all files from\n" + path + "?"))
+          if(Boxes::ask("Remove all files from\n" + path + "?\n\nWARNING: This will delete EVERYTHING in that directory."))
             TigLib::Repo::killPath(path);
         }
     }
