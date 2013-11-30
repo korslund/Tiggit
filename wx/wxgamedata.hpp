@@ -69,6 +69,7 @@ namespace wxTiggit
     virtual bool sortDownloads() = 0;
 
     virtual int size() const = 0;
+    virtual int totalSize() const = 0;
     virtual const wxGameInfo& get(int) = 0;
     virtual wxGameInfo& edit(int) = 0;
   };

@@ -342,6 +342,11 @@ bool wxTigApp::GameData::moveRepo(const std::string &newPath)
                                   (newP/"spread/channels").string(),
                                   spread, "Copying Tiggit data"))
         return true;
+      // TODO: These should be added to cache on startup
+      if(!ImportGui::copyFilesGui((oldP/"spread/cache").string(),
+                                  (newP/"spread/cache").string(),
+                                  spread, "Copying cache"))
+        return true;
 
       bf::copy_file(oldP/"spread/cache.conf", newP/"spread/cache.conf");
 

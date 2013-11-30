@@ -201,8 +201,12 @@ namespace TigLib
     Spread::JobInfoPtr startUninstall(const std::string &idname, bool async=true);
    
     // Remove any path, using boost::filesystem::remove_all(), in a
-    // background thread.
-    static Spread::JobInfoPtr killPath(const std::string &dir, bool async=true);
+    // background thread. EDIT: This is dangerous, disabled.
+    //static Spread::JobInfoPtr killPath(const std::string &dir, bool async=true);
+
+    // Remove all files and subdirs normally found in a repository.
+    // Runs in a backround thread if async=true.
+    static Spread::JobInfoPtr killRepo(const std::string &dir, bool async=true);
 
     // Get access to the Spread repository instance used internally by
     // Repo

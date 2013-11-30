@@ -7,6 +7,7 @@
 #include "wx/dialogs.hpp"
 #include <wx/cmdline.h>
 #include "version.hpp"
+#include "misc/dirfinder.hpp"
 
 //#define PRINT_DEBUG
 #ifdef PRINT_DEBUG
@@ -197,6 +198,13 @@ struct TigApp : wxApp
           assert(repOk);
         }
 
+        // Double-check that the repository is writable
+        if(!Misc::DirFinder::isWritable(rep.getPath()))
+          {
+            if(!Boxes::ask("Repo path " + rep.getPath() + " does not seem to be writable. Do you want to continue anyway?\n\nIf this fails, try rerunning tiggit.exe with the --reset parameter, and pick another repo location."))
+              return false;
+          }
+
         // Set up the GameData struct
         gameData = new wxTigApp::GameData(rep);
 
@@ -286,6 +294,11 @@ struct TigApp : wxApp
 
         // Check for and act on cleanup instructions.
         ImportGui::doUserCleanup(rep.getPath());
+
+        // TODO: After a repo move, we have copied files into
+        // spread/cache/, but these might not actually be visible to
+        // the system at this point. We might need to cache them
+        // manually.
 
         // TODO: Reaffirm the stored path. This might be needed on
         // Linux, where the path is stored in a file. In some cases

@@ -137,16 +137,15 @@ void StatusNotifier::tick()
   bool soft = false;
   bool hard = false;
 
-  WatchList::iterator it, itold;
-  for(it = watchList.begin(); it != watchList.end();)
+  for(WatchList::iterator it = watchList.begin(); it != watchList.end();)
     {
       // If there are any elements being installed at all, always
       // update the displays.
       soft = true;
 
-      // Increase the iterator, since we might erase it from the
+      // Increase the iterator here since we might erase it from the
       // list below, invalidating the current position.
-      itold = it++;
+      WatchList::iterator itold = it++;
 
       // Get the GameInf pointer
       GameInf* inf = getFromId(data->repo, itold->first);

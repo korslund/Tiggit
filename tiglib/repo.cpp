@@ -398,6 +398,14 @@ JobInfoPtr Repo::startInstall(const std::string &idname, const std::string &urln
   return client;
 }
 
+/* We had one unfortunate user who managed to set his repo path to his
+   main Documents folder. Attempting to move it afterwards (using this
+   for cleanup) did not end well; it deleted all his files and he was
+   NOT particularly happy.
+
+   We've replaced this with the much safer RepoKillJob below, but keep
+   the code around in case you need it for something else.
+
 struct RemoveJob : Job
 {
   RemoveJob(const std::string &_what) : what(_what) {}
@@ -416,6 +424,51 @@ JobInfoPtr Repo::killPath(const std::string &dir, bool async)
 {
   assert(dir != "");
   return Thread::run(new RemoveJob(dir), async);
+}
+*/
+
+struct RepoKillJob : Job
+{
+  RepoKillJob(const std::string &_what) : what(_what) {}
+
+  std::string what;
+
+  void doJob()
+  {
+    setBusy("Removing data from " + what);
+
+    bf::path p = what;
+
+    bf::remove_all(p/"gamedata");
+    bf::remove_all(p/"promo");
+    bf::remove_all(p/"run");
+    bf::remove_all(p/"shots_300x260");
+    bf::remove_all(p/"spread");
+    bf::remove(p/"news.json");
+    bf::remove(p/"stats.json");
+    bf::remove(p/"launch.log");
+    bf::remove(p/"threads.log");
+    bf::remove(p/"tiglib.conf");
+    bf::remove(p/"tiglib_news.conf");
+    bf::remove(p/"tiglib_rates.conf");
+    bf::remove(p/"wxtiggit.conf");
+    bf::remove(p/"wxtiggit.conf");
+    bf::remove(p/"launch.log.old");
+    bf::remove(p/"threads.log.old");
+    bf::remove(p/"tiglib.conf.old");
+    bf::remove(p/"tiglib_news.conf.old");
+    bf::remove(p/"tiglib_rates.conf.old");
+    bf::remove(p/"wxtiggit.conf.old");
+    bf::remove(p/"wxtiggit.conf.old");
+
+    setDone();
+  }
+};
+
+JobInfoPtr Repo::killRepo(const std::string &dir, bool async)
+{
+  assert(dir != "");
+  return Thread::run(new RepoKillJob(dir), async);
 }
 
 JobInfoPtr Repo::startUninstall(const std::string &idname, bool async)
