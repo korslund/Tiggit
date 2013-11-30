@@ -75,6 +75,7 @@ bool GameList::sortDownloads()
 }
 
 int GameList::size() const { return lister.size(); }
+int GameList::totalSize() const { return lister.totalSize(); }
 
 static GameInf &liveToInfo(const LiveInfo &l)
 {

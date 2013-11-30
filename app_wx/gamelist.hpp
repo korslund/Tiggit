@@ -72,6 +72,7 @@ namespace wxTigApp
     bool sortDownloads();
 
     int size() const;
+    int totalSize() const;
     const wxGameInfo& get(int i) { return edit(i); }
     wxGameInfo& edit(int);
   };

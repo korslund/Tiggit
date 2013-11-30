@@ -24,15 +24,6 @@ namespace bf = boost::filesystem;
 #define PRINT(a)
 #endif
 
-// Used to notify the server about broken URLs
-struct CallbackURL
-{
-  void operator()(const Hash &hash, const std::string &url) const
-  {
-    Fetch::fetchString(ServerAPI::brokenURL(hash.toString(), url), true);
-  }
-};
-
 struct Repo::_Internal
 {
   Misc::LockFile lock;
@@ -43,9 +34,6 @@ struct Repo::_Internal
   _Internal(const std::string &spreadDir, const std::string &tmpDir)
     : spread(spreadDir, tmpDir), tmp(tmpDir)
   {
-    CallbackURL cb;
-    spread.setURLCallback(cb);
-
     DownloadTask::userAgent = "Tiggit/1.0 - see http://tiggit.net";
   }
 

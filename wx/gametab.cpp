@@ -233,7 +233,7 @@ void GameTab::gotFocus()
 
 int GameTab::getTitleNumber()
 {
-  return lister.size();
+  return lister.totalSize();
 }
 
 // Respond to clickable URLs in the game description
