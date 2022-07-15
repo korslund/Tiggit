@@ -7,6 +7,7 @@ find_package(ZLIB REQUIRED)
 find_package(wxWidgets COMPONENTS core base adv REQUIRED)
 include(${wxWidgets_USE_FILE})
 
+add_definitions(-DNEED_LOCKGUARD=1)
 include_directories("./")
 include_directories("libs/")
 include_directories("libs/spread/")
